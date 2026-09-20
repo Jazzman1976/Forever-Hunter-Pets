@@ -9,8 +9,9 @@ Drei Teile, kein Build-Schritt, keine Abhängigkeiten. Node braucht man nur zum
 Aktualisieren der Daten (Version 18 oder neuer, wegen `fetch`).
 
 ```
-tools/fetch-data.mjs  ──lädt──>  tools/cache/*.html  ──baut──>  data.js  ──liest──>  index.html
- + tools/sources.mjs             (669 HTML-Dateien)            (window.PET_DATA)    (eine Datei, Vanilla JS)
+tools/fetch-data.mjs     ──lädt──>  tools/cache/*        ──baut──>  data.js  ──liest──>  index.html
+ + tools/sources.mjs                 (gut 700 Dateien)           (window.PET_DATA)    (eine Datei, Vanilla JS)
+ + tools/beastmaster.mjs
 ```
 
 - `tools/fetch-data.mjs` ist ein Scraper. Er läuft von Hand, nicht beim Öffnen der Seite.
@@ -183,12 +184,12 @@ Eine Fähigkeit in `abilities[]`:
 
 | Feld | Inhalt |
 | --- | --- |
-| `name`, `nameEn` | deutscher und englischer Name. Der englische ist der Schlüssel zu Petopia. |
+| `name`, `nameEn` | deutscher und englischer Name. Der englische ist der Schlüssel zu Petopia und beastmaster.io. |
 | `icon` | Dateiname ohne Endung, wird zur Icon-URL ergänzt. |
 | `schools`, `classic`, `classicFamilies[]` | Zauberschule und Classic-Herkunft; derzeit nicht überall angezeigt. |
-| `families[]` | Familien-IDs, die die Fähigkeit nutzen (leer bei allgemeinen Fähigkeiten). |
+| `families[]` | Familien-IDs, die die Fähigkeit nutzen (leer bei allgemeinen Fähigkeiten). Aus Wowhead; sagt Wowhead nichts, aus beastmaster.io. |
 | `kind` | `general` (alle Familien), `family` (bestimmte Familien), `trait` (Angriffstempo). |
-| `source` | `tame` (von einem Tier abschauen), `trainer` (Tierausbilder), `unknown` (keine Quelle nennt etwas). Steuert Label, Filter und Empfehlungstext. |
+| `source` | `tame` (von einem Tier abschauen), `trainer` (Tierausbilder), `unknown` (keine Quelle nennt etwas). Steuert Label, Filter und Empfehlungstext. `tame` mit leerer `beasts`-Liste ist möglich: die Lernart ist bekannt, das Tier nicht. |
 | `speed` | nur bei `kind: 'trait'`: das Angriffstempo als Text, z. B. `"1.3"`. |
 | `classicTrainer` | in Classic beim Ausbilder lernbar (laut Petopia). |
 | `classicExtra[]` | Ränge, die es in Classic gab und die Forever nicht listet: `{ rank, level, tp }`. |
@@ -204,11 +205,11 @@ Ein Tier in `beasts[]`:
 | `family` | Familien-ID. |
 | `min`, `max` | Stufenbereich. |
 | `zones[]` | Zonen-IDs. |
-| `zoneText` | Ersatztext, wenn keine Zonen-ID ermittelt werden konnte (Petopia-Freitext). |
+| `zoneText` | Ersatztext, wenn keine Zonen-ID ermittelt werden konnte (Freitext aus Petopia oder beastmaster.io). |
 | `cls` | Einstufung: 0 normal, 1 Elite, 2 Rar-Elite, 3 Boss, 4 Rar. |
 | `rank` | der Rang, den dieses Tier beibringt. |
 | `est` | `true` = Rang nur nach der Tierstufe geschätzt. Auf der Seite das „≈“. |
-| `src[]` | woher der Eintrag stammt: `petopia` (P), `kommentar` (K), `forever` (F). Mehrere möglich. |
+| `src[]` | woher der Eintrag stammt: `petopia` (P), `kommentar` (K), `beastmaster` (B), `forever` (F). Mehrere möglich. |
 
 `data.js` ist generiert und wird nicht von Hand bearbeitet.
 
@@ -216,7 +217,7 @@ Ein Tier in `beasts[]`:
 
 `node tools/fetch-data.mjs` – der Ablauf in der Reihenfolge des Skripts:
 
-**1. Abrufen und Cache** (`get()` und `download()`, Zeile 39-75). Vor jedem Abruf 2 Sekunden
+**1. Abrufen und Cache** (`get()` und `download()`, Zeile 45-81). Vor jedem Abruf 2 Sekunden
 Pause. Bei 403, 429 oder 5xx – Wowhead drosselt – wird mit wachsender Wartezeit bis zu
 viermal neu versucht. Ein 404 wird als leere Datei im Cache vermerkt, damit dieselbe Seite
 nicht bei jedem Lauf neu angefragt wird. Weiterleitungen folgt das Skript selbst
@@ -232,6 +233,7 @@ Jede Antwort landet unter einem sprechenden Namen in `tools/cache/`:
 | `npc-<id>.html` | eine NPC-Seite aus Forever |
 | `classic-npc-<id>.html` | dieselbe NPC-Seite aus Classic, wegen der Koordinaten |
 | `petopia-abilities.html`, `petopia-attackspeed.html` | die beiden Petopia-Seiten |
+| `beastmaster.html`, `beastmaster-index-<hash>.js` | die beastmaster.io-Seite und ihr JS-Bundle (~13 MB) |
 
 **2. Wowhead auslesen ohne HTML-Parser.** Die interessanten Daten stehen auf Wowhead-Seiten
 als JavaScript-Literale im Quelltext. Zwei Helfer holen sie heraus: `sliceLiteral()` schneidet
@@ -243,8 +245,11 @@ So gelesen werden `listviewspells` (die Fähigkeitenliste), die `listview`-Blöc
 `$.extend(g_npcs[id], …)` (NPC-Stammdaten) und `g_mapperData` (die Fundorte).
 
 **3. Fähigkeitenliste.** Die deutsche Liste liefert alles, die englische nur die Namen
-(`nameEn`) als Schlüssel zu Petopia. Gefiltert wird auf `chrclass === 4` (Jäger) abzüglich
-`SKIP_IDS` – vier interne Einträge (Scaling, DND, Summoning).
+(`nameEn`) als Schlüssel zu Petopia und beastmaster.io. Gefiltert wird auf `chrclass === 4`
+(Jäger) abzüglich `SKIP_IDS` – vier interne Einträge (Scaling, DND, Summoning). Einzelne in
+Forever neue Fähigkeiten stehen ohne `chrclass` in der Liste und würden so durchfallen; welche
+davon Jäger-Pet-Fähigkeiten sind, sagt beastmaster.io, und sie werden über ihre Spell-ID
+wieder dazugenommen (`extraIds`). So kam „Tanz des Täuschers“ herein.
 
 **4. Zonen.** Aus `/zones` kommen die deutschen Namen für die Anzeige und, aus der englischen
 Fassung, eine Brücke „englischer Zonenname → Zonen-ID“, mit der sich Petopia-Ortsangaben
@@ -255,13 +260,13 @@ deutsch anzeigen lassen. Gruppeninhalte erkennt das Skript an `nplayers > 0` und
 **5. Je Zauberseite** werden gelesen: Pet-Familien, die Tiere aus `used-by-npc`, Rangnummer,
 Pet-Stufe, Beschreibung und Icon – und die Kommentare der Seite.
 
-**6. Nachladen.** Tiere, die nur Petopia oder ein Kommentar nennt, kennt Forever aus Schritt 5
-noch nicht. Für sie und für die Tierausbilder wird je eine NPC-Seite geholt. Beim ersten Lauf
-sind das ein paar hundert Seiten, gut 20 Minuten.
+**6. Nachladen.** Tiere, die nur Petopia, ein Kommentar oder beastmaster.io nennt, kennt
+Forever aus Schritt 5 noch nicht. Für sie und für die Tierausbilder wird je eine NPC-Seite
+geholt. Beim ersten Lauf sind das ein paar hundert Seiten, gut 20 Minuten.
 
-**7. Tiere zusammenführen** (Zeile 272-341). Die Reihenfolge ist die Rangfolge der Quellen:
+**7. Tiere zusammenführen** (Zeile 335-418). Die Reihenfolge ist die Rangfolge der Quellen:
 
-1. Petopia und die Kommentar-Tabellen liefern Tiere **mit** Rang → `est: false`.
+1. Petopia, die Kommentar-Tabellen und beastmaster.io liefern Tiere **mit** Rang → `est: false`.
 2. Danach die Forever-Tiere: ist das Tier schon bekannt, wird nur `src` um `forever`
    ergänzt (es bestätigt den Eintrag). Ist es neu, wird sein Rang aus der Tierstufe
    geschätzt – der höchste Rang, dessen Pet-Stufe die Tierstufe nicht übersteigt – und
@@ -271,14 +276,26 @@ sind das ein paar hundert Seiten, gut 20 Minuten.
 Trainingspunkte kommen aus Petopia, ersatzweise aus einer Kommentar-Tabelle. Ränge, die es
 in Classic gab und die Forever nicht listet, landen in `classicExtra`. Die Lernart ergibt
 sich am Ende: gibt es Lehrtiere → `tame`; sonst Ausbilder oder allgemeine Fähigkeit →
-`trainer`; sonst `unknown`.
+`trainer`; sonst das, was beastmaster.io zur Fähigkeit sagt (`tamed`/`both` → `tame`,
+`trainer` → `trainer`); sonst `unknown`. Der letzte Schritt ist der Grund, warum keine
+Fähigkeit mehr auf `unknown` steht: Prankenhieb, Zerstückeln und Meins! haben zwar kein
+bekanntes Lehrtier, aber beastmaster.io sagt, dass man sie durch Zähmen lernt.
 
 **8. Angriffstempo.** Das ist keine erlernbare Fähigkeit, sondern eine versteckte Aura
 („Schnellerer/Langsamerer Angriff“), die Wowhead trotzdem in der Liste führt. `TRAIT_SPEED`
-(Zeile 23-26) ordnet diesen Spell-IDs das Tempo zu (Basis 2,0 s); die Tiere dazu kommen aus
-der Petopia-Tempoliste, und die Fähigkeit bekommt `kind: 'trait'`.
+(Zeile 25-28) ordnet diesen Spell-IDs das Tempo zu (Basis 2,0 s); die Tiere dazu kommen aus
+der Petopia-Tempoliste und aus dem `attackSpeed` der beastmaster.io-Tiere, und die Fähigkeit
+bekommt `kind: 'trait'`.
 
-**9. Koordinaten und Schreiben.** Für jedes Tier einmal die Classic-Seite, `g_mapperData`
+**9. Familien nachziehen.** Kernhund und Fuchs führt Wowhead nicht als Pet-Familie: Sie
+stehen nur als ID am Tier, ohne Namen und ohne Zuordnung zur Fähigkeit. Beides kommt von
+beastmaster.io. Die Brücke „Familienslug → Wowhead-ID“ entsteht über die Tiere; wo das nicht
+reicht (der Kernhund hat dort kein zähmbares Tier mit Wowhead-ID), über die Fähigkeit: hat
+eine Fähigkeit nur Tiere **einer** Familien-ID und kennt beastmaster.io sie nur bei **einer**
+Familie, gehören die beiden zusammen. Die deutschen Namen stehen in `FAMILY_DE`, weil es sie
+auf Wowhead nicht gibt.
+
+**10. Koordinaten und Schreiben.** Für jedes Tier einmal die Classic-Seite, `g_mapperData`
 auslesen, Punkte je Zone entdoppeln. Zum Schluss werden nur die Zonen übernommen, die
 wirklich vorkommen, und `data.js` geschrieben.
 
@@ -286,10 +303,11 @@ wirklich vorkommen, und `data.js` geschrieben.
 
 | Quelle | Liefert | Code | Verlässlichkeit |
 | --- | --- | --- | --- |
-| **Wowhead Forever** (de + en) | Fähigkeiten, Ränge, Pet-Stufen, Beschreibungen, Icons, Pet-Familien, Tiere je Fähigkeit, Zonennamen, NPC-Stammdaten (Name, Stufe, Zone, Einstufung) | `fetch-data.mjs:99-139` | Der aktuelle Stand des Servers. Aber: keine Rangzuordnung der Tiere, keine Trainingspunkte, keine Karten. |
+| **Wowhead Forever** (de + en) | Fähigkeiten, Ränge, Pet-Stufen, Beschreibungen, Icons, Pet-Familien, Tiere je Fähigkeit, Zonennamen, NPC-Stammdaten (Name, Stufe, Zone, Einstufung) | `fetch-data.mjs:105-150` | Der aktuelle Stand des Servers. Aber: keine Rangzuordnung der Tiere, keine Trainingspunkte, keine Karten. |
 | **Wowhead-Kommentare** auf den Zauberseiten | rangweise Zähmlisten mit Trainingspunkten, die Tierausbilder | `sources.mjs:60-113` | Spielerwissen, meist aus Classic. Die ergiebigste Tabelle stammt von „hevgirl“ (2019). |
 | **Petopia Classic** | Lehrtiere je Rang, Trainingspunkte, „learned from trainers“, Angriffstempi | `sources.mjs:22-57` | Sehr gründlich, aber Classic-Stand. |
-| **Wowhead Classic** | Fundorte (`g_mapperData`) und die Zonenkarten vom CDN | `fetch-data.mjs:141-154` | Forever hat keine eigenen Kartendaten, deshalb der Umweg. Fundorte können abweichen. |
+| **beastmaster.io** | Lehrtiere je Rang **für Forever**, Lernart, Angriffstempi, die Familien Kernhund und Fuchs | `beastmaster.mjs` | Die einzige Quelle, die die Forever-Neuzugänge abdeckt. Weniger Tiere je Fähigkeit als Petopia, aber wo sich beide äußern, widersprechen sie sich in keinem einzigen Rang. |
+| **Wowhead Classic** | Fundorte (`g_mapperData`) und die Zonenkarten vom CDN | `fetch-data.mjs:153-165` | Forever hat keine eigenen Kartendaten, deshalb der Umweg. Fundorte können abweichen. |
 
 Zu den Parsern in `tools/sources.mjs`:
 
@@ -305,9 +323,38 @@ Zu den Parsern in `tools/sources.mjs`:
   zwei NPCs verlinkt sind – sonst landen beliebige Kommentar-Links in den Daten.
 - `parseTrainerComment()` zieht die Tierausbilder aus dem Kommentar zu „Große Ausdauer“.
 
-Weil Petopia englisch ist, hängen zwei Übersetzungstabellen in `fetch-data.mjs:27-34`
-daran: `PETOPIA_ALIAS` für abweichende Fähigkeitsnamen und `FAMILY_EN` für die
-Familiennamen (Singular und Plural) → Wowhead-Familien-ID.
+Weil Petopia und beastmaster.io englisch sind, hängen drei Übersetzungstabellen in
+`fetch-data.mjs` daran: `ALIAS_EN` für abweichende Fähigkeitsnamen (beide kürzen
+„Demoralizing Screech“ zu „Screech“), `FAMILY_EN` für Familiennamen (Singular und Plural)
+→ Wowhead-Familien-ID und `FAMILY_DE` für die zwei Familien, zu denen Wowhead keinen
+deutschen Namen hat.
+
+### `tools/beastmaster.mjs`
+
+beastmaster.io ist eine React-Seite ohne Schnittstelle; die Forever-Daten stecken als
+Literale im JS-Bundle. Der Parser geht deshalb so vor:
+
+1. `bundleUrl()` liest aus der Seite den `<script src="/assets/index-<hash>.js">`. Der Hash
+   wandert in den Cache-Namen, damit ein neues Bundle nicht auf ein altes trifft.
+2. `parseBeastmaster()` sucht die vier Datentabellen **nicht über ihren Namen** – der ist
+   minifiziert und ändert sich bei jedem Deploy – sondern über ihre Form (`MARKS`): das
+   Muster `{era:…,tbc:…,forever:…}` für Tiere und Rang-Stufen, `[{slug:"bat",name:"Bat"…`
+   für die Familien, `[{slug:"acid-spit"…` für die Metadaten.
+3. `endOfLiteral()` bestimmt das Ende der letzten Tabelle per Klammerzählung. Hinter diesem
+   Schnitt wird abgeschnitten – der Rest des Bundles ist die React-Anwendung und wird gar
+   nicht erst ausgeführt.
+4. Das Bruchstück läuft in einem `vm`-Kontext mit einer Browser-Attrappe (`browserStub()`).
+   Dort kommt fremder Code weder an `fs` noch an `process`. Ein Durchlauf dauert rund 1 s.
+5. Das Muster `{era:…,forever:…}` passt auf mehrere Tabellen. Welche die Rang-Stufen sind,
+   entscheidet sich erst am Ergebnis: genommen wird die, deren Schlüssel am besten zu den
+   Fähigkeitsnamen aus den Metadaten passen. (Eine der anderen benutzt Unterstriche statt
+   Leerzeichen – `Furious_Howl` statt `Furious Howl` – und fällt dadurch durch.)
+6. `slugNpcId()` zieht die NPC-ID aus dem Slug (`ragged-young-wolf-705` → 705). Nur die Zahl
+   **am Ende** zählt: Slugs mit angehängter Farbvariante sind Dubletten des Grundeintrags,
+   und bei manchen steht dort eine Darstellungs- statt einer NPC-ID.
+
+Findet der Parser eine Tabelle nicht oder ist das Ergebnis leer, wirft er mit klarer Meldung –
+er liefert nie stillschweigend halbe Daten.
 
 ## 7. Fallstricke und Wartung
 
@@ -324,6 +371,11 @@ Familiennamen (Singular und Plural) → Wowhead-Familien-ID.
 - **Classic-Wissen bleibt Classic-Wissen.** Trainingspunkte, Ausbilder und Ränge stammen aus
   Petopia und den Kommentaren und können in Forever abweichen. Die Seite kennzeichnet die
   Herkunft (P/K/F), prüfen kann das Skript sie nicht.
-- **Neue Forever-Fähigkeiten ohne Classic-Vorbild** (Prankenhieb, Zwicken, Sehnenriss,
-  Zerstückeln, Wildes Verwunden, Meins!) haben keine Lernquelle und stehen deshalb als
-  `source: 'unknown'` in den Daten.
+- **Drei Fähigkeiten ohne Lehrtier.** Prankenhieb, Zerstückeln und Meins! stehen mit
+  `source: 'tame'` und leerer `beasts`-Liste in den Daten: beastmaster.io sagt, dass man sie
+  durch Zähmen lernt, nennt aber kein Tier. Die Rang-Karte schreibt dann „Keine Quelle nennt
+  ein Tier für diesen Rang.“ `source: 'unknown'` kommt derzeit nicht mehr vor, die Behandlung
+  dafür steht aber noch – eine neue Fähigkeit kann wieder dort landen.
+- **beastmaster.io hängt am Bundle-Aufbau**, nicht an Markup. Das ist der wackeligste Teil der
+  Kette: Ändert die Seite ihre Datenstruktur, hilft kein Nachziehen eines Selektors, dann muss
+  `MARKS` in `tools/beastmaster.mjs` neu gefasst werden. Der Parser bricht in dem Fall ab.

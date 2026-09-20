@@ -30,20 +30,21 @@ node tools/fetch-data.mjs
 1. **Wowhead Forever** (deutsch): Fähigkeiten, Ränge, Pet-Familien und die Tiere, die eine Fähigkeit nutzen.
 2. **Wowhead-Kommentare** auf den Zauberseiten: rangweise Zähmlisten mit Trainingspunkten (vor allem von „hevgirl“, 2019) und die Tierausbilder in den Hauptstädten.
 3. **Petopia Classic** (https://www.wow-petopia.com/classic/): Lehrtiere je Rang, Trainingspunkte, welche Fähigkeiten beim Tierausbilder zu lernen sind, und die Angriffstempi der Tiere. Damit werden Lücken mit Classic-Wissen gefüllt.
+4. **beastmaster.io** (https://beastmaster.io/forever/abilities): Lehrtiere je Rang für Forever selbst – auch für die Fähigkeiten, die es in Classic noch nicht gab und zu denen Petopia deshalb nichts hat (Staubwolke, Wildes Verwunden, Zwicken, Sehnenriss, Tanz des Täuschers). Dazu die Lernart der übrigen Forever-Neuen, Angriffstempi und die zwei Pet-Familien, die Wowhead nicht führt (Kernhund, Fuchs).
+5. **Wowhead Classic**: Fundorte (Koordinaten) der Tiere aus `g_mapperData` auf den NPC-Seiten. Wowhead Forever hat noch keine Kartendaten. Die Zonenkarten (deutsch) lädt die Seite vom Wowhead-CDN.
 
-4. **Wowhead Classic**: Fundorte (Koordinaten) der Tiere aus `g_mapperData` auf den NPC-Seiten. Wowhead Forever hat noch keine Kartendaten. Die Zonenkarten (deutsch) lädt die Seite vom Wowhead-CDN.
+Die Parser für 2 und 3 stehen in `tools/sources.mjs`, der für 4 in `tools/beastmaster.mjs`.
 
-Die Parser für 2 und 3 stehen in `tools/sources.mjs`.
-
-Beim ersten Lauf ruft das Skript für jedes der rund 465 Tiere die Classic-Seite ab. Das dauert etwa 20 Minuten. Danach kommt alles aus dem Cache.
+Beim ersten Lauf ruft das Skript für jedes der rund 480 Tiere die Classic-Seite ab. Das dauert etwa 20 Minuten. Danach kommt alles aus dem Cache.
 
 ## Empfehlung
 Die Seite schätzt zu jedem Tier den Aufwand (leicht/mittel/schwer) aus Einstufung (normal, Elite, rar), Instanz ja/nein, Anzahl der Fundorte, Tierstufe und der Frage, ob der Rang bestätigt ist. Je Rang steht das leichteste Tier oben und mit ★, oben in der Karte steht die Empfehlung für die Fähigkeit. Über die Fraktionsauswahl werden Startgebiete der Gegenfraktion abgewertet. Das ist eine Faustregel, keine Spielmechanik.
 
 ## Grenzen der Daten
-- Wowhead Forever ordnet Tiere keinem Rang zu. Tiere, die nur dort vorkommen, sind auf der Seite mit ≈ markiert. Ihr Rang ist nach der Tierstufe geschätzt. Tiere mit P (Petopia) oder K (Kommentar) haben einen Rang aus der Quelle.
+- Wowhead Forever ordnet Tiere keinem Rang zu. Tiere, die nur dort vorkommen, sind auf der Seite mit ≈ markiert. Ihr Rang ist nach der Tierstufe geschätzt. Tiere mit P (Petopia), K (Kommentar) oder B (beastmaster.io) haben einen Rang aus der Quelle.
 - Trainingspunkte, Tierausbilder und Classic-Ränge stammen aus WoW Classic und können in Forever abweichen.
-- Für neue Forever-Fähigkeiten wie Prankenhieb, Zwicken, Sehnenriss, Zerstückeln, Wildes Verwunden und Meins! gibt es keine Lernquelle.
+- Zu Prankenhieb, Zerstückeln und Meins! nennt keine Quelle ein Lehrtier. Dass man sie durch Zähmen lernt, sagt nur beastmaster.io – welches Tier sie beibringt, steht dort nicht.
+- beastmaster.io veröffentlicht keine Schnittstelle; die Daten stecken im JS-Bundle der Seite und werden daraus gelesen. Baut die Seite um, bricht `tools/beastmaster.mjs` mit einer Meldung ab, statt still falsche Daten zu liefern.
 
 ## Technik
 Wie die Seite aufgebaut ist, wie `data.js` aussieht und woher jede einzelne Angabe stammt, steht in [TECHNIK.md](TECHNIK.md).

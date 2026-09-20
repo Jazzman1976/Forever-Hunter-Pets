@@ -171,6 +171,7 @@ input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accen
 .src-petopia { background: var(--tame-bg); color: var(--tame); }
 .src-kommentar { background: var(--train-bg); color: var(--train); }
 .src-forever { background: var(--unk-bg); color: var(--unk); }
+.src-beastmaster { background: var(--trait-bg); color: var(--trait); }
 .beasts li.est { opacity: .8; }
 .est-mark { color: var(--muted); font-weight: 700; }
 .extra, .refs { font-size: .84rem; color: var(--muted); margin: 10px 0 0; }
@@ -271,13 +272,14 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
         Zur Zone kennen die Daten nur <strong>Lehrtiere</strong>: Eine Familie kann dort leben, ohne etwas beizubringen – dann steht sie nicht in der Liste.</li>
       <li><span class="badge b-tame">Zähmen</span> Du zähmst ein Tier, das die Fähigkeit kennt, lässt es kämpfen, bis du sie gelernt hast, und bringst sie dann per „Wildtierausbildung“ deinem Pet bei. Das kostet Trainingspunkte (TP).</li>
       <li><span class="badge b-trainer">Pet-Lehrer</span> Diese Fähigkeit lernst du beim Tierausbilder in einer Hauptstadt.</li>
-      <li><span class="badge b-unknown">Quelle unbekannt</span> Das sind neue Forever-Fähigkeiten ohne Classic-Vorbild. Keine Quelle nennt Lehrtiere, wahrscheinlich lernt die Familie sie automatisch.</li>
+      <li><span class="badge b-unknown">Quelle unbekannt</span> Keine der Quellen sagt, wie man die Fähigkeit lernt. Das Label steht nur da, wenn es solche Fähigkeiten gibt.</li>
       <li><span class="badge b-trait">Eigenschaft</span> Das Angriffstempo übernimmt dein Pet vom gezähmten Tier. Erlernen kann man es nicht.</li>
       <li>Die Kürzel hinter jedem Tier zeigen die Quelle:
         <span class="src src-petopia">P</span> Petopia Classic,
         <span class="src src-kommentar">K</span> Wowhead-Kommentar,
+        <span class="src src-beastmaster">B</span> beastmaster.io,
         <span class="src src-forever">F</span> Wowhead Forever.
-        Bei P und K ist der Rang in der Quelle angegeben. Steht <span class="est-mark">≈</span> vor einem Tier, stammt es nur aus Wowhead Forever. Wowhead ordnet Tiere dort keinem Rang zu, deshalb ist der Rang nach der Tierstufe <strong>geschätzt</strong>.</li>
+        Bei P, K und B ist der Rang in der Quelle angegeben; B ist die einzige Quelle, die auch die in Forever neuen Familienfähigkeiten abdeckt. Steht <span class="est-mark">≈</span> vor einem Tier, stammt es nur aus Wowhead Forever. Wowhead ordnet Tiere dort keinem Rang zu, deshalb ist der Rang nach der Tierstufe <strong>geschätzt</strong>.</li>
       <li>Neben jedem Tier siehst du eine kleine Zonenkarte mit seinen Fundorten. Ein Klick darauf vergrößert sie. Die Koordinaten stehen auch hinter dem Zonennamen, bei Rare-Mobs fett und mit gelben Pins. Karten und Koordinaten stammen aus Wowhead Classic, weil Wowhead Forever noch keine Kartendaten hat.</li>
       <li><span class="star">★</span> <strong>Empfehlung:</strong> Die Seite schätzt für jedes Tier den Aufwand
         (<span class="eff eff-leicht">leicht</span> <span class="eff eff-mittel">mittel</span> <span class="eff eff-schwer">schwer</span>) aus Einstufung (normal, Elite, rar),
@@ -382,7 +384,8 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     .map(([k, [label, cls]]) => `<button type="button" class="badge ${cls}" data-src="${k}" aria-pressed="false">${label} <span class="n">${srcCount[k]}</span></button>`)
     .join(''));
 
-  const SRC = { petopia: ['P', 'Petopia Classic'], kommentar: ['K', 'Wowhead-Kommentar'], forever: ['F', 'Wowhead Forever'] };
+  const SRC = { petopia: ['P', 'Petopia Classic'], kommentar: ['K', 'Wowhead-Kommentar'], forever: ['F', 'Wowhead Forever'],
+    beastmaster: ['B', 'beastmaster.io'] };
   const fmtSpeed = (s) => String(s).replace('.', ',');
 
   // ---- Karten & Koordinaten ----
@@ -523,10 +526,10 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
           ? `<button class="more" data-more="${esc(key)}">${all ? 'Weniger anzeigen' : `Alle ${list.length} Tiere anzeigen`}</button>` : '');
     const hint = {
       tame: isTrait
-        ? `Dein Pet übernimmt das Angriffstempo des Tiers, das du zähmst (so war es in Classic). Diese Tiere greifen laut Petopia Classic alle ${fmtSpeed(a.speed)} s an, normal sind 2,0 s:`
+        ? `Dein Pet übernimmt das Angriffstempo des Tiers, das du zähmst (so war es in Classic). Diese Tiere greifen laut Petopia Classic und beastmaster.io alle ${fmtSpeed(a.speed)} s an, normal sind 2,0 s:`
         : 'Zähmbare Tiere, die diesen Rang kennen, das am leichtesten erreichbare zuerst:',
       trainer: `Lernst du beim Tierausbilder${a.classicTrainer ? ' (in Classic laut Petopia)' : ' (in Classic so, für Forever nicht bestätigt)'}.`,
-      unknown: 'Neue Forever-Fähigkeit ohne Classic-Vorbild. Weder Wowhead noch Petopia nennen Lehrtiere, wahrscheinlich lernt die Familie sie automatisch mit steigender Stufe.',
+      unknown: 'Keine der Quellen sagt, wie man diese Fähigkeit lernt.',
     }[a.source];
 
     // Empfehlung für genau diesen Rang

@@ -1,5 +1,6 @@
 // Sammelt die Hunter-Pet-Fähigkeiten für WoW Forever und schreibt ../data.js.
-// Quellen: Wowhead Forever (deutsch, inkl. Kommentare) und Petopia Classic für Lücken.
+// Quellen: Wowhead Forever (deutsch, inkl. Kommentare), Petopia Classic für Classic-Lücken
+// und beastmaster.io für das, was es erst in Forever gibt.
 // Aufruf: node tools/fetch-data.mjs   (Cache in tools/cache/, zum Neuladen den Ordner löschen)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   parsePetopiaAbilities, parsePetopiaAttackSpeeds, extractComments, parseCommentLists, parseTrainerComment,
 } from './sources.mjs';
+import { BEASTMASTER, bmAbilityUrl, bmSpeedUrl, bundleUrl, parseBeastmaster, slugNpcId } from './beastmaster.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -24,7 +26,8 @@ const TRAIT_SPEED = {
   1263110: '1.0', 1263109: '1.2', 1263107: '1.3', 1263104: '1.4', 1263102: '1.5',
   1263100: '1.6', 1263099: '1.7', 1263113: '2.4', 1263114: '2.5',
 };
-const PETOPIA_ALIAS = { 'Demoralizing Screech': 'Screech' };
+// Petopia und beastmaster.io führen „Demoralisierendes Kreischen“ kurz als „Screech“.
+const ALIAS_EN = { 'Demoralizing Screech': 'Screech' };
 // Petopia-Familiennamen (Singular/Plural) → Wowhead-Familien-ID
 const FAMILY_EN = {
   Wolf: 1, Wolves: 1, Cat: 2, Cats: 2, Spider: 3, Spiders: 3, Bear: 4, Bears: 4, Boar: 5, Boars: 5,
@@ -32,6 +35,9 @@ const FAMILY_EN = {
   Raptor: 11, Raptors: 11, Tallstrider: 12, Tallstriders: 12, Scorpid: 20, Scorpids: 20, Turtle: 21, Turtles: 21,
   Bat: 24, Bats: 24, Hyena: 25, Hyenas: 25, Owl: 26, Owls: 26, 'Wind Serpent': 27, 'Wind Serpents': 27,
 };
+// Die in Forever neuen Familien führt Wowhead nicht unter /pet=<ID> – für sie gibt es dort
+// keinen deutschen Namen, nur die ID am Tier. Deshalb hier von Hand, Rest bleibt englisch.
+const FAMILY_DE = { 'Core Hound': 'Kernhund', Fox: 'Fuchs' };
 
 fs.mkdirSync(CACHE, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -119,10 +125,15 @@ function descriptions(html) {
   return out;
 }
 
-function spellList(html) {
+function rawSpellList(html) {
   const i = html.indexOf('listviewspells = ');
-  return evalLiteral(sliceLiteral(html, i + 'listviewspells = '.length))
-    .filter((s) => s.chrclass === 4 && !SKIP_IDS.has(s.id));
+  return evalLiteral(sliceLiteral(html, i + 'listviewspells = '.length));
+}
+
+// Jäger-Pet-Zauber sind die mit chrclass 4. Ein paar in Forever neue Fähigkeiten stehen ohne
+// chrclass in der Liste (z. B. „Tanz des Täuschers“) – die holt `extra` über die ID dazu.
+function spellList(html, extra = new Set()) {
+  return rawSpellList(html).filter((s) => (s.chrclass === 4 || extra.has(s.id)) && !SKIP_IDS.has(s.id));
 }
 
 // NPC-Seite (deutsch) → Name, Titel, Stufen, Zonen, Familie
@@ -155,17 +166,35 @@ async function classicCoords(id) {
 
 const rankNum = (r) => parseInt(String(r || '').replace(/\D+/g, ''), 10) || 0;
 
+// beastmaster.io: die Seite ist eine React-App, die Daten stecken im JS-Bundle. Dessen Name
+// trägt einen Hash, der sich bei jedem Deploy ändert – er wandert deshalb in den Cache-Namen,
+// damit ein neues Bundle nicht auf ein altes trifft.
+async function beastmaster() {
+  const url = bundleUrl(await get(BEASTMASTER, 'beastmaster.html'));
+  const hash = path.basename(new URL(url).pathname);
+  return parseBeastmaster(await get(url, `beastmaster-${hash}`));
+}
+
 async function main() {
-  const spells = spellList(await get(LIST_URL, 'list.html'));
-  const enName = Object.fromEntries(spellList(await get(LIST_URL_EN, 'list-en.html')).map((s) => [s.id, s.name]));
-  console.log(`${spells.length} Hunter-Pet-Einträge gefunden`);
+  const bm = await beastmaster();
+  const bmAbility = new Set(Object.keys(bm.levels));
+  const bmMeta = new Map(bm.meta.map((m) => [m.name, m]));
+  console.log(`beastmaster.io: ${bm.beasts.length} Forever-Tiere, ${bmAbility.size} Fähigkeiten, ${bm.families.length} Familien`);
+
+  // Fähigkeiten, die Wowhead ohne chrclass führt, aber beastmaster.io als Forever-Pet-Fähigkeit kennt
+  const listEn = await get(LIST_URL_EN, 'list-en.html');
+  const extraIds = new Set(rawSpellList(listEn).filter((s) => s.chrclass == null && bmAbility.has(s.name)).map((s) => s.id));
+  const spells = spellList(await get(LIST_URL, 'list.html'), extraIds);
+  const enName = Object.fromEntries(spellList(listEn, extraIds).map((s) => [s.id, s.name]));
+  console.log(`${spells.length} Hunter-Pet-Einträge gefunden${extraIds.size ? ` (${extraIds.size} davon über beastmaster.io nachgezogen)` : ''}`);
 
   const zonesHtml = await get(`${BASE}/zones`, 'zones.html');
   const zones = {};
   const instanceOf = {}; // 2 Dungeon, 3 Raid, 4 Schlachtfeld
   // Gruppeninhalte erkennt man an "nplayers" > 0 (die Blackrockspitze hat z. B. "instance":0, aber 10 Spieler),
-  // die Art an "category": 2 Dungeon, 3 Raid, 6 Schlachtfeld.
-  for (const m of zonesHtml.matchAll(/"category":(\d+),[^{}]*?"id":(\d+),"instance":\d+,[^{}]*?"name":"((?:[^"\\]|\\.)*)","nplayers":(\d+)/g)) {
+  // die Art an "category": 2 Dungeon, 3 Raid, 6 Schlachtfeld. In Forever neue Gebiete stehen
+  // teils mit "category":-1 – die dürfen nicht durchfallen, sonst bleibt die Zone namenlos.
+  for (const m of zonesHtml.matchAll(/"category":(-?\d+),[^{}]*?"id":(\d+),"instance":\d+,[^{}]*?"name":"((?:[^"\\]|\\.)*)","nplayers":(\d+)/g)) {
     const [, cat, id, name, nplayers] = m;
     zones[id] = JSON.parse(`"${name}"`);
     if (+nplayers > 0) instanceOf[id] = cat === '3' ? 3 : cat === '6' ? 4 : 2;
@@ -235,11 +264,32 @@ async function main() {
     e.rankNo = own ? own.rank : e.rank;
   }
 
-  // Alle Tiere aus Petopia/Kommentaren/Tempo-Liste, die Wowhead Forever nicht schon mitliefert, nachladen.
+  // beastmaster.io nach NPC-ID umsortieren: was lehrt welches Tier, wie schnell schlägt es zu.
+  // Die NPC-ID steckt im Slug („ragged-young-wolf-705“); die paar Einträge ohne ID sind
+  // Einzeltiere, zu denen es auf Wowhead nichts gibt – die lassen wir weg.
+  const bmTaught = {};   // englischer Fähigkeitsname → { Rang: Set<npcId> }
+  const bmSpeed = {};    // Angriffstempo („1.3“) → Set<npcId>
+  const bmNpc = new Map();
+  for (const b of bm.beasts) {
+    const id = slugNpcId(b.slug);
+    if (!id) continue;
+    bmNpc.set(id, b);
+    for (const t of b.taughtAbilities || []) ((bmTaught[t.name] ??= {})[t.rank] ??= new Set()).add(id);
+    if (b.attackSpeed) (bmSpeed[b.attackSpeed.toFixed(1)] ??= new Set()).add(id);
+  }
+  const bmFamilyId = {};  // beastmaster-Familienslug → Wowhead-Familien-ID (über die Tiere erschlossen)
+  const bmFamilyEn = Object.fromEntries(bm.families.map((f) => [f.slug, f.name]));
+
+  // Alle Tiere aus Petopia/Kommentaren/Tempo-Liste/beastmaster.io, die Wowhead Forever
+  // nicht schon mitliefert, nachladen.
   const wanted = new Set();
   for (const p of Object.values(petopia)) for (const r of Object.values(p.ranks)) r.npcs.forEach((x) => wanted.add(x.id));
   for (const e of commentLists) e.npcIds.forEach((id) => wanted.add(id));
   for (const [sp, list] of Object.entries(speeds)) if (sp !== '2.0') list.forEach((x) => wanted.add(x.id));
+  for (const b of bm.beasts) {
+    const id = slugNpcId(b.slug);
+    if (id && ((b.taughtAbilities || []).length || (b.attackSpeed && b.attackSpeed !== 2))) wanted.add(id);
+  }
   const missing = [...wanted].filter((id) => !npcs.has(id));
   const trainerIds = [...new Map(trainerRefs.map((t) => [t.id, t])).keys()];
   let k = 0;
@@ -258,21 +308,36 @@ async function main() {
   const beastBase = (id) => {
     const w = npcs.get(id);
     const p = petopiaNpc.get(id) || {};
-    const petopiaZone = zoneIdEn[String(p.zoneEn || '').replace(/\s*\([^)]*\)$/, '')];
+    const m = bmNpc.get(id) || {};
+    const zoneOf = (name) => zoneIdEn[String(name || '').replace(/\s*\([^)]*\)$/, '')];
+    const petopiaZone = zoneOf(p.zoneEn);
+    // beastmaster.io nennt je Tier mehrere Fundorte – die, die wir als Zone kennen, nehmen wir mit.
+    const bmZones = [...new Set((m.locations || []).map((l) => zoneOf(l.zone)).filter(Boolean))];
+    const zones = w?.zones?.length ? w.zones : petopiaZone ? [petopiaZone] : bmZones;
+    const family = w?.family || FAMILY_EN[p.familyEn] || bmFamilyId[m.familySlug] || 0;
+    if (family && m.familySlug) bmFamilyId[m.familySlug] ??= family;
     return {
-      id, name: w?.name || p.nameEn || `NPC ${id}`,
-      family: w?.family || FAMILY_EN[p.familyEn] || 0,
-      min: w?.min ?? p.min, max: w?.max ?? p.max,
-      zones: w?.zones?.length ? w.zones : petopiaZone ? [petopiaZone] : [],
-      zoneText: w?.zones?.length || petopiaZone ? '' : (p.zoneEn || ''),
+      id, name: w?.name || p.nameEn || m.name || `NPC ${id}`,
+      family,
+      min: w?.min ?? p.min ?? m.level?.min, max: w?.max ?? p.max ?? m.level?.max,
+      zones,
+      zoneText: zones.length ? '' : (p.zoneEn || m.locations?.[0]?.zone || ''),
       cls: w?.cls ?? 0,
     };
   };
+  // Familien-IDs erst einmal über alle beastmaster-Tiere erschließen, damit `beastBase`
+  // sie auch für Tiere kennt, zu denen Wowhead keine Familie liefert.
+  for (const [id, b] of bmNpc) {
+    const fam = npcs.get(id)?.family;
+    if (fam && b.familySlug) bmFamilyId[b.familySlug] ??= fam;
+  }
 
   const abilityList = Object.values(abilities).map((a) => {
     a.ranks.sort((x, y) => x.rank - y.rank || x.level - y.level);
     const traitSpeed = a.ranks.length === 1 ? TRAIT_SPEED[a.ranks[0].id] : undefined;
-    const pt = petopia[PETOPIA_ALIAS[a.nameEn] || a.nameEn];
+    const nameEn = ALIAS_EN[a.nameEn] || a.nameEn;
+    const pt = petopia[nameEn];
+    const bmA = bmMeta.get(nameEn);
     const beasts = new Map(); // npcId → Eintrag
     const add = (id, rank, src, est = false) => {
       const b = beasts.get(id) || { ...beastBase(id), rank, est, src: [] };
@@ -284,12 +349,20 @@ async function main() {
 
     if (traitSpeed) {
       for (const x of speeds[traitSpeed] || []) add(x.id, 0, 'petopia');
+      for (const id of bmSpeed[traitSpeed] || []) add(id, 0, 'beastmaster');
       refs.push({ label: `Petopia Classic: Angriffstempo ${traitSpeed}`, url: `${PETOPIA}attackspeed.php#attackspeed_${traitSpeed}` });
+      if (bmSpeed[traitSpeed]?.size) refs.push({ label: `beastmaster.io: Angriffstempo ${traitSpeed}`, url: bmSpeedUrl(traitSpeed) });
     }
     // 1) Classic-Listen je Rang: Petopia und Wowhead-Kommentare
     if (pt) {
       for (const [rank, r] of Object.entries(pt.ranks)) r.npcs.forEach((x) => add(x.id, +rank, 'petopia'));
-      refs.push({ label: 'Petopia Classic', url: `${PETOPIA}abilities.php#${(PETOPIA_ALIAS[a.nameEn] || a.nameEn).toLowerCase().replace(/[^a-z]/g, '')}` });
+      refs.push({ label: 'Petopia Classic', url: `${PETOPIA}abilities.php#${nameEn.toLowerCase().replace(/[^a-z]/g, '')}` });
+    }
+    // 1b) beastmaster.io führt die Lehrtiere auch für das, was es erst in Forever gibt –
+    //     dort, wo Petopia (Classic) nichts hat, ist das oft die einzige Rangangabe.
+    if (bmTaught[nameEn]) {
+      for (const [rank, ids] of Object.entries(bmTaught[nameEn])) for (const id of ids) add(id, +rank, 'beastmaster');
+      refs.push({ label: 'beastmaster.io', url: bmAbilityUrl(bmA?.slug || nameEn.toLowerCase().replace(/[^a-z]+/g, '-')) });
     }
     const seenRefs = new Set();
     for (const e of commentLists.filter((x) => x.ability === a && x.rankNo)) {
@@ -329,8 +402,12 @@ async function main() {
     let source = 'unknown';
     if (beastList.length) source = 'tame';
     else if (classicTrainer || a.general) source = 'trainer';
+    // Bleibt die Lernart offen, entscheidet beastmaster.io („tamed“/„both“/„trainer“).
+    // Das betrifft die in Forever neuen Familienfähigkeiten, zu denen Petopia nichts hat.
+    else if (bmA?.source === 'trainer') source = 'trainer';
+    else if (bmA?.source === 'tamed' || bmA?.source === 'both') source = 'tame';
     return {
-      name: a.name, nameEn: a.nameEn, icon: a.icon, schools: a.schools,
+      name: a.name, nameEn: a.nameEn, icon: a.icon, schools: a.schools, bmName: nameEn,
       families: [...a.families].sort((x, y) => x - y),
       classicFamilies: pt && !pt.families.includes('All Families')
         ? [...new Set(pt.families.map((f) => FAMILY_EN[f]).filter(Boolean))] : [],
@@ -362,6 +439,34 @@ async function main() {
   }
   process.stdout.write('\n');
 
+  // --- Familien nachziehen ---
+  // Wowhead führt Kernhund und Fuchs nicht als Pet-Familie: Sie stehen nur als ID am Tier,
+  // ohne Namen und ohne Zuordnung zur Fähigkeit. Beides kommt von beastmaster.io.
+  const bmFamilyOfAbility = {}; // englischer Fähigkeitsname → Familienslugs
+  for (const f of bm.families) {
+    for (const x of f.perExpansion?.forever?.abilities ?? f.abilities ?? []) (bmFamilyOfAbility[x.name] ??= []).push(f.slug);
+  }
+  // Slug → Wowhead-ID auch über die Fähigkeiten: „Lavaatem“ hat nur Tiere der Familie 312,
+  // und beastmaster.io kennt die Fähigkeit nur beim Kernhund – also ist 312 der Kernhund.
+  for (const a of abilityList) {
+    if (a.kind !== 'family') continue;
+    const slugs = bmFamilyOfAbility[a.bmName] || [];
+    const ids = [...new Set(a.beasts.map((b) => b.family).filter(Boolean))];
+    if (slugs.length === 1 && ids.length === 1) bmFamilyId[slugs[0]] ??= ids[0];
+  }
+  for (const a of abilityList) {
+    if (a.families.length || a.kind !== 'family') continue;
+    a.families = [...new Set((bmFamilyOfAbility[a.bmName] || []).map((s) => bmFamilyId[s]).filter(Boolean))].sort((x, y) => x - y);
+  }
+  const famNameEn = Object.fromEntries(Object.entries(bmFamilyId).map(([slug, id]) => [id, bmFamilyEn[slug]]));
+  for (const a of abilityList) for (const b of a.beasts) {
+    if (!b.family || families[b.family]) continue;
+    const en = famNameEn[b.family];
+    families[b.family] = { id: b.family, name: (en && FAMILY_DE[en]) || en || `Familie ${b.family}`, icon: '', diet: '', type: 0 };
+    console.log(`  Familie ${b.family} nur über beastmaster.io benannt: ${families[b.family].name}`);
+  }
+  for (const a of abilityList) delete a.bmName;
+
   // Nur die tatsächlich genutzten Zonen übernehmen, damit data.js klein bleibt.
   const usedZones = {};
   for (const co of Object.values(coords)) for (const z of Object.keys(co)) usedZones[z] = zones[z] || `Zone ${z}`;
@@ -374,6 +479,7 @@ async function main() {
       { label: 'Wowhead Forever', url: LIST_URL },
       { label: 'Wowhead-Kommentare', url: LIST_URL },
       { label: 'Petopia Classic', url: `${PETOPIA}abilities.php` },
+      { label: 'beastmaster.io', url: BEASTMASTER },
       { label: 'Wowhead Classic (Koordinaten)', url: 'https://www.wowhead.com/classic/' },
     ],
     coords,
@@ -388,9 +494,14 @@ async function main() {
 
   const rankCount = abilityList.reduce((s, a) => s + a.ranks.length, 0);
   const all = abilityList.flatMap((a) => a.beasts);
+  const bySrc = {};
+  for (const b of all) for (const s of b.src) bySrc[s] = (bySrc[s] || 0) + 1;
   console.log(`Fertig: ${abilityList.length} Fähigkeiten, ${rankCount} Ränge, ${all.length} Tier-Einträge ` +
     `(${all.filter((b) => !b.est).length} rangbestätigt), ${trainers.length} Tierausbilder, ` +
-    `Koordinaten für ${Object.keys(coords).length}/${beastIds.length} Tiere → data.js`);
+    `${data.families.length} Familien, Koordinaten für ${Object.keys(coords).length}/${beastIds.length} Tiere → data.js`);
+  console.log('Tier-Einträge je Quelle: ' + Object.entries(bySrc).map(([s, n]) => `${s} ${n}`).join(', '));
+  const offen = abilityList.filter((a) => a.source === 'unknown');
+  if (offen.length) console.log(`Ohne bekannte Lernart: ${offen.map((a) => a.name).join(', ')}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
