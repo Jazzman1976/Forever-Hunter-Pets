@@ -37,9 +37,9 @@ des Browsers.
 **Theming.** Alle Farben sind CSS-Variablen auf `:root`. Dunkelmodus kommt doppelt:
 über `@media (prefers-color-scheme: dark)` (abgesichert mit `:root:not([data-theme="light"])`)
 und über `:root[data-theme="dark"]` für den Umschalter in der Fußzeile. Die Wahl liegt
-in `localStorage` unter `petTheme` (`index.html:626`).
+in `localStorage` unter `petTheme` (`index.html:925-927`).
 
-**Startlogik** (`index.html:282-327`), einmal beim Laden:
+**Startlogik** (`index.html:332-372`), einmal beim Laden:
 
 1. `D.coords` entpacken – in `data.js` stehen flache Integer-Listen, hier werden wieder
    `[[x, y], …]`-Paare in Prozent daraus.
@@ -50,17 +50,65 @@ in `localStorage` unter `petTheme` (`index.html:626`).
    Kopfzeile und Fußzeile mit den Kennzahlen beschriften.
 
 **Zustand.** Ein Objekt `state` hält Suchbegriff, Familie, Zone, Ansicht, „nur bestätigte
-Ränge“, Fraktion, gewählte Lernarten und die offenen Karten. Gespeichert wird es unter
-`petState` in `localStorage` (`index.html:316-319`) – bis auf `state.open`: welche Karten
-offen sind, soll bewusst nicht über einen Neustart hinaus gelten.
+Ränge“, Fraktion, gewählte Lernarten und die offenen Karten. Dazu kommen die drei Felder der
+Ansichten „Gebiet“ und „Stufe“: `level` (1–60, gilt als Jäger- **und** Pet-Stufe),
+`hideKnown` und `known`. `known` ist `{ Fähigkeitsname: höchster gelernter Rang }` – ein
+Eintrag deckt alle niedrigeren Ränge mit ab, deshalb genügen 39 Zahlen für 158 Ränge.
+Darauf setzen die Helfer `ownedRank()`, `rankStatus()`, `rankDone()`, `rankHidden()` und
+`abilityDone()` auf, die alle vier Ansichten benutzen.
+Gespeichert wird alles unter `petState` in `localStorage` – bis auf `state.open` (welche Karten
+offen sind) und `state.more` (welche Rang-Tierlisten ganz ausgeklappt sind): beides soll
+bewusst nicht über einen Neustart hinaus gelten. Die zwei sind getrennt, weil seit den
+Rang-Karten beide denselben Schlüssel `Name#Rang` benutzen.
 
-**Rendern.** `render()` entscheidet zwischen `renderAbilities()` und `renderFamilies()`.
-Jede Fähigkeitskarte baut `abilityCard()` als HTML-String zusammen, am Ende wird
+**Rendern.** `render()` wählt über die Tabelle `VIEWS` eine von vier Funktionen:
+`renderAbilities()`, `renderFamilies()`, `renderZone()`, `renderLevel()`. Alle Bedienelemente
+wirken in allen vieren, keins wird mehr gesperrt. Die Stufe tut dabei zweierlei: In
+„Fähigkeiten“ und „Familien“ ist sie ein harter Filter (`usable(r)` für den Rang,
+`tameable(b)` für das Tier; ein Rang ohne erreichbares Tier fällt weg), in „Gebiet“ und
+„Stufe“ entscheidet sie über die Gruppenzuordnung. Standard ist 60, dann filtert sie nichts –
+kein Tier in den Daten hat eine höhere Mindeststufe.
+`renderFamilies()` zeigt mit gewählter Zone
+nur Familien mit Lehrtieren dort und ergänzt je Karte, welche Fähigkeit und welchen Rang
+deren Tiere vor Ort beibringen.
+Die Fähigkeiten-Ansicht ist **eine Karte je Fähigkeit und Rang** (`rankCard()`, 158 statt 39
+Einträge). Zugeklappt zeigt sie Rang, Pet-Stufe, TP, Tierzahl und die Empfehlung, aufgeklappt
+die Lehrtiere; links sitzt dasselbe Lernstand-Häkchen wie in „Gebiet“ und „Stufe“
+(`onclick="event.stopPropagation()"`, sonst klappt der Klick die Karte auf). Am Ende wird
 `#list.innerHTML` in einem Rutsch gesetzt. Kein virtuelles DOM, kein Diffing: bei jeder
-Filteränderung wird die Liste komplett neu gebaut. Das ist bei 39 Karten schnell genug;
+Filteränderung wird die Liste komplett neu gebaut. Das ist auch bei 158 Karten schnell genug;
 die Sucheingabe ist trotzdem um 120 ms entprellt. Jeder Fremdtext läuft durch `esc()`.
 
-**Karten und Fundorte** (`index.html:332-419`). Das Zonenbild kommt direkt vom Wowhead-CDN,
+**Die Ansichten „Gebiet“ und „Stufe“.** Beide beantworten dieselbe Frage aus zwei Richtungen:
+*was ist für mich gerade dran?* Sie teilen sich denselben Unterbau und zeigen je Fähigkeit
+**genau eine Zeile** statt einer Karte mit allen Rängen.
+
+- `pickRow(a, beasts)` wählt diese Zeile: den **höchsten noch offenen Rang**, den du auch
+  wirklich holen kannst – `usable(r)` (Pet-Stufe reicht) und, bei `source: 'tame'`, mindestens
+  ein Tier mit `tameable(b)` (Tierstufe ≤ deiner Stufe). Zurück kommt ein `kind`:
+  `new` (Fähigkeit fehlt ganz), `upgrade` (du hast einen niedrigeren Rang), `high`
+  (Stufe fehlt noch) oder `known` (nichts mehr offen). Niedrigere, ebenfalls erreichbare
+  Ränge stehen als `lower` daneben und werden als TP-günstigere Alternative erwähnt.
+- `rankStatus()` vergleicht dafür nur gegen `state.known[a.name]`; das Häkchen in der Zeile
+  (`data-known="<Name>#<Rang>"`) setzt diesen Wert, ein Abhaken setzt ihn auf `Rang - 1`.
+- `todoItem()` baut die Zeile, `grp()` die aufklappbare Gruppe drumherum. Die Tierzeilen
+  darin sind dieselben `beastLi()` wie in den Rang-Karten – deshalb funktionieren
+  Kartenvorschau (`data-map`) und „Alle Tiere anzeigen“ (`data-more`) dort ohne Zutun.
+- `renderZone()` gruppiert nach `kind` und hängt zwei Blöcke an: die Tierausbilder der Zone
+  und die Angriffstempi der Tiere vor Ort (interessant, wenn man dort ohnehin ein Pet sucht).
+  `renderLevel()` gruppiert stattdessen nach Stufenschwelle: `cur` ist die höchste Rang-Stufe
+  ≤ `state.level` (daher fällt die Überschrift bei Stufe 23 auf „Neu bei Stufe 20“ zurück),
+  `next` die nächste darüber.
+- Der Zonenfilter steckte früher komplett in `beastMatches()`. Er ist jetzt in `beastOk()`
+  (Suche + „nur bestätigte Ränge“) und `beastMatches()` (dazu die Zone) getrennt, weil
+  `renderLevel()` und `renderFamilies()` die Zone selbst anwenden: dort ist sie optional
+  (`const z = state.zone ? +state.zone : 0`), leer heißt „alle Zonen“.
+- In `renderLevel()` mit gewählter Zone fällt eine Zähm-Fähigkeit ohne Tier vor Ort heraus.
+  Pet-Lehrer- und `unknown`-Fähigkeiten hängen an keinem Fundort; sie bekommen das Merkmal
+  `away` und landen in der eingeklappten Gruppe **„Ortsunabhängig“** – außer der Tierausbilder
+  steht in der gewählten Zone (`trainerHere`), dann zählen sie normal mit.
+
+**Karten und Fundorte** (`index.html:386-472`). Das Zonenbild kommt direkt vom Wowhead-CDN,
 `…/classic/maps/dede/{normal|original}/{zoneId}.jpg`; `normal` für die Vorschau,
 `original` für die große Ansicht. Die Fundorte sind absolut positionierte `<span class="pin">`
 in Prozent – deshalb passen sie ohne Umrechnung auf jede Bildgröße. Zwei Hilfsfunktionen
@@ -71,13 +119,18 @@ Punkte aus (sonst stünden dort dreimal fast dieselben Werte). Ein Klick auf die
 Lädt ein Kartenbild nicht, entfernt sich die Vorschau per `onerror` selbst.
 
 **Ereignisse.** Statt Handler pro Karte hängt alles an `#list` (Delegation): Karte
-vergrößern (`data-map`), „Alle Tiere anzeigen“ (`data-more`) und der Sprung aus der
-Familienansicht zu einer Fähigkeit (`data-goto`). Beim Aufklappen einer langen Tierliste
-wird die Scrollposition gemerkt und wiederhergestellt, weil ja neu gerendert wird.
+vergrößern (`data-map`), „Alle Tiere anzeigen“ (`data-more`), der Sprung aus der
+Familienansicht zu einer Fähigkeit (`data-goto` – `Name` trifft die Fähigkeit über
+`data-ability`, `Name#Rang` genau eine Rang-Karte und klappt sie auf), das Zurücksetzen des
+Lernstands (`data-reset`) und – als `change` statt `click` – die Lernstand-Häkchen (`data-known`).
+Beim Aufklappen einer langen Tierliste und beim Abhaken wird die Scrollposition gemerkt
+und wiederhergestellt, weil ja neu gerendert wird.
 
 ## 3. Aufwand und Empfehlung
 
-`effort()` (`index.html:363-380`) schätzt je Tier, wie mühsam das Zähmen wird. Ein
+`effort()` schätzt je Tier, wie mühsam das Zähmen wird. Es sortiert die Tierlisten in allen
+Ansichten: in den Rang-Karten, und in „Gebiet“ und „Stufe“ zusätzlich die Reihenfolge der
+Gruppeneinträge (das leichteste Ziel steht oben). Ein
 Punktesystem, niedriger ist leichter:
 
 | Kriterium | Punkte |
@@ -96,13 +149,13 @@ Punktesystem, niedriger ist leichter:
 | nur in Zonen der Gegenfraktion | +2 |
 
 Bis 1,5 Punkte „leicht“, bis 4 „mittel“, darüber „schwer“. Je Rang steht das Tier mit der
-niedrigsten Summe oben und bekommt ★. Die Empfehlung oben in der Karte nennt das beste
-Tier des höchsten Rangs und, falls das ein anderes ist, zusätzlich das insgesamt leichteste.
+niedrigsten Summe oben und bekommt ★; es ist zugleich die Empfehlung im Kopf der Rang-Karte
+und in den Zeilen von „Gebiet“ und „Stufe“.
 Die Begründung (`why`) liefert dieselbe Funktion mit: als Tooltip am farbigen Punkt vor dem
 Tier und als Klartext in der Empfehlung oben in der Karte.
 
 Zwei Dinge dazu: Die Gegenfraktions-Abwertung arbeitet mit der festen Zonenliste
-`FACTION_ZONES` (`index.html:361`) – das sind die Startgebiete, nicht alle feindlichen Zonen.
+`FACTION_ZONES` (`index.html:414`) – das sind die Startgebiete, nicht alle feindlichen Zonen.
 Und das Ganze schätzt nur, wie schwer das Tier zu erreichen ist. Wie schnell ein Pet die
 Fähigkeit im Kampf aufschnappt, hängt nicht vom Tier ab.
 
@@ -118,7 +171,7 @@ window.PET_DATA = { generatedAt, sources, coords, instances, families, zones, tr
 | --- | --- |
 | `generatedAt` | ISO-Zeitstempel des Laufs; die Fußzeile zeigt ihn als „Stand“. |
 | `sources[]` | `{ label, url }` – die Links in der Fußzeile. |
-| `coords` | `{ npcId: { zoneId: [x, y, x, y, …] } }`, flach und mit 10 multipliziert gerundet. Aus `28.4 / 66.4` wird `284, 664`. Das spart gegenüber verschachtelten Kommazahlen viel Platz; `index.html:284-290` packt es wieder aus. |
+| `coords` | `{ npcId: { zoneId: [x, y, x, y, …] } }`, flach und mit 10 multipliziert gerundet. Aus `28.4 / 66.4` wird `284, 664`. Das spart gegenüber verschachtelten Kommazahlen viel Platz; `index.html:332-338` packt es wieder aus. |
 | `instances` | `{ zoneId: 2 Dungeon, 3 Raid, 4 Schlachtfeld }`, nur für Zonen, die vorkommen. |
 | `families[]` | `{ id, name, icon, diet, type }` – die 17 Pet-Familien. |
 | `zones` | `{ zoneId: deutscher Name }`, nur tatsächlich benutzte Zonen. |

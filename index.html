@@ -56,7 +56,7 @@ h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -.01em; }
   padding: 12px 0; border-bottom: 1px solid var(--border);
   display: grid; gap: 8px; grid-template-columns: 1fr;
 }
-@media (min-width: 720px) { .controls { grid-template-columns: 2fr 1fr 1fr auto; align-items: center; } .controls .row2 { grid-column: 1 / -1; } }
+@media (min-width: 720px) { .controls { grid-template-columns: 2fr 1fr 1fr; align-items: center; } .controls .seg, .controls .row2 { grid-column: 1 / -1; } }
 .row2 { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
 .row2 select { width: auto; padding: 3px 6px; }
 .srcfilter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -182,6 +182,38 @@ input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accen
 .more { margin-top: 6px; width: auto; padding: 4px 10px; font-size: .85rem; cursor: pointer; }
 .none { font-size: .88rem; color: var(--muted); font-style: italic; margin: 4px 0 0; }
 
+/* Ansichten „Gebiet“ und „Stufe“: Gruppen und Aufgabenzeilen */
+.grp > summary { list-style: none; cursor: pointer; padding: 11px 14px; display: flex; gap: 10px; align-items: baseline; }
+.grp > summary::-webkit-details-marker { display: none; }
+.grp[open] > summary { border-bottom: 1px solid var(--border); }
+.grp-t { font-weight: 700; font-size: 1rem; }
+.grp-n { color: var(--muted); font-size: .85rem; }
+.grp-s { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.grp-neu .grp-t { color: var(--tame); }
+.grp-upgrade .grp-t { color: var(--accent); }
+.todo { list-style: none; margin: 0; padding: 0; }
+.todo > li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px dashed var(--border); }
+.todo > li:first-child { border-top: 0; }
+.todo > li.done { opacity: .6; }
+.tick { flex: none; padding-top: 2px; }
+.tick input { width: 17px; height: 17px; cursor: pointer; }
+/* Häkchen und Rang im Kopf einer Rang-Karte */
+.card > summary > .tick { padding-top: 11px; width: 17px; }
+.rk { font-weight: 600; font-size: .95rem; }
+.rk a { color: var(--text); }
+.card.done > summary { opacity: .55; }
+.card.done > summary .rec-short { color: var(--muted); }
+.ti { flex: 1; min-width: 0; }
+.ti-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.ti-head .icon { width: 22px; height: 22px; border-radius: 5px; align-self: center; }
+.ti-name { font-weight: 600; font-size: .97rem; }
+.ti-rank { font-weight: 600; font-size: .9rem; }
+.ti-note { font-size: .84rem; color: var(--muted); margin: 2px 0 0; }
+.learned { font-size: .84rem; color: var(--muted); margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.learned button { width: auto; padding: 3px 10px; font-size: .82rem; cursor: pointer; }
+.lvl { width: auto; }
+.lvl input { width: 4.5em; padding: 3px 6px; text-align: center; font-variant-numeric: tabular-nums; }
+
 .fam-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .fam-list button { width: auto; padding: 3px 10px; font-size: .85rem; border-radius: 99px; cursor: pointer; }
 
@@ -204,8 +236,13 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     <div class="seg" role="group" aria-label="Ansicht">
       <button id="v-abil" aria-pressed="true">Fähigkeiten</button>
       <button id="v-fam" aria-pressed="false">Familien</button>
+      <button id="v-zone" aria-pressed="false">Gebiet</button>
+      <button id="v-lvl" aria-pressed="false">Stufe</button>
     </div>
     <div class="row2">
+      <label class="check lvl" title="Gilt als Jäger- und als Pet-Stufe. Ist dein Pet niedriger als du, trag die Pet-Stufe ein.">Stufe
+        <input id="lvl" type="number" min="1" max="60" step="1" inputmode="numeric" aria-label="Deine Stufe"></label>
+      <label class="check"><input type="checkbox" id="hidek"> Schon Gelerntes ausblenden</label>
       <label class="check"><input type="checkbox" id="conf"> Nur Tiere mit bestätigtem Rang (Petopia / Wowhead-Kommentar)</label>
       <div class="srcfilter" id="srcfilter" role="group" aria-label="Lernart"><span class="check">Lernart:</span></div>
       <label class="check">Fraktion für die Empfehlung:
@@ -218,6 +255,20 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   <details class="note">
     <summary>So sind die Angaben zu lesen</summary>
     <ul>
+      <li><strong>Die vier Ansichten:</strong> <strong>Fähigkeiten</strong> listet jeden Rang als eigenen, zugeklappten Eintrag –
+        ein Klick zeigt die Lehrtiere dazu. <strong>Familien</strong> zeigt, welche Familie was kann.
+        <strong>Gebiet</strong> beantwortet „ich bin neu hier – was kann ich in diesem Gebiet mitnehmen?“,
+        <strong>Stufe</strong> beantwortet „ich bin aufgestiegen – was ist jetzt dran und wo steht es?“.</li>
+      <li><strong>Lernstand:</strong> Das Häkchen vor einem Rang heißt „kann mein Pet schon“ und gilt auch für alle niedrigeren Ränge –
+        du brauchst also nur den höchsten. Daraus entsteht in <strong>Gebiet</strong> und <strong>Stufe</strong> die Trennung in
+        <em>neu</em>, <em>Upgrade</em> und <em>erledigt</em>. <strong>Schon Gelerntes ausblenden</strong> wirkt in allen vier Ansichten:
+        In <strong>Fähigkeiten</strong> verschwinden die abgehakten Ränge, in <strong>Familien</strong> eine Fähigkeit dann, wenn kein Rang mehr offen ist.
+        Der Lernstand liegt nur in diesem Browser, nicht in der Datei.</li>
+      <li><strong>Filter:</strong> Suche, Familie, Zone und Stufe wirken in allen vier Ansichten.
+        In <strong>Fähigkeiten</strong> und <strong>Familien</strong> blendet die Stufe alles aus, was noch nicht geht:
+        Ränge über deiner Pet-Stufe und Tiere, die du noch nicht zähmen kannst. Steht die Stufe auf 60, ist alles zu sehen.
+        In <strong>Gebiet</strong> und <strong>Stufe</strong> steuert sie stattdessen die Gruppen („Noch zu hoch“, „Als Nächstes“).
+        Zur Zone kennen die Daten nur <strong>Lehrtiere</strong>: Eine Familie kann dort leben, ohne etwas beizubringen – dann steht sie nicht in der Liste.</li>
       <li><span class="badge b-tame">Zähmen</span> Du zähmst ein Tier, das die Fähigkeit kennt, lässt es kämpfen, bis du sie gelernt hast, und bringst sie dann per „Wildtierausbildung“ deinem Pet bei. Das kostet Trainingspunkte (TP).</li>
       <li><span class="badge b-trainer">Pet-Lehrer</span> Diese Fähigkeit lernst du beim Tierausbilder in einer Hauptstadt.</li>
       <li><span class="badge b-unknown">Quelle unbekannt</span> Das sind neue Forever-Fähigkeiten ohne Classic-Vorbild. Keine Quelle nennt Lehrtiere, wahrscheinlich lernt die Familie sie automatisch.</li>
@@ -313,10 +364,15 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   $('source').innerHTML = 'Daten: ' + D.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(', ') +
     `, Stand ${new Date(D.generatedAt).toLocaleDateString('de-DE')}. Aktualisieren mit <code>node tools/fetch-data.mjs</code>.`;
 
-  const state = { q: '', fam: '', zone: '', view: 'abil', conf: false, faction: '', srcs: [], open: new Set() };
-  try { Object.assign(state, JSON.parse(localStorage.getItem('petState') || '{}'), { open: new Set() }); } catch {}
+  // known: { Fähigkeitsname: höchster gelernter Rang } – ein Eintrag deckt alle niedrigeren Ränge mit ab
+  // open: aufgeklappte Karten · more: Ränge, deren volle Tierliste ausgeklappt ist (beides nur für diese Sitzung)
+  const state = { q: '', fam: '', zone: '', view: 'abil', conf: false, faction: '', srcs: [], open: new Set(), more: new Set(),
+    level: 60, known: {}, hideKnown: true };
+  try { Object.assign(state, JSON.parse(localStorage.getItem('petState') || '{}'), { open: new Set(), more: new Set() }); } catch {}
   if (!Array.isArray(state.srcs)) state.srcs = [];
-  const save = () => { try { localStorage.setItem('petState', JSON.stringify({ fam: state.fam, zone: state.zone, view: state.view, conf: state.conf, faction: state.faction, srcs: state.srcs })); } catch {} };
+  if (!state.known || typeof state.known !== 'object') state.known = {};
+  state.level = Math.min(60, Math.max(1, Math.round(+state.level || 60)));
+  const save = () => { try { localStorage.setItem('petState', JSON.stringify({ fam: state.fam, zone: state.zone, view: state.view, conf: state.conf, faction: state.faction, srcs: state.srcs, level: state.level, known: state.known, hideKnown: state.hideKnown })); } catch {} };
 
   // Filter-Schalter für die Lernart-Labels (gleiche Farben wie die Labels an den Fähigkeiten)
   const srcCount = {};
@@ -418,163 +474,388 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     if (!dlg.open) dlg.showModal();
   }
 
-  function beastMatches(b, q) {
+  function beastOk(b, q) {                                   // Suche und „nur bestätigte Ränge“
     if (state.conf && b.est) return false;
-    if (state.zone && !b.zones.includes(+state.zone)) return false;
     return !q || b._text.includes(q);
   }
+  function beastMatches(b, q) {                              // dazu der Zonenfilter der Fähigkeiten-Ansicht
+    if (state.zone && !b.zones.includes(+state.zone)) return false;
+    return beastOk(b, q);
+  }
 
-  const trainerList = () => `<ul class="trainers">${D.trainers.map((t) =>
+  // ---- Lernstand (gilt in allen Ansichten) ----
+  const ownedRank = (a) => state.known[a.name] || 0;
+  const rankStatus = (a, r) => (r.rank <= ownedRank(a) ? 'known' : ownedRank(a) ? 'upgrade' : 'new');
+  const learnable = (a) => a.kind !== 'trait';               // Angriffstempo kann man nicht lernen
+  const rankDone = (a, r) => learnable(a) && rankStatus(a, r) === 'known';
+  const rankHidden = (a, r) => state.hideKnown && rankDone(a, r);
+  const abilityDone = (a) => learnable(a) && a.ranks.every((r) => rankDone(a, r));
+  // Tiere eines Rangs nach Aufwand sortiert – überall dieselbe Reihenfolge
+  const ranked = (a, r, beasts) => beasts.filter((b) => b.rank === r.rank)
+    .map((b) => ({ b, e: effort(b, r.level) })).sort((x, y) => x.e.score - y.e.score);
+
+  const trainerList = (list = D.trainers) => `<ul class="trainers">${list.map((t) =>
     `<li><a href="${WH}/npc=${t.id}" target="_blank" rel="noopener">${esc(t.name)}</a> · ${esc(t.zones.map(zoneName).join(', '))}</li>`).join('')}</ul>`;
 
-  function abilityCard(a, beasts) {
+  // Eine Karte je Fähigkeit UND Rang: zugeklappt die Kennzahlen, aufgeklappt die Lehrtiere
+  function rankCard(a, r, list, filtered) {
+    const key = `${a.name}#${r.rank}`;
     const [label, cls] = SOURCE[sourceKey(a)];
-    const top = a.ranks[a.ranks.length - 1];
-    const fams = a.kind === 'trait' ? '<span class="chip">vom gezähmten Tier abhängig</span>'
+    const isTrait = a.kind === 'trait';
+    const done = rankDone(a, r);
+    // Bei vielen Familien nur die Zahl – sonst stünden dieselben 17 Chips an jeder Rang-Karte
+    const fams = isTrait ? '<span class="chip">vom gezähmten Tier abhängig</span>'
       : appliesToAll(a) ? '<span class="chip">alle Familien</span>'
+      : a.families.length > 6 ? `<span class="chip" title="${esc(a.families.map(famName).join(', '))}">${a.families.length} Familien</span>`
       : a.families.map((f) => `<span class="chip">${esc(famName(f))}</span>`).join('');
-    const levels = a.kind === 'trait' ? `Angriffstempo ${fmtSpeed(a.speed)} s`
-      : a.ranks.length > 1 ? `${a.ranks.length} Ränge · Pet-Stufe ${a.ranks[0].level}–${top.level}`
-      : a.ranks[0].level ? `Pet-Stufe ${a.ranks[0].level}` : '';
+    const rankLabel = isTrait ? `Tempo ${fmtSpeed(a.speed)} s` : r.rank ? `Rang ${r.rank}` : 'Wert';
+    const conf = list.filter(({ b }) => !b.est).length;
+    const count = a.source !== 'tame' ? ''
+      : `${list.length} Tier${list.length === 1 ? '' : 'e'}${conf && conf < list.length ? ` (${conf} bestätigt)` : ''}`;
 
-    const filtered = beasts.length < a.beasts.length;
-    const picks = []; // bestes Tier je Rang, für die Empfehlung oben
-    const ranks = a.ranks.map((r) => {
-      // nach Aufwand sortieren: das am leichtesten erreichbare Tier steht oben
-      const list = beasts.filter((b) => b.rank === r.rank)
-        .map((b) => ({ b, e: effort(b, r.level) })).sort((x, y) => x.e.score - y.e.score);
-      if (a.source === 'tame' && filtered && !list.length) return ''; // bei aktivem Filter leere Ränge ausblenden
-      if (list.length) picks.push({ rank: r, ...list[0] });
-      let learn = '';
-      if (a.source === 'tame') {
-        if (!list.length) learn = '<p class="none">Kein passendes Tier in dieser Auswahl.</p>';
-        else {
-          const key = `${a.name}#${r.rank}`;
-          const all = state.open.has(key);
-          const shown = all ? list : list.slice(0, BEAST_PREVIEW);
-          learn = `<ul class="beasts">${shown.map(({ b, e }, i) => beastLi(b, e, i === 0)).join('')}</ul>` +
-            (list.length > BEAST_PREVIEW
-              ? `<button class="more" data-more="${esc(key)}">${all ? 'Weniger anzeigen' : `Alle ${list.length} Tiere anzeigen`}</button>` : '');
-        }
-      }
-      const rankLabel = a.kind === 'trait' ? `Tempo ${fmtSpeed(a.speed)} s` : r.rank ? `Rang ${r.rank}` : 'Wert';
-      const conf = list.filter(({ b }) => !b.est).length;
-      const count = a.source !== 'tame' ? ''
-        : `${list.length} Tier${list.length === 1 ? '' : 'e'}${conf && conf < list.length ? ` (${conf} bestätigt)` : ''}`;
-      return `<div class="rank">
-        <div class="rank-h"><strong><a href="${WH}/spell=${r.id}" target="_blank" rel="noopener">${rankLabel}</a></strong>
-          ${r.level && a.kind !== 'trait' ? `<span class="meta">ab Pet-Stufe ${r.level}</span>` : ''}
-          ${r.tp != null ? `<span class="meta">${r.tp} TP</span>` : ''}
-          ${count ? `<span class="meta">${count}</span>` : ''}</div>
-        ${r.desc ? `<p class="rank-desc">${esc(r.desc)}</p>` : ''}
-        ${learn}</div>`;
-    }).join('');
-
+    // Lehrtiere, Ausbilder oder Hinweis – je nach Lernart
+    const all = state.more.has(key);
+    const shown = all ? list : list.slice(0, BEAST_PREVIEW);
+    const learn = a.source !== 'tame' ? ''
+      : !list.length ? `<p class="none">${filtered ? 'Kein passendes Tier in dieser Auswahl.' : 'Keine Quelle nennt ein Tier für diesen Rang.'}</p>`
+      : `<ul class="beasts">${shown.map(({ b, e }, i) => beastLi(b, e, i === 0)).join('')}</ul>`
+        + (list.length > BEAST_PREVIEW
+          ? `<button class="more" data-more="${esc(key)}">${all ? 'Weniger anzeigen' : `Alle ${list.length} Tiere anzeigen`}</button>` : '');
     const hint = {
-      tame: a.kind === 'trait'
+      tame: isTrait
         ? `Dein Pet übernimmt das Angriffstempo des Tiers, das du zähmst (so war es in Classic). Diese Tiere greifen laut Petopia Classic alle ${fmtSpeed(a.speed)} s an, normal sind 2,0 s:`
-        : 'Zähmbare Tiere, die die Fähigkeit kennen, sortiert nach Rang:',
+        : 'Zähmbare Tiere, die diesen Rang kennen, das am leichtesten erreichbare zuerst:',
       trainer: `Lernst du beim Tierausbilder${a.classicTrainer ? ' (in Classic laut Petopia)' : ' (in Classic so, für Forever nicht bestätigt)'}.`,
       unknown: 'Neue Forever-Fähigkeit ohne Classic-Vorbild. Weder Wowhead noch Petopia nennen Lehrtiere, wahrscheinlich lernt die Familie sie automatisch mit steigender Stufe.',
     }[a.source];
-    // Empfehlung: höchster erreichbarer Rang, dazu der Einstieg, falls das ein anderes Tier ist
-    const tip = (p) => {
-      const z = p.b.zones.find((zz) => COORDS[p.b.id]?.[zz]) ?? p.b.zones[0];
-      const rank = a.kind === 'trait' ? '' : `Rang ${p.rank.rank} von `;
-      return `${rank}<a href="${WH}/npc=${p.b.id}" target="_blank" rel="noopener">${esc(p.b.name)}</a> · Stufe ${lvText(p.b)} · `
-        + (z == null ? esc(p.b.zoneText || 'Zone unbekannt') : zoneText(p.b, z))
-        + ` ${effBadge(p.e)} <span class="rec-why">${esc(p.e.why.join(' · '))}</span>`;
-    };
+
+    // Empfehlung für genau diesen Rang
+    const best = list[0];
     let rec = '', recShort = '';
     if (a.source === 'trainer') {
       rec = `<strong>★ Am leichtesten:</strong> beim Tierausbilder – nur Stufe und Gold nötig, kein Zähmen, kein Zufall.${trainerList()}`;
-      recShort = '★ Am leichtesten: beim Tierausbilder';
+      recShort = '★ Beim Tierausbilder';
     } else if (a.source === 'unknown') {
       rec = '<strong>★ Nichts zu tun:</strong> Die Familie lernt diese Fähigkeit sehr wahrscheinlich von selbst.';
       recShort = '★ Vermutlich automatisch';
-    } else if (picks.length) {
-      const best = picks[picks.length - 1];                   // höchster Rang
-      const easiest = picks.reduce((x, y) => (y.e.score < x.e.score ? y : x));
-      rec = `<strong>★ Am leichtesten:</strong> ${tip(best)}`;
-      if (easiest !== best && easiest.b !== best.b) rec += `<br><strong>Geringster Aufwand insgesamt:</strong> ${tip(easiest)}`;
-      recShort = `★ ${a.kind === 'trait' ? '' : `Rang ${best.rank.rank}: `}${best.b.name} (${best.b.zones.map(zoneName)[0] || best.b.zoneText || '?'}) · ${best.e.level}`;
+    } else if (best) {
+      const z = best.b.zones.find((zz) => COORDS[best.b.id]?.[zz]) ?? best.b.zones[0];
+      rec = `<strong>★ Am leichtesten:</strong> <a href="${WH}/npc=${best.b.id}" target="_blank" rel="noopener">${esc(best.b.name)}</a>`
+        + ` · Stufe ${lvText(best.b)} · ${z == null ? esc(best.b.zoneText || 'Zone unbekannt') : zoneText(best.b, z)}`
+        + ` ${effBadge(best.e)} <span class="rec-why">${esc(best.e.why.join(' · '))}</span>`;
+      recShort = `★ ${best.b.name} (${best.b.zones.map(zoneName)[0] || best.b.zoneText || '?'}) · ${best.e.level}`;
     }
-    const recBox = rec ? `<div class="rec">${rec}</div>` : '';
 
-    const extra = a.classicExtra.length
+    // Classic-Zusatzränge und Quellen nur einmal je Fähigkeit, am letzten Rang
+    const last = r === a.ranks[a.ranks.length - 1];
+    const extra = last && a.classicExtra.length
       ? `<p class="extra">In Classic gab es zusätzlich ${a.classicExtra.map((x) => `Rang ${x.rank} (Pet-Stufe ${x.level}, ${x.tp} TP)`).join(', ')}. In Forever listet Wowhead diesen Rang nicht.</p>` : '';
     const refs = a.refs.length
-      ? `<p class="refs">Quellen: ${a.refs.map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)}</a>`).join('')}</p>` : '';
+      ? `<p class="refs">Quellen: ${a.refs.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join('')}</p>` : '';
 
-    const isOpen = state.open.has(a.name);
-    return `<details class="card" data-name="${esc(a.name)}"${isOpen ? ' open' : ''}>
+    const tick = learnable(a)
+      ? `<label class="tick" onclick="event.stopPropagation()" title="Abhaken = diesen Rang kann dein Pet schon (gilt auch für alle niedrigeren Ränge)">
+          <input type="checkbox" data-known="${esc(key)}"${done ? ' checked' : ''} aria-label="${esc(a.name)} ${rankLabel} gelernt"></label>`
+      : '<span class="tick" aria-hidden="true"></span>';
+    return `<details class="card${done ? ' done' : ''}" data-name="${esc(key)}" data-ability="${esc(a.name)}"${state.open.has(key) ? ' open' : ''}>
       <summary>
-        ${img(a.icon, a.name)}
+        ${tick}${img(a.icon, a.name)}
         <div class="head">
-          <div class="title"><h2>${esc(a.name)}</h2><span class="badge ${cls}">${label}</span>
-            <span class="meta">${levels}</span></div>
-          ${top.desc ? `<p class="desc">${esc(top.desc)}</p>` : ''}
+          <div class="title"><h2>${esc(a.name)}</h2><span class="rk"><a href="${WH}/spell=${r.id}" target="_blank" rel="noopener">${rankLabel}</a></span>
+            <span class="badge ${cls}">${label}</span>
+            <span class="meta">${[r.level && !isTrait ? `ab Pet-Stufe ${r.level}` : '', r.tp != null ? `${r.tp} TP` : '', count].filter(Boolean).join(' · ')}</span></div>
+          ${r.desc ? `<p class="desc">${esc(r.desc)}</p>` : ''}
           ${recShort ? `<p class="rec-short">${esc(recShort)}</p>` : ''}
           <div class="chips">${fams}</div>
         </div>
         <span class="chev" aria-hidden="true">▶</span>
       </summary>
-      <div class="body">${recBox}<div class="hint">${hint}</div>${ranks}${extra}${refs}</div>
+      <div class="body">${rec ? `<div class="rec">${rec}</div>` : ''}<div class="hint">${hint}</div>${learn}${extra}${refs}</div>
     </details>`;
   }
 
   function renderAbilities() {
     const q = norm(state.q.trim());
     const out = [];
+    const names = new Set();
+    let hidKnown = 0, hidLevel = 0;
     for (const a of D.abilities) {
       if (state.fam && !appliesToAll(a) && !a.families.includes(+state.fam)) continue;
       if (state.srcs.length && !state.srcs.includes(sourceKey(a))) continue;
       const nameHit = !q || a._text.includes(q);
-      let beasts = a.beasts.filter((b) => beastMatches(b, nameHit ? '' : q));
+      // Stufe filtert mit: Tiere über deiner Stufe kannst du noch nicht zähmen
+      const beasts = a.beasts.filter((b) => beastMatches(b, nameHit ? '' : q) && tameable(b));
+      const filtered = beasts.length < a.beasts.length;
       if (state.zone && !beasts.length) continue;       // Zonenfilter: nur was man dort lernen kann
       if (!nameHit && !beasts.length) continue;
-      out.push(abilityCard(a, beasts));
+      for (const r of a.ranks) {
+        if (rankHidden(a, r)) { hidKnown++; continue; }
+        if (learnable(a) && !usable(r)) { hidLevel++; continue; }     // Rang braucht mehr Pet-Stufe
+        const list = ranked(a, r, beasts);
+        if (a.source === 'tame' && filtered && !list.length) { hidLevel++; continue; } // kein erreichbares Tier
+        out.push(rankCard(a, r, list, filtered));
+        names.add(a.name);
+      }
     }
-    $('count').textContent = `${out.length} Fähigkeit${out.length === 1 ? '' : 'en'}` +
+    $('count').textContent = `${out.length} ${out.length === 1 ? 'Rang-Eintrag' : 'Rang-Einträge'} aus ${names.size} Fähigkeit${names.size === 1 ? '' : 'en'}` +
       (state.srcs.length ? ` · ${state.srcs.map((k) => SOURCE[k][0]).join(', ')}` : '') +
-      (state.zone ? ` in ${zoneName(state.zone)} erlernbar` : '');
-    $('list').innerHTML = out.join('') || '<p class="empty">Nichts gefunden. Probier einen anderen Suchbegriff oder Filter.</p>';
+      (state.zone ? ` · in ${zoneName(state.zone)} erlernbar` : '') +
+      (state.level < 60 ? ` · Stufe ${state.level}` : '') +
+      (hidKnown ? ` · ${hidKnown} gelernte ausgeblendet` : '') +
+      (hidLevel ? ` · ${hidLevel} über deiner Stufe ausgeblendet` : '');
+    $('list').innerHTML = out.join('') || `<p class="empty">${
+      hidLevel ? 'Auf dieser Stufe ist hier nichts erreichbar. Stell die Stufe höher.'
+        : hidKnown ? 'Alles in dieser Auswahl ist schon gelernt. Nimm den Haken bei „Schon Gelerntes ausblenden“ weg.'
+        : 'Nichts gefunden. Probier einen anderen Suchbegriff oder Filter.'}</p>`;
   }
 
   function renderFamilies() {
     const q = norm(state.q.trim());
-    const general = D.abilities.filter((a) => a.kind === 'general');
+    const z = state.zone ? +state.zone : 0;
+    // sichtbar = noch ein Rang offen (Lernstand) und mindestens einer auf deiner Stufe wirkbar
+    const open = (a) => (!state.hideKnown || !abilityDone(a))
+      && a.ranks.some((r) => usable(r) && !(state.hideKnown && rankDone(a, r)));
+    const general = D.abilities.filter((a) => a.kind === 'general' && open(a));
+    // Was die Lehrtiere einer Familie in dieser Zone beibringen
+    const here = {};
+    if (z) {
+      for (const a of D.abilities) {
+        if (a.source !== 'tame' || a.kind === 'trait') continue;
+        for (const b of a.beasts) {
+          if (!b.zones.includes(z) || !beastOk(b, '') || !tameable(b)) continue;
+          const e = (here[b.family] ||= { beasts: new Map(), learn: new Map() });
+          e.beasts.set(b.id, b);
+          const r = a.ranks.find((x) => x.rank === b.rank);
+          if (r && !usable(r)) continue;                             // Rang braucht mehr Pet-Stufe
+          if (r && state.hideKnown && rankDone(a, r)) continue;      // diesen Rang hast du schon
+          e.learn.set(`${a.name}#${b.rank}`, { a, rank: b.rank });
+        }
+      }
+    }
     const out = D.families
       .filter((f) => !state.fam || f.id === +state.fam)
+      .filter((f) => !z || here[f.id])
       .map((f) => {
-        const own = D.abilities.filter((a) => a.kind === 'family' && a.families.includes(f.id));
-        return { f, own };
+        const all = D.abilities.filter((a) => a.kind === 'family' && a.families.includes(f.id));
+        return { f, all, own: all.filter(open) };
       })
-      .filter(({ f, own }) => !q || norm(f.name).includes(q) || own.some((a) => a._text.includes(q)))
-      .map(({ f, own }) => {
+      .filter(({ f, all }) => !q || norm(f.name).includes(q) || all.some((a) => a._text.includes(q)))
+      .map(({ f, all, own }) => {
         const btn = (a) => `<li><button data-goto="${esc(a.name)}">${esc(a.name)}</button></li>`;
+        const gone = all.length - own.length;
+        const goneKnown = state.hideKnown ? all.filter(abilityDone).length : 0;
+        const why = [goneKnown ? `${goneKnown} gelernt` : '', gone - goneKnown ? `${gone - goneKnown} ab höherer Stufe` : ''].filter(Boolean).join(', ');
+        const e = here[f.id];
+        const learn = e ? [...e.learn.values()].sort((x, y) => x.a.name.localeCompare(y.a.name, 'de') || x.rank - y.rank) : [];
+        const beasts = e ? [...e.beasts.values()].sort((x, y) => (x.min ?? 0) - (y.min ?? 0)) : [];
+        const zoneBlock = !e ? '' : `
+          <p class="hint">Von Tieren dieser Familie in ${esc(zoneName(z))} lernbar (${learn.length}):</p>
+          <ul class="fam-list">${learn.map(({ a, rank }) =>
+            `<li><button data-goto="${esc(`${a.name}#${rank}`)}">${esc(a.name)} <span class="meta">Rang ${rank}</span></button></li>`).join('')
+            || '<li class="none">hier nichts Offenes mehr</li>'}</ul>
+          <p class="hint">Tiere hier: ${beasts.slice(0, 6).map((b) => `${esc(b.name)} (Stufe ${lvText(b)})`).join(', ')}${
+            beasts.length > 6 ? ` + ${beasts.length - 6} weitere` : ''}.</p>`;
         return `<article class="card"><div class="body" style="padding-top:12px">
           <div style="display:flex;gap:12px;align-items:center">${img(f.icon, f.name)}
             <div class="title"><h2>${esc(f.name)}</h2>
               <a class="meta" href="${WH}/pet=${f.id}" target="_blank" rel="noopener">auf Wowhead</a></div></div>
-          <p class="hint">Familienfähigkeiten (${own.length}):</p>
-          <ul class="fam-list">${own.map(btn).join('') || '<li class="none">keine bekannt</li>'}</ul>
-          <p class="hint">Dazu die allgemeinen Fähigkeiten: ${general.map((a) => esc(a.name)).join(', ')}.</p>
+          <p class="hint">Familienfähigkeiten (${own.length}${gone ? ` von ${all.length}, ${why}` : ''}):</p>
+          <ul class="fam-list">${own.map(btn).join('') || `<li class="none">${gone ? `nichts offen (${why})` : 'keine bekannt'}</li>`}</ul>
+          <p class="hint">Dazu die allgemeinen Fähigkeiten: ${general.map((a) => esc(a.name)).join(', ') || '– nichts offen'}.</p>
+          ${zoneBlock}
         </div></article>`;
       });
-    $('count').textContent = `${out.length} Familie${out.length === 1 ? '' : 'n'}`;
-    $('list').innerHTML = out.join('') || '<p class="empty">Keine Familie gefunden.</p>';
+    $('count').textContent = `${out.length} Familie${out.length === 1 ? '' : 'n'}`
+      + (z ? ` mit ${state.level < 60 ? 'erreichbaren ' : ''}Lehrtieren in ${zoneName(z)} (von ${D.families.length})` : '')
+      + (state.level < 60 ? ` · Stufe ${state.level}` : '')
+      + (state.hideKnown && Object.keys(state.known).length ? ' · Gelerntes ausgeblendet' : '');
+    $('list').innerHTML = out.join('')
+      || `<p class="empty">${z ? `In ${esc(zoneName(z))} gibt es zu dieser Auswahl keine Lehrtiere.` : 'Keine Familie gefunden.'}</p>`;
   }
 
+  // ---- Ansichten „Gebiet“ und „Stufe“: was ist gerade dran? ----
+  const TODO_PREVIEW = 2;                                            // Tiere je Zeile vor dem Aufklappen
+  const usable = (r) => !r.level || r.level <= state.level;          // Pet-Stufe reicht für den Rang
+  const tameable = (b) => b.min == null || b.min <= state.level;     // Tier ist auf deiner Stufe zähmbar
+  const famOk = (a) => !state.fam || appliesToAll(a) || a.families.includes(+state.fam);
+  const srcOk = (a) => !state.srcs.length || state.srcs.includes(sourceKey(a));
+
+  // Je Fähigkeit die eine Zeile, die gerade zählt: der höchste offene Rang, den du auch holen kannst.
+  // kind: new (Fähigkeit fehlt ganz) · upgrade (höherer Rang als abgehakt) · high (Stufe fehlt) · known (erledigt)
+  function pickRow(a, beasts) {
+    const tame = a.source === 'tame';
+    const rows = a.ranks.map((r) => ({ r, list: ranked(a, r, beasts) })).filter(({ list }) => !tame || list.length);
+    if (!rows.length) return null;
+    const open = rows.filter(({ r }) => rankStatus(a, r) !== 'known');
+    const ready = open.filter(({ r, list }) => usable(r) && (!tame || list.some(({ b }) => tameable(b))));
+    if (ready.length) {
+      const top = ready[ready.length - 1];
+      const kind = rankStatus(a, top.r);
+      return { a, ...top, kind, lower: ready.slice(0, -1).map(({ r }) => r.rank),
+        tag: kind === 'upgrade' ? `<span class="chip">du hast Rang ${ownedRank(a)}</span>` : '' };
+    }
+    if (open.length) {
+      const nxt = open[0];
+      const lv = Math.min(...nxt.list.map(({ b }) => b.min ?? 99));
+      const why = !usable(nxt.r) ? `ab Pet-Stufe ${nxt.r.level}` : `Tier erst ab Stufe ${lv}`;
+      return { a, ...nxt, kind: 'high', tag: `<span class="chip">${why}</span>` };
+    }
+    return { a, ...rows[rows.length - 1], kind: 'known', done: true };
+  }
+
+  function todoItem({ a, r, list, lower, tag, done }) {
+    const key = `${a.name}#${r.rank}`;
+    const all = state.more.has(key);
+    const shown = all ? list : list.slice(0, TODO_PREVIEW);
+    const [label, cls] = SOURCE[sourceKey(a)];
+    const where = list.length
+      ? `<ul class="beasts">${shown.map(({ b, e }, i) => beastLi(b, e, i === 0 && !done)).join('')}</ul>`
+        + (list.length > TODO_PREVIEW
+          ? `<button class="more" data-more="${esc(key)}">${all ? 'Weniger anzeigen' : `Alle ${list.length} Tiere anzeigen`}</button>` : '')
+      : a.source === 'trainer' ? '<p class="ti-note">Beim Tierausbilder in der Hauptstadt lernen – kein Zähmen nötig.</p>'
+      : a.source === 'unknown' ? '<p class="ti-note">Keine Quelle nennt ein Lehrtier. Die Familie lernt das vermutlich von selbst.</p>'
+      : '<p class="ti-note">Kein passendes Tier in dieser Auswahl.</p>';
+    return `<li${done ? ' class="done"' : ''}>
+      <label class="tick" title="Abhaken = diesen Rang kann dein Pet schon (gilt auch für alle niedrigeren Ränge)">
+        <input type="checkbox" data-known="${esc(key)}"${done ? ' checked' : ''} aria-label="${esc(a.name)} Rang ${r.rank} gelernt"></label>
+      <div class="ti">
+        <div class="ti-head">${img(a.icon, a.name)}<span class="ti-name">${esc(a.name)}</span>
+          <a class="ti-rank" href="${WH}/spell=${r.id}" target="_blank" rel="noopener">${r.rank ? `Rang ${r.rank}` : 'Wert'}</a>
+          ${r.level ? `<span class="meta">ab Pet-Stufe ${r.level}</span>` : ''}
+          ${r.tp != null ? `<span class="meta">${r.tp} TP</span>` : ''}
+          <span class="badge ${cls}">${label}</span>${tag || ''}</div>
+        ${r.desc ? `<p class="rank-desc">${esc(r.desc)}</p>` : ''}
+        ${lower?.length ? `<p class="ti-note">Hier gibt es auch Rang ${lower.join(', ')} – weniger TP, falls der große Sprung noch zu teuer ist.</p>` : ''}
+        ${where}</div></li>`;
+  }
+
+  const grp = (id, title, rows, open, sub = '') => (rows.length
+    ? `<details class="card grp grp-${id}"${open ? ' open' : ''}>
+        <summary class="grp-h"><span class="grp-t">${title}</span><span class="grp-n">${rows.length}</span>${sub ? `<span class="grp-s">${sub}</span>` : ''}</summary>
+        <div class="body"><ul class="todo">${rows.map(todoItem).join('')}</ul>
+        ${rows.some((x) => x.a.source === 'trainer') ? `<p class="ti-note">Tierausbilder:</p>${trainerList()}` : ''}</div></details>`
+    : '');
+
+  const learnedFoot = () => {
+    const n = Object.values(state.known).filter((v) => v > 0).length;
+    return `<p class="learned">Lernstand: ${n} Fähigkeit${n === 1 ? '' : 'en'} abgehakt, nur in diesem Browser gespeichert.
+      ${n ? '<button type="button" data-reset>Lernstand zurücksetzen</button>' : ''}</p>`;
+  };
+  const byEffort = (x, y) => (x.list[0]?.e.score ?? 99) - (y.list[0]?.e.score ?? 99);
+  const byLevel = (x, y) => (x.r.level || 0) - (y.r.level || 0);
+
+  // „Ich komme neu in dieses Gebiet“
+  function renderZone() {
+    if (!state.zone) {
+      $('count').textContent = '';
+      $('list').innerHTML = '<p class="empty">Wähle oben dein Gebiet. Dann steht hier, was du dort an neuen Fähigkeiten und Rang-Upgrades mitnehmen kannst.</p>';
+      return;
+    }
+    const z = +state.zone, q = norm(state.q.trim());
+    const g = { new: [], upgrade: [], high: [], known: [] };
+    for (const a of D.abilities) {
+      if (a.kind === 'trait' || a.source !== 'tame' || !famOk(a) || !srcOk(a)) continue;
+      const nameHit = !q || a._text.includes(q);
+      const here = a.beasts.filter((b) => b.zones.includes(z) && beastOk(b, nameHit ? '' : q));
+      if (!here.length) continue;
+      const row = pickRow(a, here);
+      if (row) g[row.kind].push(row);
+    }
+    g.new.sort(byEffort); g.upgrade.sort(byEffort); g.high.sort(byLevel); g.known.sort(byLevel);
+
+    const tr = D.trainers.filter((t) => t.zones.includes(z));
+    const trainerBlock = tr.length ? `<details class="card grp">
+      <summary class="grp-h"><span class="grp-t">Tierausbilder hier</span><span class="grp-n">${tr.length}</span>
+        <span class="grp-s">Fähigkeiten ohne Zähmen</span></summary>
+      <div class="body">${trainerList(tr)}
+        <p class="ti-note">Beim Ausbilder lernst du: ${D.abilities.filter((a) => a.source === 'trainer' && famOk(a))
+          .map((a) => esc(a.name)).join(', ') || '– (nichts für diese Familie)'}.</p></div></details>` : '';
+
+    const speeds = D.abilities.filter((a) => a.kind === 'trait')
+      .map((a) => ({ a, bs: a.beasts.filter((b) => b.zones.includes(z) && beastOk(b, '')) }))
+      .filter(({ bs }) => bs.length);
+    const traitBlock = speeds.length ? `<details class="card grp">
+      <summary class="grp-h"><span class="grp-t">Angriffstempo hier</span><span class="grp-n">${speeds.length}</span>
+        <span class="grp-s">falls du hier ein neues Pet suchst</span></summary>
+      <div class="body"><ul class="todo">${speeds.map(({ a, bs }) => `<li><div class="ti">
+        <div class="ti-head">${img(a.icon, a.name)}<span class="ti-name">${esc(a.name)}</span>
+          <span class="meta">${fmtSpeed(a.speed)} s statt 2,0 s</span></div>
+        <p class="ti-note">${bs.map((b) => `${esc(b.name)} (${esc(famName(b.family))}, Stufe ${lvText(b)})`).join(' · ')}</p>
+        </div></li>`).join('')}</ul></div></details>` : '';
+
+    const out = [
+      grp('neu', 'Neu für dich', g.new, true, 'hier zähmbar, noch nicht abgehakt'),
+      grp('upgrade', 'Upgrade', g.upgrade, true, 'höherer Rang als abgehakt'),
+      grp('high', 'Noch zu hoch', g.high, false, 'Pet-Stufe oder Tierstufe fehlt'),
+      state.hideKnown ? '' : grp('known', 'Hast du schon', g.known, false),
+      trainerBlock, traitBlock,
+    ].filter(Boolean);
+    $('count').textContent = `${zoneName(z)} · Stufe ${state.level} · ${g.new.length} neu, ${g.upgrade.length} Upgrade${g.upgrade.length === 1 ? '' : 's'}`
+      + `, ${g.high.length} noch zu hoch, ${g.known.length} erledigt`;
+    $('list').innerHTML = out.length
+      ? out.join('') + learnedFoot()
+      : `<p class="empty">In ${esc(zoneName(z))} gibt es zu dieser Auswahl keine Lehrtiere.</p>`;
+  }
+
+  // „Ich bin aufgestiegen“
+  function renderLevel() {
+    const q = norm(state.q.trim());
+    const z = state.zone ? +state.zone : 0;                          // optional: nur dieses Gebiet
+    const trainerHere = !z || D.trainers.some((t) => t.zones.includes(z));
+    const rows = [];
+    for (const a of D.abilities) {
+      if (a.kind === 'trait' || !famOk(a) || !srcOk(a)) continue;
+      const nameHit = !q || a._text.includes(q);
+      const bs = a.beasts.filter((b) => beastOk(b, nameHit ? '' : q) && (!z || b.zones.includes(z)));
+      if (!nameHit && !bs.length) continue;
+      if (z && a.source === 'tame' && !bs.length) continue;          // gibt es in diesem Gebiet nicht
+      const row = pickRow(a, bs);
+      if (!row) continue;
+      // Ausbilder und automatisch Gelerntes hängen an keinem Fundort – außer der Ausbilder steht hier
+      row.away = !!z && a.source !== 'tame' && !(a.source === 'trainer' && trainerHere);
+      rows.push(row);
+    }
+    // Stufenschwellen der gerade sichtbaren Fähigkeiten
+    const steps = [...new Set(D.abilities.filter((a) => a.kind !== 'trait' && famOk(a) && srcOk(a))
+      .flatMap((a) => a.ranks.map((r) => r.level || 1)))].sort((x, y) => x - y);
+    const cur = Math.max(1, ...steps.filter((s) => s <= state.level));
+    const next = steps.find((s) => s > state.level);
+
+    const local = rows.filter((x) => !x.away || x.kind === 'known');
+    const fresh = local.filter((x) => (x.kind === 'new' || x.kind === 'upgrade') && (x.r.level || 1) === cur).sort(byEffort);
+    const open = local.filter((x) => (x.kind === 'new' || x.kind === 'upgrade') && !fresh.includes(x)).sort(byEffort);
+    const high = local.filter((x) => x.kind === 'high').sort(byLevel);
+    const done = rows.filter((x) => x.kind === 'known').sort(byLevel);
+    const away = rows.filter((x) => x.away && x.kind !== 'known').sort(byLevel);
+
+    const out = [
+      grp('neu', `Neu bei Stufe ${cur}`, fresh, true,
+        cur === state.level ? 'frisch freigeschaltet' : `letzte Freischaltung vor deiner Stufe ${state.level}`),
+      grp('upgrade', 'Noch offen für deine Stufe', open, true, 'kannst du sofort holen'),
+      grp('high', 'Als Nächstes', high, false,
+        next ? `noch nicht erreichbar · nächste Freischaltung bei Stufe ${next}` : 'noch nicht erreichbar'),
+      grp('away', 'Ortsunabhängig', away, false, 'Pet-Lehrer und automatisch Gelerntes – nicht an dieses Gebiet gebunden'),
+      state.hideKnown ? '' : grp('known', 'Hast du schon', done, false),
+    ].filter(Boolean);
+    $('count').textContent = `Stufe ${state.level}${z ? ` · ${zoneName(z)}` : ''}${state.fam ? ` · ${famName(+state.fam)}` : ''}`
+      + ` · ${fresh.length} neu bei Stufe ${cur}, ${open.length} offen, ${high.length} später`
+      + `${away.length ? `, ${away.length} ortsunabhängig` : ''}, ${done.length} erledigt`;
+    $('list').innerHTML = out.length
+      ? out.join('') + learnedFoot()
+      : `<p class="empty">Zu dieser Auswahl gibt es nichts${z ? ` in ${esc(zoneName(z))}` : ''}. Probier eine andere Zone, Familie oder Stufe.</p>`;
+  }
+
+  const VIEWS = { abil: renderAbilities, fam: renderFamilies, zone: renderZone, lvl: renderLevel };
   function render() {
-    $('v-abil').setAttribute('aria-pressed', state.view === 'abil');
-    $('v-fam').setAttribute('aria-pressed', state.view === 'fam');
-    $('zone').disabled = state.view === 'fam';
-    $('srcfilter').setAttribute('aria-disabled', state.view === 'fam'); // wirkt nur in der Fähigkeiten-Ansicht
+    for (const [v, id] of [['abil', 'v-abil'], ['fam', 'v-fam'], ['zone', 'v-zone'], ['lvl', 'v-lvl']]) {
+      $(id).setAttribute('aria-pressed', state.view === v);
+    }
+    // Suche, Familie, Zone, Stufe und „Gelerntes ausblenden“ wirken in allen vier Ansichten
+    $('srcfilter').setAttribute('aria-disabled', state.view === 'fam'); // Lernart wirkt in allen Ansichten außer „Familien“
     for (const b of $('srcfilter').querySelectorAll('[data-src]')) {
       b.setAttribute('aria-pressed', state.srcs.includes(b.dataset.src));
     }
-    (state.view === 'fam' ? renderFamilies : renderAbilities)();
+    (VIEWS[state.view] || renderAbilities)();
   }
 
   let t;
@@ -590,28 +871,57 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     state.srcs = state.srcs.includes(k) ? state.srcs.filter((s) => s !== k) : [...state.srcs, k];
     save(); render();
   });
-  $('v-abil').addEventListener('click', () => { state.view = 'abil'; save(); render(); });
-  $('v-fam').addEventListener('click', () => { state.view = 'fam'; save(); render(); });
+  for (const [v, id] of [['abil', 'v-abil'], ['fam', 'v-fam'], ['zone', 'v-zone'], ['lvl', 'v-lvl']]) {
+    $(id).addEventListener('click', () => { state.view = v; save(); render(); });
+  }
+  let tl;
+  $('lvl').addEventListener('input', (e) => {
+    const n = Math.round(+e.target.value);
+    if (!Number.isFinite(n) || n < 1 || n > 60) return;               // Zwischenstände beim Tippen ignorieren
+    state.level = n; clearTimeout(tl); tl = setTimeout(() => { save(); render(); }, 120);
+  });
+  $('lvl').addEventListener('blur', (e) => { e.target.value = state.level; });
+  $('hidek').addEventListener('change', (e) => { state.hideKnown = e.target.checked; save(); render(); });
 
   $('list').addEventListener('toggle', (e) => {
     const n = e.target.dataset?.name;
     if (n) e.target.open ? state.open.add(n) : state.open.delete(n);
   }, true);
+  // Lernstand: ein Haken merkt den höchsten Rang, alle niedrigeren gelten damit als gelernt
+  $('list').addEventListener('change', (e) => {
+    const box = e.target.closest('[data-known]');
+    if (!box) return;
+    const i = box.dataset.known.lastIndexOf('#');
+    const name = box.dataset.known.slice(0, i), rank = +box.dataset.known.slice(i + 1);
+    const lvl = box.checked ? rank : rank - 1;
+    if (lvl > 0) state.known[name] = lvl; else delete state.known[name];
+    const y = window.scrollY; save(); render(); window.scrollTo(0, y);
+  });
   $('list').addEventListener('click', (e) => {
     const map = e.target.closest('[data-map]');
     if (map) { openMap(+map.dataset.map, +map.dataset.zone); return; }
     const more = e.target.closest('[data-more]');
     if (more) {
       const k = more.dataset.more;
-      state.open.has(k) ? state.open.delete(k) : state.open.add(k);
+      state.more.has(k) ? state.more.delete(k) : state.more.add(k);
       const y = window.scrollY; render(); window.scrollTo(0, y);
       return;
     }
+    const reset = e.target.closest('[data-reset]');
+    if (reset) {
+      if (!confirm('Lernstand komplett zurücksetzen?')) return;
+      state.known = {}; save(); render();
+      return;
+    }
+    // Sprung in die Fähigkeiten-Ansicht: „Name“ trifft die Fähigkeit, „Name#Rang“ genau einen Rang
     const go = e.target.closest('[data-goto]');
     if (go) {
-      const name = go.dataset.goto;
-      state.view = 'abil'; state.q = ''; $('q').value = ''; state.open.add(name); save(); render();
-      document.querySelector(`.card[data-name="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'start' });
+      const key = go.dataset.goto, exact = key.includes('#');
+      state.view = 'abil'; state.q = ''; $('q').value = '';
+      if (exact) state.open.add(key);
+      save(); render();
+      const sel = exact ? `.card[data-name="${CSS.escape(key)}"]` : `.card[data-ability="${CSS.escape(key)}"]`;
+      document.querySelector(sel)?.scrollIntoView({ block: 'start' });
     }
   });
 
@@ -632,6 +942,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   try { const th = localStorage.getItem('petTheme'); if (th) document.documentElement.dataset.theme = th; } catch {}
 
   $('fam').value = state.fam; $('zone').value = state.zone; $('conf').checked = !!state.conf; $('faction').value = state.faction || '';
+  $('lvl').value = state.level; $('hidek').checked = !!state.hideKnown;
   if ($('fam').value !== state.fam) state.fam = '';
   if ($('zone').value !== state.zone) state.zone = '';
   render();
