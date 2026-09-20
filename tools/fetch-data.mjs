@@ -9,7 +9,9 @@ import { fileURLToPath } from 'node:url';
 import {
   parsePetopiaAbilities, parsePetopiaAttackSpeeds, extractComments, parseCommentLists, parseTrainerComment,
 } from './sources.mjs';
-import { BEASTMASTER, bmAbilityUrl, bmSpeedUrl, bundleUrl, parseBeastmaster, slugNpcId } from './beastmaster.mjs';
+import {
+  BEASTMASTER, BEASTMASTER_DE, bmAbilityUrl, bmSpeedUrl, bundleUrl, parseBeastmaster, parseGameDataDe, slugNpcId,
+} from './beastmaster.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -35,9 +37,6 @@ const FAMILY_EN = {
   Raptor: 11, Raptors: 11, Tallstrider: 12, Tallstriders: 12, Scorpid: 20, Scorpids: 20, Turtle: 21, Turtles: 21,
   Bat: 24, Bats: 24, Hyena: 25, Hyenas: 25, Owl: 26, Owls: 26, 'Wind Serpent': 27, 'Wind Serpents': 27,
 };
-// Die in Forever neuen Familien führt Wowhead nicht unter /pet=<ID> – für sie gibt es dort
-// keinen deutschen Namen, nur die ID am Tier. Deshalb hier von Hand, Rest bleibt englisch.
-const FAMILY_DE = { 'Core Hound': 'Kernhund', Fox: 'Fuchs' };
 
 fs.mkdirSync(CACHE, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -172,7 +171,16 @@ const rankNum = (r) => parseInt(String(r || '').replace(/\D+/g, ''), 10) || 0;
 async function beastmaster() {
   const url = bundleUrl(await get(BEASTMASTER, 'beastmaster.html'));
   const hash = path.basename(new URL(url).pathname);
-  return parseBeastmaster(await get(url, `beastmaster-${hash}`));
+  const data = parseBeastmaster(await get(url, `beastmaster-${hash}`));
+  // Die deutschen Namen liegen als eigenes JSON daneben. Fehlen sie, läuft der Rest weiter –
+  // dann bleiben die zwei Familien, die nur beastmaster.io kennt, eben englisch.
+  try {
+    data.de = parseGameDataDe(await get(BEASTMASTER_DE, 'beastmaster-de-game-data.json'));
+  } catch (e) {
+    console.log(`  deutsche Namen von beastmaster.io nicht verfügbar (${e.message})`);
+    data.de = { familyNames: {}, abilityNames: {} };
+  }
+  return data;
 }
 
 async function main() {
@@ -278,7 +286,8 @@ async function main() {
     if (b.attackSpeed) (bmSpeed[b.attackSpeed.toFixed(1)] ??= new Set()).add(id);
   }
   const bmFamilyId = {};  // beastmaster-Familienslug → Wowhead-Familien-ID (über die Tiere erschlossen)
-  const bmFamilyEn = Object.fromEntries(bm.families.map((f) => [f.slug, f.name]));
+  // Name je Slug: deutsch, wenn beastmaster.io eine Übersetzung hat, sonst englisch.
+  const bmFamilyName = Object.fromEntries(bm.families.map((f) => [f.slug, bm.de.familyNames[f.slug] || f.name]));
 
   // Alle Tiere aus Petopia/Kommentaren/Tempo-Liste/beastmaster.io, die Wowhead Forever
   // nicht schon mitliefert, nachladen.
@@ -458,11 +467,10 @@ async function main() {
     if (a.families.length || a.kind !== 'family') continue;
     a.families = [...new Set((bmFamilyOfAbility[a.bmName] || []).map((s) => bmFamilyId[s]).filter(Boolean))].sort((x, y) => x - y);
   }
-  const famNameEn = Object.fromEntries(Object.entries(bmFamilyId).map(([slug, id]) => [id, bmFamilyEn[slug]]));
+  const famName = Object.fromEntries(Object.entries(bmFamilyId).map(([slug, id]) => [id, bmFamilyName[slug]]));
   for (const a of abilityList) for (const b of a.beasts) {
     if (!b.family || families[b.family]) continue;
-    const en = famNameEn[b.family];
-    families[b.family] = { id: b.family, name: (en && FAMILY_DE[en]) || en || `Familie ${b.family}`, icon: '', diet: '', type: 0 };
+    families[b.family] = { id: b.family, name: famName[b.family] || `Familie ${b.family}`, icon: '', diet: '', type: 0 };
     console.log(`  Familie ${b.family} nur über beastmaster.io benannt: ${families[b.family].name}`);
   }
   for (const a of abilityList) delete a.bmName;

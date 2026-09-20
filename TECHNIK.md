@@ -234,6 +234,7 @@ Jede Antwort landet unter einem sprechenden Namen in `tools/cache/`:
 | `classic-npc-<id>.html` | dieselbe NPC-Seite aus Classic, wegen der Koordinaten |
 | `petopia-abilities.html`, `petopia-attackspeed.html` | die beiden Petopia-Seiten |
 | `beastmaster.html`, `beastmaster-index-<hash>.js` | die beastmaster.io-Seite und ihr JS-Bundle (~13 MB) |
+| `beastmaster-de-game-data.json` | die deutschen Namen von beastmaster.io (`/locales/de/game-data.json`) |
 
 **2. Wowhead auslesen ohne HTML-Parser.** Die interessanten Daten stehen auf Wowhead-Seiten
 als JavaScript-Literale im Quelltext. Zwei Helfer holen sie heraus: `sliceLiteral()` schneidet
@@ -292,8 +293,9 @@ stehen nur als ID am Tier, ohne Namen und ohne Zuordnung zur Fähigkeit. Beides 
 beastmaster.io. Die Brücke „Familienslug → Wowhead-ID“ entsteht über die Tiere; wo das nicht
 reicht (der Kernhund hat dort kein zähmbares Tier mit Wowhead-ID), über die Fähigkeit: hat
 eine Fähigkeit nur Tiere **einer** Familien-ID und kennt beastmaster.io sie nur bei **einer**
-Familie, gehören die beiden zusammen. Die deutschen Namen stehen in `FAMILY_DE`, weil es sie
-auf Wowhead nicht gibt.
+Familie, gehören die beiden zusammen. Die deutschen Namen kommen aus
+`/locales/de/game-data.json` – derselben Datei, die die Seite unter `/de/…` benutzt. Fällt sie
+aus, bleiben die zwei Familien englisch, der Lauf geht weiter.
 
 **10. Koordinaten und Schreiben.** Für jedes Tier einmal die Classic-Seite, `g_mapperData`
 auslesen, Punkte je Zone entdoppeln. Zum Schluss werden nur die Zonen übernommen, die
@@ -323,11 +325,10 @@ Zu den Parsern in `tools/sources.mjs`:
   zwei NPCs verlinkt sind – sonst landen beliebige Kommentar-Links in den Daten.
 - `parseTrainerComment()` zieht die Tierausbilder aus dem Kommentar zu „Große Ausdauer“.
 
-Weil Petopia und beastmaster.io englisch sind, hängen drei Übersetzungstabellen in
+Weil Petopia und beastmaster.io englisch sind, hängen zwei Übersetzungstabellen in
 `fetch-data.mjs` daran: `ALIAS_EN` für abweichende Fähigkeitsnamen (beide kürzen
-„Demoralizing Screech“ zu „Screech“), `FAMILY_EN` für Familiennamen (Singular und Plural)
-→ Wowhead-Familien-ID und `FAMILY_DE` für die zwei Familien, zu denen Wowhead keinen
-deutschen Namen hat.
+„Demoralizing Screech“ zu „Screech“) und `FAMILY_EN` für Familiennamen (Singular und
+Plural) → Wowhead-Familien-ID.
 
 ### `tools/beastmaster.mjs`
 
@@ -355,6 +356,23 @@ Literale im JS-Bundle. Der Parser geht deshalb so vor:
 
 Findet der Parser eine Tabelle nicht oder ist das Ergebnis leer, wirft er mit klarer Meldung –
 er liefert nie stillschweigend halbe Daten.
+
+**Die deutschen Namen** liegen nicht im Bundle, sondern offen als JSON: `/locales/de/game-data.json`
+(das ist es, was `https://beastmaster.io/de/forever/abilities` nachlädt), dazu
+`/locales/de/npcs.json` für die Tiere. `parseGameDataDe()` liest daraus Familien- und
+Fähigkeitsnamen. Übernommen wird davon **nur der Familienname und nur, wenn Wowhead keinen
+hat** – aus zwei Gründen:
+
+- Es sind die Übersetzungen der Seite, nicht die des Spielclients, und sie weichen ab:
+  „Grollfuß“ statt Gorilla, „Eule“ statt Raubvogel, „Krokodil“ statt Krokilisk,
+  „Schreiter“ statt Weitschreiter, „Verstümmeln“ statt Zerstückeln, „Netz“ statt Gespinst.
+  Bei den Tiernamen sind es 42 Abweichungen zu Wowhead.
+- Ausgerechnet die in Forever neuen Tiere fehlen in `npcs.json` – also genau die, die bei uns
+  noch englisch heißen (Vuldren, Ursera, Shriekling, Ornery Galestrider …). Die deutsche
+  Quelle löst dieses Problem nicht.
+
+Für Kernhund und Fuchs stimmt sie mit den Clientnamen überein, und genau die beiden braucht
+sie zu liefern.
 
 ## 7. Fallstricke und Wartung
 

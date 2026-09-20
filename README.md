@@ -30,7 +30,7 @@ node tools/fetch-data.mjs
 1. **Wowhead Forever** (deutsch): Fähigkeiten, Ränge, Pet-Familien und die Tiere, die eine Fähigkeit nutzen.
 2. **Wowhead-Kommentare** auf den Zauberseiten: rangweise Zähmlisten mit Trainingspunkten (vor allem von „hevgirl“, 2019) und die Tierausbilder in den Hauptstädten.
 3. **Petopia Classic** (https://www.wow-petopia.com/classic/): Lehrtiere je Rang, Trainingspunkte, welche Fähigkeiten beim Tierausbilder zu lernen sind, und die Angriffstempi der Tiere. Damit werden Lücken mit Classic-Wissen gefüllt.
-4. **beastmaster.io** (https://beastmaster.io/forever/abilities): Lehrtiere je Rang für Forever selbst – auch für die Fähigkeiten, die es in Classic noch nicht gab und zu denen Petopia deshalb nichts hat (Staubwolke, Wildes Verwunden, Zwicken, Sehnenriss, Tanz des Täuschers). Dazu die Lernart der übrigen Forever-Neuen, Angriffstempi und die zwei Pet-Familien, die Wowhead nicht führt (Kernhund, Fuchs).
+4. **beastmaster.io** (https://beastmaster.io/forever/abilities): Lehrtiere je Rang für Forever selbst – auch für die Fähigkeiten, die es in Classic noch nicht gab und zu denen Petopia deshalb nichts hat (Staubwolke, Wildes Verwunden, Zwicken, Sehnenriss, Tanz des Täuschers). Dazu die Lernart der übrigen Forever-Neuen, Angriffstempi und die zwei Pet-Familien, die Wowhead nicht führt (Kernhund, Fuchs) – deren deutsche Namen kommen aus `/locales/de/game-data.json`, der Übersetzungsdatei hinter https://beastmaster.io/de/forever/abilities.
 5. **Wowhead Classic**: Fundorte (Koordinaten) der Tiere aus `g_mapperData` auf den NPC-Seiten. Wowhead Forever hat noch keine Kartendaten. Die Zonenkarten (deutsch) lädt die Seite vom Wowhead-CDN.
 
 Die Parser für 2 und 3 stehen in `tools/sources.mjs`, der für 4 in `tools/beastmaster.mjs`.
@@ -45,6 +45,8 @@ Die Seite schätzt zu jedem Tier den Aufwand (leicht/mittel/schwer) aus Einstufu
 - Trainingspunkte, Tierausbilder und Classic-Ränge stammen aus WoW Classic und können in Forever abweichen.
 - Zu Prankenhieb, Zerstückeln und Meins! nennt keine Quelle ein Lehrtier. Dass man sie durch Zähmen lernt, sagt nur beastmaster.io – welches Tier sie beibringt, steht dort nicht.
 - beastmaster.io veröffentlicht keine Schnittstelle; die Daten stecken im JS-Bundle der Seite und werden daraus gelesen. Baut die Seite um, bricht `tools/beastmaster.mjs` mit einer Meldung ab, statt still falsche Daten zu liefern.
+- **Namen kommen von Wowhead, nicht von beastmaster.io.** Die deutsche Fassung der Seite hat eigene Übersetzungen, die nicht die des Spielclients sind („Grollfuß“ statt Gorilla, „Eule“ statt Raubvogel, „Verstümmeln“ statt Zerstückeln; bei den Tieren 42 Abweichungen). Genommen wird von dort nur, was Wowhead nicht hat.
+- Ein paar in Forever neue Tiere stehen mit englischem Namen in der Liste (Vuldren, Ursera, Shriekling, Ornery Galestrider …). Wowhead hat für sie keinen deutschen Namen, und in der deutschen Tierliste von beastmaster.io fehlen sie ebenfalls.
 
 ## Technik
 Wie die Seite aufgebaut ist, wie `data.js` aussieht und woher jede einzelne Angabe stammt, steht in [TECHNIK.md](TECHNIK.md).

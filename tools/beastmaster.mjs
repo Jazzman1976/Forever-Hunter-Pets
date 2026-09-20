@@ -8,13 +8,37 @@
 // Die Namen im Bundle sind minifiziert und ändern sich bei jedem Deploy. Deshalb suchen
 // wir die vier Datentabellen nicht über ihren Namen, sondern über ihre *Form*; ändert
 // beastmaster.io die Struktur, schlägt das hier mit einer klaren Meldung fehl.
+//
+// Die Übersetzungen liegen dagegen offen: die Seite lädt sie als JSON unter
+// /locales/<sprache>/. Daraus holen wir die deutschen Familiennamen (siehe `parseGameDataDe`).
 
 import vm from 'node:vm';
 
 export const BEASTMASTER = 'https://beastmaster.io/forever/abilities';
+/** Die deutschen Übersetzungen, die die Seite selbst nachlädt (/de/forever/abilities benutzt sie). */
+export const BEASTMASTER_DE = 'https://beastmaster.io/locales/de/game-data.json';
 /** Einzelne Fähigkeit bzw. die gefilterte Tierliste – die Routen der Seite. */
 export const bmAbilityUrl = (slug) => `https://beastmaster.io/forever/ability/${slug}`;
 export const bmSpeedUrl = (speed) => `https://beastmaster.io/forever/all?speed=${speed}`;
+
+/**
+ * `/locales/de/game-data.json` → { familyNames, abilityNames } (jeweils Slug → deutscher Name).
+ *
+ * Übernommen wird davon nur, was Wowhead nicht liefert. Die Übersetzungen sind die der Seite,
+ * nicht die des Spiels, und weichen an etlichen Stellen von den Clientnamen ab: „Grollfuß“
+ * statt Gorilla, „Eule“ statt Raubvogel, „Schreiter“ statt Weitschreiter, „Verstümmeln“ statt
+ * Zerstückeln. Dieselbe Datei nennt auch die Tiere auf Deutsch – aber ausgerechnet die in
+ * Forever neuen fehlen dort, deshalb holen wir die Tiernamen weiter von Wowhead.
+ */
+export function parseGameDataDe(json) {
+  let d;
+  try { d = JSON.parse(json); } catch { throw new Error('beastmaster.io: /locales/de/game-data.json ist kein JSON'); }
+  const names = (o) => Object.fromEntries(Object.entries(o || {})
+    .map(([slug, v]) => [slug, v?.name]).filter(([, n]) => typeof n === 'string' && n));
+  const familyNames = names(d.family);
+  if (!Object.keys(familyNames).length) throw new Error('beastmaster.io: keine deutschen Familiennamen gefunden');
+  return { familyNames, abilityNames: names(d.ability) };
+}
 
 /** `<script src="/assets/index-XYZ.js">` aus der Seite ziehen. */
 export function bundleUrl(html, base = BEASTMASTER) {
