@@ -62,9 +62,13 @@ bewusst nicht über einen Neustart hinaus gelten. Die zwei sind getrennt, weil s
 Rang-Karten beide denselben Schlüssel `Name#Rang` benutzen.
 
 **Rendern.** `render()` wählt über die Tabelle `VIEWS` eine von vier Funktionen:
-`renderAbilities()`, `renderFamilies()`, `renderZone()`, `renderLevel()`. Suche, Familie,
-Zone und „Schon Gelerntes ausblenden“ wirken in allen vieren; gesperrt (`disabled`) ist nur
-das Stufenfeld außerhalb von „Gebiet“ und „Stufe“. `renderFamilies()` zeigt mit gewählter Zone
+`renderAbilities()`, `renderFamilies()`, `renderZone()`, `renderLevel()`. Alle Bedienelemente
+wirken in allen vieren, keins wird mehr gesperrt. Die Stufe tut dabei zweierlei: In
+„Fähigkeiten“ und „Familien“ ist sie ein harter Filter (`usable(r)` für den Rang,
+`tameable(b)` für das Tier; ein Rang ohne erreichbares Tier fällt weg), in „Gebiet“ und
+„Stufe“ entscheidet sie über die Gruppenzuordnung. Standard ist 60, dann filtert sie nichts –
+kein Tier in den Daten hat eine höhere Mindeststufe.
+`renderFamilies()` zeigt mit gewählter Zone
 nur Familien mit Lehrtieren dort und ergänzt je Karte, welche Fähigkeit und welchen Rang
 deren Tiere vor Ort beibringen.
 Die Fähigkeiten-Ansicht ist **eine Karte je Fähigkeit und Rang** (`rankCard()`, 158 statt 39
