@@ -2,8 +2,14 @@
 //
 // https://beastmaster.io/forever/abilities ist eine React-App ohne API: die Forever-Daten
 // stecken als Literale im JS-Bundle. Wir schneiden das Bundle hinter den Datendefinitionen
-// ab und werten nur diesen Teil in einem vm-Kontext mit Browser-Attrappe aus – dort kommt
-// fremder Code weder an fs noch an process.
+// ab und werten nur diesen Teil in einem vm-Kontext mit Browser-Attrappe aus.
+//
+// ACHTUNG, keine Sandbox: `node:vm` ist ausdrücklich *keine* Sicherheitsgrenze. Der Kontext
+// hat zwar kein `process` und kein `require`, aber über `this.constructor.constructor(…)`
+// kommt Code darin an die Globals des Hosts. Wer `tools/fetch-data.mjs` startet, führt also
+// Fremdcode von beastmaster.io mit seinen eigenen Rechten aus. Was das Risiko klein hält,
+// ist etwas anderes: Wir schneiden vor dem Start der Anwendung ab, es läuft nur der
+// Datenteil, und das Skript startet niemand versehentlich.
 //
 // Die Namen im Bundle sind minifiziert und ändern sich bei jedem Deploy. Deshalb suchen
 // wir die vier Datentabellen nicht über ihren Namen, sondern über ihre *Form*; ändert
@@ -20,6 +26,7 @@ export const BEASTMASTER_DE = 'https://beastmaster.io/locales/de/game-data.json'
 /** Einzelne Fähigkeit bzw. die gefilterte Tierliste – die Routen der Seite. */
 export const bmAbilityUrl = (slug) => `https://beastmaster.io/forever/ability/${slug}`;
 export const bmSpeedUrl = (speed) => `https://beastmaster.io/forever/all?speed=${speed}`;
+export const bmFamilyUrl = (slug) => `https://beastmaster.io/forever/family/${slug}`;
 
 /**
  * `/locales/de/game-data.json` → { familyNames, abilityNames } (jeweils Slug → deutscher Name).

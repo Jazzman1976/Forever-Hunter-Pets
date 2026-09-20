@@ -10,7 +10,8 @@ import {
   parsePetopiaAbilities, parsePetopiaAttackSpeeds, extractComments, parseCommentLists, parseTrainerComment,
 } from './sources.mjs';
 import {
-  BEASTMASTER, BEASTMASTER_DE, bmAbilityUrl, bmSpeedUrl, bundleUrl, parseBeastmaster, parseGameDataDe, slugNpcId,
+  BEASTMASTER, BEASTMASTER_DE, bmAbilityUrl, bmFamilyUrl, bmSpeedUrl, bundleUrl,
+  parseBeastmaster, parseGameDataDe, slugNpcId,
 } from './beastmaster.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -99,6 +100,8 @@ function sliceLiteral(src, start) {
 }
 
 // Wowhead nutzt teils unquotierte Schlüssel – daher in einem leeren VM-Kontext auswerten.
+// Der Kontext hält fremden Code nicht wirklich fest (siehe beastmaster.mjs); er begrenzt hier
+// nur, was ein Literal versehentlich sieht, und deckelt über `timeout` Endlosschleifen.
 const evalLiteral = (txt) => vm.runInNewContext(`(${txt})`, Object.create(null), { timeout: 1000 });
 
 function listviewData(html, id) {
@@ -467,11 +470,17 @@ async function main() {
     if (a.families.length || a.kind !== 'family') continue;
     a.families = [...new Set((bmFamilyOfAbility[a.bmName] || []).map((s) => bmFamilyId[s]).filter(Boolean))].sort((x, y) => x - y);
   }
-  const famName = Object.fromEntries(Object.entries(bmFamilyId).map(([slug, id]) => [id, bmFamilyName[slug]]));
+  const famSlug = Object.fromEntries(Object.entries(bmFamilyId).map(([slug, id]) => [id, slug]));
   for (const a of abilityList) for (const b of a.beasts) {
     if (!b.family || families[b.family]) continue;
-    families[b.family] = { id: b.family, name: famName[b.family] || `Familie ${b.family}`, icon: '', diet: '', type: 0 };
-    console.log(`  Familie ${b.family} nur über beastmaster.io benannt: ${families[b.family].name}`);
+    // Wowhead hat zu dieser Familie keine Seite (`/pet=<ID>` läuft ins Leere), deshalb kommt
+    // mit `url` gleich der Link mit, den die Seite statt des Wowhead-Links setzt.
+    const slug = famSlug[b.family];
+    families[b.family] = {
+      id: b.family, name: (slug && bmFamilyName[slug]) || `Familie ${b.family}`,
+      icon: '', diet: '', type: 0, url: slug ? bmFamilyUrl(slug) : null,
+    };
+    console.log(`  Familie ${b.family} nur über beastmaster.io: ${families[b.family].name}`);
   }
   for (const a of abilityList) delete a.bmName;
 

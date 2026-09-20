@@ -325,6 +325,11 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   const norm = (s) => String(s || '').toLocaleLowerCase('de');
   const famById = Object.fromEntries(D.families.map((f) => [f.id, f]));
   const famName = (id) => famById[id]?.name || `Familie ${id}`;
+  // Kernhund und Fuchs führt Wowhead nicht als Pet-Familie – `/pet=<ID>` landet dort auf einer
+  // Fehlerseite. Solche Familien bringen ihren eigenen Link mit (`url`, aus data.js).
+  const famLink = (f) => (f.url
+    ? { url: f.url, label: 'beastmaster.io' }
+    : { url: `${WH}/pet=${f.id}`, label: 'Wowhead' });
   const zoneName = (id) => D.zones[id] || `Zone ${id}`;
   const img = (icon, alt) => icon
     ? `<img class="icon" src="${ICON(esc(icon))}" alt="${esc(alt)}" loading="lazy" onerror="this.style.visibility='hidden'">`
@@ -661,7 +666,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
         return `<article class="card"><div class="body" style="padding-top:12px">
           <div style="display:flex;gap:12px;align-items:center">${img(f.icon, f.name)}
             <div class="title"><h2>${esc(f.name)}</h2>
-              <a class="meta" href="${WH}/pet=${f.id}" target="_blank" rel="noopener">auf Wowhead</a></div></div>
+              <a class="meta" href="${esc(famLink(f).url)}" target="_blank" rel="noopener">auf ${esc(famLink(f).label)}</a></div></div>
           <p class="hint">Familienfähigkeiten (${own.length}${gone ? ` von ${all.length}, ${why}` : ''}):</p>
           <ul class="fam-list">${own.map(btn).join('') || `<li class="none">${gone ? `nichts offen (${why})` : 'keine bekannt'}</li>`}</ul>
           <p class="hint">Dazu die allgemeinen Fähigkeiten: ${general.map((a) => esc(a.name)).join(', ') || '– nichts offen'}.</p>

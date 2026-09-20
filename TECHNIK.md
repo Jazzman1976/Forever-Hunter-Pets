@@ -25,9 +25,9 @@ die Fähigkeiten-Icons (`wow.zamimg.com/images/wow/icons/medium/…`), die Zonen
 (`wow.zamimg.com/images/wow/classic/maps/dede/…`) und die Links nach Wowhead.
 Ohne Internet bleibt die Seite benutzbar, nur ohne Bilder.
 
-Aktueller Stand der Daten: 39 Fähigkeiten, 158 Ränge, 17 Pet-Familien, 465 Lehrtiere
-(1130 Tier-Einträge, davon 432 mit bestätigtem Rang), Koordinaten für 417 Tiere,
-56 Zonen, 5 Tierausbilder.
+Aktueller Stand der Daten: 40 Fähigkeiten, 159 Ränge, 19 Pet-Familien, 479 Lehrtiere
+(1155 Tier-Einträge, davon 457 mit bestätigtem Rang), Koordinaten für 417 Tiere,
+57 Zonen, 5 Tierausbilder.
 
 ## 2. `index.html` – die Seite
 
@@ -54,7 +54,7 @@ in `localStorage` unter `petTheme` (`index.html:925-927`).
 Ränge“, Fraktion, gewählte Lernarten und die offenen Karten. Dazu kommen die drei Felder der
 Ansichten „Gebiet“ und „Stufe“: `level` (1–60, gilt als Jäger- **und** Pet-Stufe),
 `hideKnown` und `known`. `known` ist `{ Fähigkeitsname: höchster gelernter Rang }` – ein
-Eintrag deckt alle niedrigeren Ränge mit ab, deshalb genügen 39 Zahlen für 158 Ränge.
+Eintrag deckt alle niedrigeren Ränge mit ab, deshalb genügen 40 Zahlen für 159 Ränge.
 Darauf setzen die Helfer `ownedRank()`, `rankStatus()`, `rankDone()`, `rankHidden()` und
 `abilityDone()` auf, die alle vier Ansichten benutzen.
 Gespeichert wird alles unter `petState` in `localStorage` – bis auf `state.open` (welche Karten
@@ -72,12 +72,12 @@ kein Tier in den Daten hat eine höhere Mindeststufe.
 `renderFamilies()` zeigt mit gewählter Zone
 nur Familien mit Lehrtieren dort und ergänzt je Karte, welche Fähigkeit und welchen Rang
 deren Tiere vor Ort beibringen.
-Die Fähigkeiten-Ansicht ist **eine Karte je Fähigkeit und Rang** (`rankCard()`, 158 statt 39
+Die Fähigkeiten-Ansicht ist **eine Karte je Fähigkeit und Rang** (`rankCard()`, 159 statt 40
 Einträge). Zugeklappt zeigt sie Rang, Pet-Stufe, TP, Tierzahl und die Empfehlung, aufgeklappt
 die Lehrtiere; links sitzt dasselbe Lernstand-Häkchen wie in „Gebiet“ und „Stufe“
 (`onclick="event.stopPropagation()"`, sonst klappt der Klick die Karte auf). Am Ende wird
 `#list.innerHTML` in einem Rutsch gesetzt. Kein virtuelles DOM, kein Diffing: bei jeder
-Filteränderung wird die Liste komplett neu gebaut. Das ist auch bei 158 Karten schnell genug;
+Filteränderung wird die Liste komplett neu gebaut. Das ist auch bei 159 Karten schnell genug;
 die Sucheingabe ist trotzdem um 120 ms entprellt. Jeder Fremdtext läuft durch `esc()`.
 
 **Die Ansichten „Gebiet“ und „Stufe“.** Beide beantworten dieselbe Frage aus zwei Richtungen:
@@ -174,7 +174,7 @@ window.PET_DATA = { generatedAt, sources, coords, instances, families, zones, tr
 | `sources[]` | `{ label, url }` – die Links in der Fußzeile. |
 | `coords` | `{ npcId: { zoneId: [x, y, x, y, …] } }`, flach und mit 10 multipliziert gerundet. Aus `28.4 / 66.4` wird `284, 664`. Das spart gegenüber verschachtelten Kommazahlen viel Platz; `index.html:332-338` packt es wieder aus. |
 | `instances` | `{ zoneId: 2 Dungeon, 3 Raid, 4 Schlachtfeld }`, nur für Zonen, die vorkommen. |
-| `families[]` | `{ id, name, icon, diet, type }` – die 17 Pet-Familien. |
+| `families[]` | `{ id, name, icon, diet, type, url? }` – die 19 Pet-Familien. `url` steht nur bei den zweien, die Wowhead nicht führt (Kernhund, Fuchs): dort landet `/pet=<ID>` auf einer Fehlerseite, deshalb verlinkt die Seite sie nach beastmaster.io. |
 | `zones` | `{ zoneId: deutscher Name }`, nur tatsächlich benutzte Zonen. |
 | `trainers[]` | `{ id, name, title, zones[] }` – die Tierausbilder in den Hauptstädten. |
 | `trainerRef` | `{ url, user }` des Kommentars, aus dem die Ausbilderliste stammt. |
@@ -217,7 +217,7 @@ Ein Tier in `beasts[]`:
 
 `node tools/fetch-data.mjs` – der Ablauf in der Reihenfolge des Skripts:
 
-**1. Abrufen und Cache** (`get()` und `download()`, Zeile 45-81). Vor jedem Abruf 2 Sekunden
+**1. Abrufen und Cache** (`get()` und `download()`). Vor jedem Abruf 2 Sekunden
 Pause. Bei 403, 429 oder 5xx – Wowhead drosselt – wird mit wachsender Wartezeit bis zu
 viermal neu versucht. Ein 404 wird als leere Datei im Cache vermerkt, damit dieselbe Seite
 nicht bei jedem Lauf neu angefragt wird. Weiterleitungen folgt das Skript selbst
@@ -265,7 +265,7 @@ Pet-Stufe, Beschreibung und Icon – und die Kommentare der Seite.
 Forever aus Schritt 5 noch nicht. Für sie und für die Tierausbilder wird je eine NPC-Seite
 geholt. Beim ersten Lauf sind das ein paar hundert Seiten, gut 20 Minuten.
 
-**7. Tiere zusammenführen** (Zeile 335-418). Die Reihenfolge ist die Rangfolge der Quellen:
+**7. Tiere zusammenführen** (der `abilityList`-Durchlauf mit seinem `add()`). Die Reihenfolge ist die Rangfolge der Quellen:
 
 1. Petopia, die Kommentar-Tabellen und beastmaster.io liefern Tiere **mit** Rang → `est: false`.
 2. Danach die Forever-Tiere: ist das Tier schon bekannt, wird nur `src` um `forever`
@@ -284,7 +284,7 @@ bekanntes Lehrtier, aber beastmaster.io sagt, dass man sie durch Zähmen lernt.
 
 **8. Angriffstempo.** Das ist keine erlernbare Fähigkeit, sondern eine versteckte Aura
 („Schnellerer/Langsamerer Angriff“), die Wowhead trotzdem in der Liste führt. `TRAIT_SPEED`
-(Zeile 25-28) ordnet diesen Spell-IDs das Tempo zu (Basis 2,0 s); die Tiere dazu kommen aus
+ordnet diesen Spell-IDs das Tempo zu (Basis 2,0 s); die Tiere dazu kommen aus
 der Petopia-Tempoliste und aus dem `attackSpeed` der beastmaster.io-Tiere, und die Fähigkeit
 bekommt `kind: 'trait'`.
 
@@ -305,11 +305,11 @@ wirklich vorkommen, und `data.js` geschrieben.
 
 | Quelle | Liefert | Code | Verlässlichkeit |
 | --- | --- | --- | --- |
-| **Wowhead Forever** (de + en) | Fähigkeiten, Ränge, Pet-Stufen, Beschreibungen, Icons, Pet-Familien, Tiere je Fähigkeit, Zonennamen, NPC-Stammdaten (Name, Stufe, Zone, Einstufung) | `fetch-data.mjs:105-150` | Der aktuelle Stand des Servers. Aber: keine Rangzuordnung der Tiere, keine Trainingspunkte, keine Karten. |
-| **Wowhead-Kommentare** auf den Zauberseiten | rangweise Zähmlisten mit Trainingspunkten, die Tierausbilder | `sources.mjs:60-113` | Spielerwissen, meist aus Classic. Die ergiebigste Tabelle stammt von „hevgirl“ (2019). |
-| **Petopia Classic** | Lehrtiere je Rang, Trainingspunkte, „learned from trainers“, Angriffstempi | `sources.mjs:22-57` | Sehr gründlich, aber Classic-Stand. |
+| **Wowhead Forever** (de + en) | Fähigkeiten, Ränge, Pet-Stufen, Beschreibungen, Icons, Pet-Familien, Tiere je Fähigkeit, Zonennamen, NPC-Stammdaten (Name, Stufe, Zone, Einstufung) | `listviewData()`, `descriptions()`, `spellList()`, `npcInfo()` | Der aktuelle Stand des Servers. Aber: keine Rangzuordnung der Tiere, keine Trainingspunkte, keine Karten. |
+| **Wowhead-Kommentare** auf den Zauberseiten | rangweise Zähmlisten mit Trainingspunkten, die Tierausbilder | `sources.mjs`: `extractComments()`, `parseCommentLists()`, `parseTrainerComment()` | Spielerwissen, meist aus Classic. Die ergiebigste Tabelle stammt von „hevgirl“ (2019). |
+| **Petopia Classic** | Lehrtiere je Rang, Trainingspunkte, „learned from trainers“, Angriffstempi | `sources.mjs`: `parsePetopiaAbilities()`, `parsePetopiaAttackSpeeds()` | Sehr gründlich, aber Classic-Stand. |
 | **beastmaster.io** | Lehrtiere je Rang **für Forever**, Lernart, Angriffstempi, die Familien Kernhund und Fuchs | `beastmaster.mjs` | Die einzige Quelle, die die Forever-Neuzugänge abdeckt. Weniger Tiere je Fähigkeit als Petopia, aber wo sich beide äußern, widersprechen sie sich in keinem einzigen Rang. |
-| **Wowhead Classic** | Fundorte (`g_mapperData`) und die Zonenkarten vom CDN | `fetch-data.mjs:153-165` | Forever hat keine eigenen Kartendaten, deshalb der Umweg. Fundorte können abweichen. |
+| **Wowhead Classic** | Fundorte (`g_mapperData`) und die Zonenkarten vom CDN | `classicCoords()` | Forever hat keine eigenen Kartendaten, deshalb der Umweg. Fundorte können abweichen. |
 
 Zu den Parsern in `tools/sources.mjs`:
 
@@ -345,7 +345,7 @@ Literale im JS-Bundle. Der Parser geht deshalb so vor:
    Schnitt wird abgeschnitten – der Rest des Bundles ist die React-Anwendung und wird gar
    nicht erst ausgeführt.
 4. Das Bruchstück läuft in einem `vm`-Kontext mit einer Browser-Attrappe (`browserStub()`).
-   Dort kommt fremder Code weder an `fs` noch an `process`. Ein Durchlauf dauert rund 1 s.
+   Ein Durchlauf dauert rund 1 s.
 5. Das Muster `{era:…,forever:…}` passt auf mehrere Tabellen. Welche die Rang-Stufen sind,
    entscheidet sich erst am Ergebnis: genommen wird die, deren Schlüssel am besten zu den
    Fähigkeitsnamen aus den Metadaten passen. (Eine der anderen benutzt Unterstriche statt
