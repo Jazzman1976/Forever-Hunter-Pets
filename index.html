@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hunter-Pet-Fähigkeiten</title>
+<style>
+:root {
+  --bg: #f6f3ec;
+  --surface: #ffffff;
+  --surface-2: #f0ebe0;
+  --text: #221d15;
+  --muted: #6d6456;
+  --border: #ddd4c3;
+  --accent: #8a5a12;
+  --accent-soft: #f3e4c6;
+  --tame: #2f6b3a;   --tame-bg: #e2f0e1;
+  --train: #28598f;  --train-bg: #e0eaf6;
+  --unk: #7a6a4f;    --unk-bg: #eee7d9;
+  --trait: #6b3f86;  --trait-bg: #efe4f5;
+  --rare: #5d6d7e;   --elite: #a8761c;
+  --shadow: 0 1px 2px rgba(40,30,10,.06), 0 2px 8px rgba(40,30,10,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15130f; --surface: #1f1c17; --surface-2: #29251e; --text: #ece5d8; --muted: #a39984;
+    --border: #3a342a; --accent: #e0a94a; --accent-soft: #3a2e1a;
+    --tame: #8fd49a; --tame-bg: #1f3322; --train: #8db8ea; --train-bg: #1c2a3b;
+    --unk: #c8b690; --unk-bg: #302a1f; --trait: #cfa6ea; --trait-bg: #2e2238;
+    --rare: #b3c1cf; --elite: #e8b75c; --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15130f; --surface: #1f1c17; --surface-2: #29251e; --text: #ece5d8; --muted: #a39984;
+  --border: #3a342a; --accent: #e0a94a; --accent-soft: #3a2e1a;
+  --tame: #8fd49a; --tame-bg: #1f3322; --train: #8db8ea; --train-bg: #1c2a3b;
+  --unk: #c8b690; --unk-bg: #302a1f; --trait: #cfa6ea; --trait-bg: #2e2238;
+  --rare: #b3c1cf; --elite: #e8b75c; --shadow: none;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+header { padding: 28px 0 8px; }
+h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0; }
+
+.controls {
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  display: grid; gap: 8px; grid-template-columns: 1fr;
+}
+@media (min-width: 720px) { .controls { grid-template-columns: 2fr 1fr 1fr auto; align-items: center; } .controls .row2 { grid-column: 1 / -1; } }
+.row2 { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+.row2 select { width: auto; padding: 3px 6px; }
+.srcfilter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.srcfilter button { width: auto; border: 1px solid transparent; cursor: pointer; opacity: .45; }
+.srcfilter button[aria-pressed="true"] { opacity: 1; border-color: currentColor; }
+.srcfilter button .n { opacity: .7; font-weight: 400; }
+.srcfilter[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+input, select, button {
+  font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 0; width: 100%;
+}
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; width: auto; flex: 1; white-space: nowrap; cursor: pointer; background: var(--surface); }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+.note {
+  margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-2);
+  color: var(--muted); font-size: .88rem;
+}
+.note summary { cursor: pointer; color: var(--text); font-weight: 600; }
+.note ul { margin: 6px 0 0; padding-left: 18px; }
+.count { color: var(--muted); font-size: .88rem; margin: 14px 0 8px; }
+
+.grid { display: grid; gap: 12px; grid-template-columns: 1fr; padding-bottom: 32px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; }
+.card > summary::-webkit-details-marker { display: none; }
+.card[open] > summary { border-bottom: 1px solid var(--border); }
+.icon { width: 40px; height: 40px; border-radius: 8px; flex: none; background: var(--surface-2); object-fit: cover; }
+.head { flex: 1; min-width: 0; }
+.title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.title h2 { font-size: 1.05rem; margin: 0; }
+.meta { color: var(--muted); font-size: .85rem; }
+.desc { margin: 4px 0 0; font-size: .92rem; }
+.chev { color: var(--muted); transition: transform .15s; flex: none; margin-top: 8px; }
+.card[open] .chev { transform: rotate(90deg); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chip { font-size: .78rem; padding: 1px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.badge { font-size: .74rem; font-weight: 600; padding: 1px 8px; border-radius: 99px; white-space: nowrap; }
+.b-tame { background: var(--tame-bg); color: var(--tame); }
+.b-trainer { background: var(--train-bg); color: var(--train); }
+.b-unknown { background: var(--unk-bg); color: var(--unk); }
+.b-trait { background: var(--trait-bg); color: var(--trait); }
+
+.body { padding: 4px 14px 14px; }
+.hint { font-size: .85rem; color: var(--muted); margin: 10px 0 4px; }
+.rank { border-top: 1px dashed var(--border); padding: 10px 0; }
+.rank:first-child { border-top: 0; }
+.rank-h { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.rank-h strong { font-size: .95rem; }
+.rank-desc { font-size: .88rem; color: var(--muted); margin: 2px 0 0; }
+.beasts { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .beasts { grid-template-columns: 1fr 1fr; } }
+.beasts li { font-size: .88rem; padding: 4px 8px; background: var(--surface-2); border-radius: 6px; min-width: 0;
+  display: flex; gap: 8px; align-items: flex-start; }
+.beasts .txt { flex: 1; min-width: 0; }
+.beasts .co { font-variant-numeric: tabular-nums; }
+.beasts .co-rare { color: var(--text); font-weight: 600; }
+
+/* Kartenvorschau neben dem Tier */
+.map-thumb { position: relative; flex: none; width: 88px; height: 59px; padding: 0; border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; cursor: zoom-in; background: var(--surface); }
+.map-thumb img { display: block; width: 100%; height: 100%; object-fit: fill; filter: saturate(.8); }
+.map-thumb:hover img { filter: none; }
+.map { position: relative; }
+.pin { position: absolute; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%;
+  background: #ff3b30; box-shadow: 0 0 0 1px rgba(0,0,0,.75); pointer-events: none; }
+.pin.rare { background: #ffd60a; }
+
+/* Vergrößerte Karte */
+#mapview { width: min(1060px, 96vw); max-height: 94vh; padding: 0; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); color: var(--text); }
+#mapview::backdrop { background: rgba(0,0,0,.6); }
+.mv-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; padding: 12px 16px 8px; }
+.mv-head h3 { margin: 0; font-size: 1.05rem; }
+.mv-close { width: auto; padding: 4px 12px; cursor: pointer; }
+.mv-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 16px 8px; }
+.mv-tabs button { width: auto; padding: 3px 10px; font-size: .85rem; border-radius: 99px; cursor: pointer; }
+.mv-tabs button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.mv-body { padding: 0 16px 16px; }
+.mv-body .map { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.mv-body .map img { display: block; width: 100%; height: auto; }
+.mv-body .pin { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; pointer-events: auto; box-shadow: 0 0 0 2px rgba(0,0,0,.8); }
+.mv-coords { font-size: .85rem; color: var(--muted); margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+.mv-coords summary { cursor: pointer; color: var(--text); }
+.mv-nomap { color: var(--muted); font-style: italic; }
+.beasts .lv { font-variant-numeric: tabular-nums; color: var(--muted); }
+.beasts .zone { color: var(--muted); }
+.tag-rare { color: var(--rare); font-weight: 600; font-size: .78rem; }
+.tag-elite { color: var(--elite); font-weight: 600; font-size: .78rem; }
+/* Aufwand beim Zähmen */
+.eff-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+.eff { font-size: .72rem; font-weight: 700; padding: 0 6px; border-radius: 99px; }
+.eff-leicht, .eff-dot.eff-leicht { background: var(--tame-bg); color: var(--tame); }
+.eff-mittel, .eff-dot.eff-mittel { background: #f6e2b8; color: #8a5a12; }
+.eff-schwer, .eff-dot.eff-schwer { background: #f4d5d2; color: #9c2f24; }
+.eff-dot.eff-leicht { background: #2f9e44; } .eff-dot.eff-mittel { background: #e8a13a; } .eff-dot.eff-schwer { background: #d1453b; }
+.star { color: var(--accent); }
+.beasts li[data-best] { outline: 1px solid var(--accent); }
+.rec { background: var(--accent-soft); border-radius: 8px; padding: 10px 12px; margin: 8px 0 4px; font-size: .92rem; line-height: 1.55; }
+.rec .trainers { margin-top: 6px; }
+.rec-why { color: var(--muted); font-size: .85rem; }
+.rec-short { margin: 4px 0 0; font-size: .86rem; color: var(--accent); font-weight: 600; }
+.src { font-size: .7rem; font-weight: 700; padding: 0 5px; border-radius: 4px; margin-left: 2px; vertical-align: 1px; }
+.src-petopia { background: var(--tame-bg); color: var(--tame); }
+.src-kommentar { background: var(--train-bg); color: var(--train); }
+.src-forever { background: var(--unk-bg); color: var(--unk); }
+.beasts li.est { opacity: .8; }
+.est-mark { color: var(--muted); font-weight: 700; }
+.extra, .refs { font-size: .84rem; color: var(--muted); margin: 10px 0 0; }
+.refs a { margin-right: 10px; white-space: nowrap; }
+.trainers { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.trainers li { font-size: .86rem; padding: 3px 8px; background: var(--surface-2); border-radius: 6px; }
+.check { display: flex; align-items: center; gap: 6px; font-size: .88rem; color: var(--muted); white-space: nowrap; }
+.check input { width: auto; }
+.more { margin-top: 6px; width: auto; padding: 4px 10px; font-size: .85rem; cursor: pointer; }
+.none { font-size: .88rem; color: var(--muted); font-style: italic; margin: 4px 0 0; }
+
+.fam-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.fam-list button { width: auto; padding: 3px 10px; font-size: .85rem; border-radius: 99px; cursor: pointer; }
+
+.empty { text-align: center; color: var(--muted); padding: 40px 0; }
+footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-top: 1px solid var(--border); }
+.theme { width: auto; padding: 4px 10px; font-size: .82rem; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Hunter-Pet-Fähigkeiten · WoW Forever</h1>
+    <p class="sub" id="stats"></p>
+  </header>
+
+  <div class="controls" role="search">
+    <input id="q" type="search" placeholder="Suche: Fähigkeit, Tier oder Zone …" aria-label="Suche">
+    <select id="fam" aria-label="Pet-Familie"><option value="">Alle Familien</option></select>
+    <select id="zone" aria-label="Zone"><option value="">Alle Zonen</option></select>
+    <div class="seg" role="group" aria-label="Ansicht">
+      <button id="v-abil" aria-pressed="true">Fähigkeiten</button>
+      <button id="v-fam" aria-pressed="false">Familien</button>
+    </div>
+    <div class="row2">
+      <label class="check"><input type="checkbox" id="conf"> Nur Tiere mit bestätigtem Rang (Petopia / Wowhead-Kommentar)</label>
+      <div class="srcfilter" id="srcfilter" role="group" aria-label="Lernart"><span class="check">Lernart:</span></div>
+      <label class="check">Fraktion für die Empfehlung:
+        <select id="faction" aria-label="Fraktion">
+          <option value="">egal</option><option value="a">Allianz</option><option value="h">Horde</option>
+        </select></label>
+    </div>
+  </div>
+
+  <details class="note">
+    <summary>So sind die Angaben zu lesen</summary>
+    <ul>
+      <li><span class="badge b-tame">Zähmen</span> Du zähmst ein Tier, das die Fähigkeit kennt, lässt es kämpfen, bis du sie gelernt hast, und bringst sie dann per „Wildtierausbildung“ deinem Pet bei. Das kostet Trainingspunkte (TP).</li>
+      <li><span class="badge b-trainer">Pet-Lehrer</span> Diese Fähigkeit lernst du beim Tierausbilder in einer Hauptstadt.</li>
+      <li><span class="badge b-unknown">Quelle unbekannt</span> Das sind neue Forever-Fähigkeiten ohne Classic-Vorbild. Keine Quelle nennt Lehrtiere, wahrscheinlich lernt die Familie sie automatisch.</li>
+      <li><span class="badge b-trait">Eigenschaft</span> Das Angriffstempo übernimmt dein Pet vom gezähmten Tier. Erlernen kann man es nicht.</li>
+      <li>Die Kürzel hinter jedem Tier zeigen die Quelle:
+        <span class="src src-petopia">P</span> Petopia Classic,
+        <span class="src src-kommentar">K</span> Wowhead-Kommentar,
+        <span class="src src-forever">F</span> Wowhead Forever.
+        Bei P und K ist der Rang in der Quelle angegeben. Steht <span class="est-mark">≈</span> vor einem Tier, stammt es nur aus Wowhead Forever. Wowhead ordnet Tiere dort keinem Rang zu, deshalb ist der Rang nach der Tierstufe <strong>geschätzt</strong>.</li>
+      <li>Neben jedem Tier siehst du eine kleine Zonenkarte mit seinen Fundorten. Ein Klick darauf vergrößert sie. Die Koordinaten stehen auch hinter dem Zonennamen, bei Rare-Mobs fett und mit gelben Pins. Karten und Koordinaten stammen aus Wowhead Classic, weil Wowhead Forever noch keine Kartendaten hat.</li>
+      <li><span class="star">★</span> <strong>Empfehlung:</strong> Die Seite schätzt für jedes Tier den Aufwand
+        (<span class="eff eff-leicht">leicht</span> <span class="eff eff-mittel">mittel</span> <span class="eff eff-schwer">schwer</span>) aus Einstufung (normal, Elite, rar),
+        Instanz ja/nein, Zahl der Fundorte, Tierstufe und ob der Rang bestätigt ist. Das leichteste Tier steht je Rang oben und mit ★.
+        Mit der Fraktionsauswahl werden Startgebiete der Gegenfraktion abgewertet. Das ist eine Faustregel: Wie schnell dein Pet die Fähigkeit im Kampf aufschnappt, hängt nicht vom Tier ab.</li>
+      <li>Über die farbigen Schalter „Lernart“ oben blendest du gezielt eine Gruppe ein, zum Beispiel nur die Fähigkeiten vom Tierausbilder. Mehrere zugleich sind möglich.</li>
+      <li>Trainingspunkte, Tierausbilder und Classic-Ränge stammen aus WoW Classic (Petopia bzw. Wowhead-Kommentare). In Forever kann einiges abweichen.</li>
+    </ul>
+  </details>
+
+  <p class="count" id="count" aria-live="polite"></p>
+  <main class="grid" id="list"></main>
+
+  <dialog id="mapview" aria-labelledby="mv-title">
+    <div class="mv-head"><h3 id="mv-title"></h3><button class="mv-close" type="button" id="mv-close">Schließen</button></div>
+    <div class="mv-tabs" id="mv-tabs"></div>
+    <div class="mv-body" id="mv-body"></div>
+  </dialog>
+
+  <footer>
+    <span id="source"></span>
+    · <button class="theme" id="theme" type="button">Hell/Dunkel</button>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.PET_DATA;
+  const WH = 'https://www.wowhead.com/forever/de';
+  const ICON = (n) => `https://wow.zamimg.com/images/wow/icons/medium/${n}.jpg`;
+  const BEAST_PREVIEW = 8;
+  const SOURCE = {
+    tame: ['Zähmen', 'b-tame'],
+    trainer: ['Pet-Lehrer', 'b-trainer'],
+    unknown: ['Quelle unbekannt', 'b-unknown'],
+    trait: ['Eigenschaft', 'b-trait'],
+  };
+  const CLS = { 1: ['Elite', 'tag-elite'], 2: ['Rar-Elite', 'tag-rare'], 3: ['Boss', 'tag-elite'], 4: ['Rar', 'tag-rare'] };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const norm = (s) => String(s || '').toLocaleLowerCase('de');
+  const famById = Object.fromEntries(D.families.map((f) => [f.id, f]));
+  const famName = (id) => famById[id]?.name || `Familie ${id}`;
+  const zoneName = (id) => D.zones[id] || `Zone ${id}`;
+  const img = (icon, alt) => icon
+    ? `<img class="icon" src="${ICON(esc(icon))}" alt="${esc(alt)}" loading="lazy" onerror="this.style.visibility='hidden'">`
+    : '<span class="icon" aria-hidden="true"></span>';
+  const sourceKey = (a) => (a.kind === 'trait' ? 'trait' : a.source);
+  const appliesToAll = (a) => a.kind !== 'family';
+
+  // Fundorte (Wowhead Classic): Zonen mit Koordinaten zu den Zonen des Tiers hinzunehmen
+  // data.js speichert [x*10, y*10, …] flach – hier zurück in [[x, y], …] (Prozent)
+  const COORDS = {};
+  for (const [id, zs] of Object.entries(D.coords || {})) {
+    COORDS[id] = {};
+    for (const [z, f] of Object.entries(zs)) {
+      COORDS[id][z] = Array.from({ length: f.length / 2 }, (_, i) => [f[2 * i] / 10, f[2 * i + 1] / 10]);
+    }
+  }
+  const beastById = {};
+  for (const a of D.abilities) for (const b of a.beasts) {
+    for (const z of Object.keys(COORDS[b.id] || {})) if (!b.zones.includes(+z)) b.zones.push(+z);
+    beastById[b.id] = b;
+  }
+
+  // Voraussuchtext pro Fähigkeit und Tier
+  for (const a of D.abilities) {
+    a._text = norm([a.name, ...a.ranks.map((r) => r.desc), ...a.families.map(famName)].join(' '));
+    for (const b of a.beasts) b._text = norm([b.name, famName(b.family), ...b.zones.map(zoneName)].join(' '));
+  }
+
+  // Filter-Auswahl füllen
+  const famOpts = D.families.map((f) => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  $('fam').insertAdjacentHTML('beforeend', famOpts);
+  const zoneOpts = Object.entries(D.zones).sort((x, y) => x[1].localeCompare(y[1], 'de'))
+    .map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join('');
+  $('zone').insertAdjacentHTML('beforeend', zoneOpts);
+
+  const rankCount = D.abilities.reduce((s, a) => s + a.ranks.length, 0);
+  const beastIds = new Set(D.abilities.flatMap((a) => a.beasts.map((b) => b.id)));
+  $('stats').textContent = `${D.abilities.length} Fähigkeiten · ${rankCount} Ränge · ${D.families.length} Pet-Familien · ${beastIds.size} Lehrtiere · ${D.trainers.length} Tierausbilder`;
+  $('source').innerHTML = 'Daten: ' + D.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(', ') +
+    `, Stand ${new Date(D.generatedAt).toLocaleDateString('de-DE')}. Aktualisieren mit <code>node tools/fetch-data.mjs</code>.`;
+
+  const state = { q: '', fam: '', zone: '', view: 'abil', conf: false, faction: '', srcs: [], open: new Set() };
+  try { Object.assign(state, JSON.parse(localStorage.getItem('petState') || '{}'), { open: new Set() }); } catch {}
+  if (!Array.isArray(state.srcs)) state.srcs = [];
+  const save = () => { try { localStorage.setItem('petState', JSON.stringify({ fam: state.fam, zone: state.zone, view: state.view, conf: state.conf, faction: state.faction, srcs: state.srcs })); } catch {} };
+
+  // Filter-Schalter für die Lernart-Labels (gleiche Farben wie die Labels an den Fähigkeiten)
+  const srcCount = {};
+  for (const a of D.abilities) srcCount[sourceKey(a)] = (srcCount[sourceKey(a)] || 0) + 1;
+  $('srcfilter').insertAdjacentHTML('beforeend', Object.entries(SOURCE)
+    .filter(([k]) => srcCount[k])
+    .map(([k, [label, cls]]) => `<button type="button" class="badge ${cls}" data-src="${k}" aria-pressed="false">${label} <span class="n">${srcCount[k]}</span></button>`)
+    .join(''));
+
+  const SRC = { petopia: ['P', 'Petopia Classic'], kommentar: ['K', 'Wowhead-Kommentar'], forever: ['F', 'Wowhead Forever'] };
+  const fmtSpeed = (s) => String(s).replace('.', ',');
+
+  // ---- Karten & Koordinaten ----
+  const MAP = (size, zone) => `https://wow.zamimg.com/images/wow/classic/maps/dede/${size}/${zone}.jpg`;
+  const THUMB_PINS = 40;
+  const isRare = (b) => b.cls === 2 || b.cls === 4;
+  const fmtC = ([x, y]) => `${x.toFixed(1).replace('.', ',')} / ${y.toFixed(1).replace('.', ',')}`;
+  const lvText = (b) => (b.min == null ? '?' : b.min === b.max || b.max == null ? `${b.min}` : `${b.min}–${b.max}`);
+  // Gleichmäßige Auswahl für die Vorschau
+  const sample = (pts, max) => (pts.length <= max ? pts : Array.from({ length: max }, (_, i) => pts[Math.floor(i * pts.length / max)]));
+  // Möglichst weit auseinanderliegende Punkte (Start: Punkt nahe am Schwerpunkt)
+  function spread(pts, k) {
+    if (pts.length <= k) return pts;
+    const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    const d2 = (p, q) => (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2;
+    const out = [pts.reduce((best, p) => (d2(p, [cx, cy]) < d2(best, [cx, cy]) ? p : best))];
+    while (out.length < k) out.push(pts.reduce((best, p) => (Math.min(...out.map((o) => d2(o, p))) > Math.min(...out.map((o) => d2(o, best))) ? p : best)));
+    return out;
+  }
+  const pins = (pts, rare) => pts.map((p) => `<span class="pin${rare ? ' rare' : ''}" style="left:${p[0]}%;top:${p[1]}%" title="${fmtC(p)}"></span>`).join('');
+
+  function zoneText(b, z) {
+    const pts = COORDS[b.id]?.[z];
+    if (!pts) return esc(zoneName(z));
+    const shown = spread(pts, 3).map(fmtC).join(' · ');
+    const more = pts.length > 3 ? ` + ${pts.length - 3} weitere` : '';
+    return `${esc(zoneName(z))} <span class="co${isRare(b) ? ' co-rare' : ''}">(${shown}${more})</span>`;
+  }
+
+  // ---- Aufwand beim Zähmen (Faustregel, niedriger = leichter) ----
+  const INST = D.instances || {};
+  const FACTION_ZONES = { a: [1, 12, 141, 40, 38, 148, 44, 10, 11], h: [14, 215, 85, 17, 130] };
+  const CLS_EFFORT = { 1: [3, 'Elite'], 2: [5, 'Rar-Elite (selten und stark)'], 3: [6, 'Boss'], 4: [3, 'Rar (lange Wiederkehrzeit)'] };
+  function effort(b, rankLevel) {
+    let s = 0;
+    const why = [];
+    const c = CLS_EFFORT[b.cls];
+    if (c) { s += c[0]; why.push(c[1]); } else why.push('normales Tier');
+    const inst = Math.max(0, ...b.zones.map((z) => INST[z] || 0));
+    if (inst === 2) { s += 3; why.push('im Dungeon'); }
+    else if (inst >= 3) { s += 5; why.push(inst === 3 ? 'im Raid' : 'auf dem Schlachtfeld'); }
+    const n = Object.values(COORDS[b.id] || {}).reduce((t, p) => t + p.length, 0);
+    if (!n) { s += 1.5; why.push('Fundort ohne Koordinaten'); }
+    else if (n < 3) { s += 2; why.push(`nur ${n} Fundort${n > 1 ? 'e' : ''}`); }
+    else { if (n < 10) s += 1; why.push(`${n} Fundorte`); }
+    if (b.est) { s += 2; why.push('Rang nur geschätzt'); } else why.push('Rang bestätigt');
+    s += Math.max(0, (b.max ?? b.min ?? rankLevel) - rankLevel) / 10; // früher zähmbar = leichter
+    const enemy = state.faction ? FACTION_ZONES[state.faction === 'a' ? 'h' : 'a'] : null;
+    if (enemy && b.zones.length && b.zones.every((z) => enemy.includes(z))) { s += 2; why.push('Gebiet der Gegenfraktion'); }
+    return { score: s, level: s <= 1.5 ? 'leicht' : s <= 4 ? 'mittel' : 'schwer', why };
+  }
+  const effBadge = (e) => `<span class="eff eff-${e.level}" title="${esc(e.why.join(' · '))}">${e.level}</span>`;
+
+  function beastLi(b, e, best) {
+    const cls = CLS[b.cls] ? ` <span class="${CLS[b.cls][1]}">${CLS[b.cls][0]}</span>` : '';
+    const dot = e ? `<span class="eff-dot eff-${e.level}" title="Aufwand: ${e.level} – ${esc(e.why.join(' · '))}"></span>` : '';
+    const star = best ? '<span class="star" title="Empfehlung für diesen Rang">★ </span>' : '';
+    const zones = b.zones.length ? b.zones.map((z) => zoneText(b, z)).join(', ') : esc(b.zoneText || 'Zone unbekannt');
+    const src = b.src.map((s) => `<span class="src src-${s}" title="${SRC[s][1]}">${SRC[s][0]}</span>`).join('');
+    const est = b.est ? '<span class="est-mark" title="Rang nach Tierstufe geschätzt">≈ </span>' : '';
+    const mapZone = b.zones.find((z) => COORDS[b.id]?.[z]);
+    const thumb = mapZone == null ? ''
+      : `<button class="map-thumb map" type="button" data-map="${b.id}" data-zone="${mapZone}" title="Karte vergrößern: ${esc(zoneName(mapZone))}">
+          <img src="${MAP('normal', mapZone)}" alt="" loading="lazy" onerror="this.parentNode.remove()">${pins(sample(COORDS[b.id][mapZone], THUMB_PINS), isRare(b))}</button>`;
+    return `<li${b.est ? ' class="est"' : ''}${best ? ' data-best' : ''}><div class="txt">${dot}${star}${est}<a href="${WH}/npc=${b.id}" target="_blank" rel="noopener">${esc(b.name)}</a>${cls}${src}
+      <span class="lv">· Stufe ${lvText(b)}</span> <span class="zone">· ${zones} · ${esc(famName(b.family))}</span></div>${thumb}</li>`;
+  }
+
+  let mvBeast = null; // Tier in der vergrößerten Karte (für die Zonen-Tabs)
+  function openMap(id, zone) {
+    mvBeast = id;
+    const b = beastById[id];
+    const co = COORDS[id] || {};
+    const zs = Object.keys(co).map(Number);
+    const cls = CLS[b.cls] ? ` · ${CLS[b.cls][0]}` : '';
+    $('mv-title').textContent = `${b.name} · Stufe ${lvText(b)}${cls}`;
+    $('mv-tabs').innerHTML = zs.length > 1
+      ? zs.map((z) => `<button type="button" data-mvzone="${z}" aria-pressed="${z === zone}">${esc(zoneName(z))} (${co[z].length})</button>`).join('') : '';
+    const pts = co[zone] || [];
+    const list = pts.map(fmtC).join(' · ');
+    $('mv-body').innerHTML = `
+      <div class="map"><img src="${MAP('original', zone)}" alt="Karte ${esc(zoneName(zone))}"
+        onerror="this.parentNode.outerHTML='<p class=&quot;mv-nomap&quot;>Karte konnte nicht geladen werden.</p>'">${pins(pts, isRare(b))}</div>
+      ${pts.length > (isRare(b) ? 30 : 12)
+        ? `<details class="mv-coords"><summary>${esc(zoneName(zone))}: ${pts.length} Fundorte – Koordinaten anzeigen</summary>${list}</details>`
+        : `<p class="mv-coords"><strong>${esc(zoneName(zone))}:</strong> ${list}</p>`}
+      <p class="mv-coords">Koordinaten aus <a href="https://www.wowhead.com/classic/npc=${id}#map" target="_blank" rel="noopener">Wowhead Classic</a> (Forever hat noch keine eigenen Kartendaten).</p>`;
+    const dlg = $('mapview');
+    if (!dlg.open) dlg.showModal();
+  }
+
+  function beastMatches(b, q) {
+    if (state.conf && b.est) return false;
+    if (state.zone && !b.zones.includes(+state.zone)) return false;
+    return !q || b._text.includes(q);
+  }
+
+  const trainerList = () => `<ul class="trainers">${D.trainers.map((t) =>
+    `<li><a href="${WH}/npc=${t.id}" target="_blank" rel="noopener">${esc(t.name)}</a> · ${esc(t.zones.map(zoneName).join(', '))}</li>`).join('')}</ul>`;
+
+  function abilityCard(a, beasts) {
+    const [label, cls] = SOURCE[sourceKey(a)];
+    const top = a.ranks[a.ranks.length - 1];
+    const fams = a.kind === 'trait' ? '<span class="chip">vom gezähmten Tier abhängig</span>'
+      : appliesToAll(a) ? '<span class="chip">alle Familien</span>'
+      : a.families.map((f) => `<span class="chip">${esc(famName(f))}</span>`).join('');
+    const levels = a.kind === 'trait' ? `Angriffstempo ${fmtSpeed(a.speed)} s`
+      : a.ranks.length > 1 ? `${a.ranks.length} Ränge · Pet-Stufe ${a.ranks[0].level}–${top.level}`
+      : a.ranks[0].level ? `Pet-Stufe ${a.ranks[0].level}` : '';
+
+    const filtered = beasts.length < a.beasts.length;
+    const picks = []; // bestes Tier je Rang, für die Empfehlung oben
+    const ranks = a.ranks.map((r) => {
+      // nach Aufwand sortieren: das am leichtesten erreichbare Tier steht oben
+      const list = beasts.filter((b) => b.rank === r.rank)
+        .map((b) => ({ b, e: effort(b, r.level) })).sort((x, y) => x.e.score - y.e.score);
+      if (a.source === 'tame' && filtered && !list.length) return ''; // bei aktivem Filter leere Ränge ausblenden
+      if (list.length) picks.push({ rank: r, ...list[0] });
+      let learn = '';
+      if (a.source === 'tame') {
+        if (!list.length) learn = '<p class="none">Kein passendes Tier in dieser Auswahl.</p>';
+        else {
+          const key = `${a.name}#${r.rank}`;
+          const all = state.open.has(key);
+          const shown = all ? list : list.slice(0, BEAST_PREVIEW);
+          learn = `<ul class="beasts">${shown.map(({ b, e }, i) => beastLi(b, e, i === 0)).join('')}</ul>` +
+            (list.length > BEAST_PREVIEW
+              ? `<button class="more" data-more="${esc(key)}">${all ? 'Weniger anzeigen' : `Alle ${list.length} Tiere anzeigen`}</button>` : '');
+        }
+      }
+      const rankLabel = a.kind === 'trait' ? `Tempo ${fmtSpeed(a.speed)} s` : r.rank ? `Rang ${r.rank}` : 'Wert';
+      const conf = list.filter(({ b }) => !b.est).length;
+      const count = a.source !== 'tame' ? ''
+        : `${list.length} Tier${list.length === 1 ? '' : 'e'}${conf && conf < list.length ? ` (${conf} bestätigt)` : ''}`;
+      return `<div class="rank">
+        <div class="rank-h"><strong><a href="${WH}/spell=${r.id}" target="_blank" rel="noopener">${rankLabel}</a></strong>
+          ${r.level && a.kind !== 'trait' ? `<span class="meta">ab Pet-Stufe ${r.level}</span>` : ''}
+          ${r.tp != null ? `<span class="meta">${r.tp} TP</span>` : ''}
+          ${count ? `<span class="meta">${count}</span>` : ''}</div>
+        ${r.desc ? `<p class="rank-desc">${esc(r.desc)}</p>` : ''}
+        ${learn}</div>`;
+    }).join('');
+
+    const hint = {
+      tame: a.kind === 'trait'
+        ? `Dein Pet übernimmt das Angriffstempo des Tiers, das du zähmst (so war es in Classic). Diese Tiere greifen laut Petopia Classic alle ${fmtSpeed(a.speed)} s an, normal sind 2,0 s:`
+        : 'Zähmbare Tiere, die die Fähigkeit kennen, sortiert nach Rang:',
+      trainer: `Lernst du beim Tierausbilder${a.classicTrainer ? ' (in Classic laut Petopia)' : ' (in Classic so, für Forever nicht bestätigt)'}.`,
+      unknown: 'Neue Forever-Fähigkeit ohne Classic-Vorbild. Weder Wowhead noch Petopia nennen Lehrtiere, wahrscheinlich lernt die Familie sie automatisch mit steigender Stufe.',
+    }[a.source];
+    // Empfehlung: höchster erreichbarer Rang, dazu der Einstieg, falls das ein anderes Tier ist
+    const tip = (p) => {
+      const z = p.b.zones.find((zz) => COORDS[p.b.id]?.[zz]) ?? p.b.zones[0];
+      const rank = a.kind === 'trait' ? '' : `Rang ${p.rank.rank} von `;
+      return `${rank}<a href="${WH}/npc=${p.b.id}" target="_blank" rel="noopener">${esc(p.b.name)}</a> · Stufe ${lvText(p.b)} · `
+        + (z == null ? esc(p.b.zoneText || 'Zone unbekannt') : zoneText(p.b, z))
+        + ` ${effBadge(p.e)} <span class="rec-why">${esc(p.e.why.join(' · '))}</span>`;
+    };
+    let rec = '', recShort = '';
+    if (a.source === 'trainer') {
+      rec = `<strong>★ Am leichtesten:</strong> beim Tierausbilder – nur Stufe und Gold nötig, kein Zähmen, kein Zufall.${trainerList()}`;
+      recShort = '★ Am leichtesten: beim Tierausbilder';
+    } else if (a.source === 'unknown') {
+      rec = '<strong>★ Nichts zu tun:</strong> Die Familie lernt diese Fähigkeit sehr wahrscheinlich von selbst.';
+      recShort = '★ Vermutlich automatisch';
+    } else if (picks.length) {
+      const best = picks[picks.length - 1];                   // höchster Rang
+      const easiest = picks.reduce((x, y) => (y.e.score < x.e.score ? y : x));
+      rec = `<strong>★ Am leichtesten:</strong> ${tip(best)}`;
+      if (easiest !== best && easiest.b !== best.b) rec += `<br><strong>Geringster Aufwand insgesamt:</strong> ${tip(easiest)}`;
+      recShort = `★ ${a.kind === 'trait' ? '' : `Rang ${best.rank.rank}: `}${best.b.name} (${best.b.zones.map(zoneName)[0] || best.b.zoneText || '?'}) · ${best.e.level}`;
+    }
+    const recBox = rec ? `<div class="rec">${rec}</div>` : '';
+
+    const extra = a.classicExtra.length
+      ? `<p class="extra">In Classic gab es zusätzlich ${a.classicExtra.map((x) => `Rang ${x.rank} (Pet-Stufe ${x.level}, ${x.tp} TP)`).join(', ')}. In Forever listet Wowhead diesen Rang nicht.</p>` : '';
+    const refs = a.refs.length
+      ? `<p class="refs">Quellen: ${a.refs.map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)}</a>`).join('')}</p>` : '';
+
+    const isOpen = state.open.has(a.name);
+    return `<details class="card" data-name="${esc(a.name)}"${isOpen ? ' open' : ''}>
+      <summary>
+        ${img(a.icon, a.name)}
+        <div class="head">
+          <div class="title"><h2>${esc(a.name)}</h2><span class="badge ${cls}">${label}</span>
+            <span class="meta">${levels}</span></div>
+          ${top.desc ? `<p class="desc">${esc(top.desc)}</p>` : ''}
+          ${recShort ? `<p class="rec-short">${esc(recShort)}</p>` : ''}
+          <div class="chips">${fams}</div>
+        </div>
+        <span class="chev" aria-hidden="true">▶</span>
+      </summary>
+      <div class="body">${recBox}<div class="hint">${hint}</div>${ranks}${extra}${refs}</div>
+    </details>`;
+  }
+
+  function renderAbilities() {
+    const q = norm(state.q.trim());
+    const out = [];
+    for (const a of D.abilities) {
+      if (state.fam && !appliesToAll(a) && !a.families.includes(+state.fam)) continue;
+      if (state.srcs.length && !state.srcs.includes(sourceKey(a))) continue;
+      const nameHit = !q || a._text.includes(q);
+      let beasts = a.beasts.filter((b) => beastMatches(b, nameHit ? '' : q));
+      if (state.zone && !beasts.length) continue;       // Zonenfilter: nur was man dort lernen kann
+      if (!nameHit && !beasts.length) continue;
+      out.push(abilityCard(a, beasts));
+    }
+    $('count').textContent = `${out.length} Fähigkeit${out.length === 1 ? '' : 'en'}` +
+      (state.srcs.length ? ` · ${state.srcs.map((k) => SOURCE[k][0]).join(', ')}` : '') +
+      (state.zone ? ` in ${zoneName(state.zone)} erlernbar` : '');
+    $('list').innerHTML = out.join('') || '<p class="empty">Nichts gefunden. Probier einen anderen Suchbegriff oder Filter.</p>';
+  }
+
+  function renderFamilies() {
+    const q = norm(state.q.trim());
+    const general = D.abilities.filter((a) => a.kind === 'general');
+    const out = D.families
+      .filter((f) => !state.fam || f.id === +state.fam)
+      .map((f) => {
+        const own = D.abilities.filter((a) => a.kind === 'family' && a.families.includes(f.id));
+        return { f, own };
+      })
+      .filter(({ f, own }) => !q || norm(f.name).includes(q) || own.some((a) => a._text.includes(q)))
+      .map(({ f, own }) => {
+        const btn = (a) => `<li><button data-goto="${esc(a.name)}">${esc(a.name)}</button></li>`;
+        return `<article class="card"><div class="body" style="padding-top:12px">
+          <div style="display:flex;gap:12px;align-items:center">${img(f.icon, f.name)}
+            <div class="title"><h2>${esc(f.name)}</h2>
+              <a class="meta" href="${WH}/pet=${f.id}" target="_blank" rel="noopener">auf Wowhead</a></div></div>
+          <p class="hint">Familienfähigkeiten (${own.length}):</p>
+          <ul class="fam-list">${own.map(btn).join('') || '<li class="none">keine bekannt</li>'}</ul>
+          <p class="hint">Dazu die allgemeinen Fähigkeiten: ${general.map((a) => esc(a.name)).join(', ')}.</p>
+        </div></article>`;
+      });
+    $('count').textContent = `${out.length} Familie${out.length === 1 ? '' : 'n'}`;
+    $('list').innerHTML = out.join('') || '<p class="empty">Keine Familie gefunden.</p>';
+  }
+
+  function render() {
+    $('v-abil').setAttribute('aria-pressed', state.view === 'abil');
+    $('v-fam').setAttribute('aria-pressed', state.view === 'fam');
+    $('zone').disabled = state.view === 'fam';
+    $('srcfilter').setAttribute('aria-disabled', state.view === 'fam'); // wirkt nur in der Fähigkeiten-Ansicht
+    for (const b of $('srcfilter').querySelectorAll('[data-src]')) {
+      b.setAttribute('aria-pressed', state.srcs.includes(b.dataset.src));
+    }
+    (state.view === 'fam' ? renderFamilies : renderAbilities)();
+  }
+
+  let t;
+  $('q').addEventListener('input', (e) => { state.q = e.target.value; clearTimeout(t); t = setTimeout(render, 120); });
+  $('fam').addEventListener('change', (e) => { state.fam = e.target.value; save(); render(); });
+  $('zone').addEventListener('change', (e) => { state.zone = e.target.value; save(); render(); });
+  $('conf').addEventListener('change', (e) => { state.conf = e.target.checked; save(); render(); });
+  $('faction').addEventListener('change', (e) => { state.faction = e.target.value; save(); render(); });
+  $('srcfilter').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-src]');
+    if (!b) return;
+    const k = b.dataset.src;
+    state.srcs = state.srcs.includes(k) ? state.srcs.filter((s) => s !== k) : [...state.srcs, k];
+    save(); render();
+  });
+  $('v-abil').addEventListener('click', () => { state.view = 'abil'; save(); render(); });
+  $('v-fam').addEventListener('click', () => { state.view = 'fam'; save(); render(); });
+
+  $('list').addEventListener('toggle', (e) => {
+    const n = e.target.dataset?.name;
+    if (n) e.target.open ? state.open.add(n) : state.open.delete(n);
+  }, true);
+  $('list').addEventListener('click', (e) => {
+    const map = e.target.closest('[data-map]');
+    if (map) { openMap(+map.dataset.map, +map.dataset.zone); return; }
+    const more = e.target.closest('[data-more]');
+    if (more) {
+      const k = more.dataset.more;
+      state.open.has(k) ? state.open.delete(k) : state.open.add(k);
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      return;
+    }
+    const go = e.target.closest('[data-goto]');
+    if (go) {
+      const name = go.dataset.goto;
+      state.view = 'abil'; state.q = ''; $('q').value = ''; state.open.add(name); save(); render();
+      document.querySelector(`.card[data-name="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'start' });
+    }
+  });
+
+  // Vergrößerte Karte: Zonen-Tabs, Schließen-Knopf, Klick auf den Hintergrund
+  $('mv-tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-mvzone]');
+    if (t && mvBeast != null) openMap(mvBeast, +t.dataset.mvzone);
+  });
+  $('mv-close').addEventListener('click', () => $('mapview').close());
+  $('mapview').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+  $('theme').addEventListener('click', () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('petTheme', root.dataset.theme); } catch {}
+  });
+  try { const th = localStorage.getItem('petTheme'); if (th) document.documentElement.dataset.theme = th; } catch {}
+
+  $('fam').value = state.fam; $('zone').value = state.zone; $('conf').checked = !!state.conf; $('faction').value = state.faction || '';
+  if ($('fam').value !== state.fam) state.fam = '';
+  if ($('zone').value !== state.zone) state.zone = '';
+  render();
+})();
+</script>
+</body>
+</html>
