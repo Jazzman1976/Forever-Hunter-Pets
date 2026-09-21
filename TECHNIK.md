@@ -53,10 +53,12 @@ in `localStorage` unter `petTheme` (`index.html:925-927`).
 **Zustand.** Ein Objekt `state` hält Suchbegriff, Familie, Zone, Ansicht, „nur bestätigte
 Ränge“, Fraktion, gewählte Lernarten und die offenen Karten. Dazu kommen die drei Felder der
 Ansichten „Gebiet“ und „Stufe“: `level` (1–60, gilt als Jäger- **und** Pet-Stufe),
-`hideKnown` und `known`. `known` ist `{ Fähigkeitsname: höchster gelernter Rang }` – ein
-Eintrag deckt alle niedrigeren Ränge mit ab, deshalb genügen 40 Zahlen für 159 Ränge.
-Darauf setzen die Helfer `ownedRank()`, `rankStatus()`, `rankDone()`, `rankHidden()` und
-`abilityDone()` auf, die alle vier Ansichten benutzen.
+`hideKnown` und `known`. `known` ist `{ Fähigkeitsname: [gelernte Ränge] }` – jeder Rang
+wird im Spiel einzeln gelernt, ein hoher Rang schließt die niedrigeren also **nicht** ein.
+Darauf setzen die Helfer `ownedRanks()`, `rankStatus()`, `rankDone()`, `rankHidden()` und
+`abilityDone()` auf, die alle vier Ansichten benutzen. Ein älterer Stand, der je Fähigkeit
+nur den höchsten Rang als Zahl speicherte, wird beim Laden einmalig in die Liste aller
+Ränge bis zu dieser Zahl übersetzt.
 Gespeichert wird alles unter `petState` in `localStorage` – bis auf `state.open` (welche Karten
 offen sind) und `state.more` (welche Rang-Tierlisten ganz ausgeklappt sind): beides soll
 bewusst nicht über einen Neustart hinaus gelten. Die zwei sind getrennt, weil seit den
@@ -87,11 +89,13 @@ die Sucheingabe ist trotzdem um 120 ms entprellt. Jeder Fremdtext läuft durch `
 - `pickRow(a, beasts)` wählt diese Zeile: den **höchsten noch offenen Rang**, den du auch
   wirklich holen kannst – `usable(r)` (Pet-Stufe reicht) und, bei `source: 'tame'`, mindestens
   ein Tier mit `tameable(b)` (Tierstufe ≤ deiner Stufe). Zurück kommt ein `kind`:
-  `new` (Fähigkeit fehlt ganz), `upgrade` (du hast einen niedrigeren Rang), `high`
+  `new` (kein Rang der Fähigkeit abgehakt), `upgrade` (ein anderer Rang ist abgehakt), `high`
   (Stufe fehlt noch) oder `known` (nichts mehr offen). Niedrigere, ebenfalls erreichbare
-  Ränge stehen als `lower` daneben und werden als TP-günstigere Alternative erwähnt.
-- `rankStatus()` vergleicht dafür nur gegen `state.known[a.name]`; das Häkchen in der Zeile
-  (`data-known="<Name>#<Rang>"`) setzt diesen Wert, ein Abhaken setzt ihn auf `Rang - 1`.
+  und noch offene Ränge stehen als `lower` daneben und werden als TP-günstigere Alternative
+  erwähnt.
+- `rankStatus()` prüft dafür nur, ob `r.rank` in `state.known[a.name]` steht; das Häkchen in
+  der Zeile (`data-known="<Name>#<Rang>"`) nimmt genau diesen Rang in die Liste auf, ein
+  Abhaken nimmt ihn wieder heraus.
 - `todoItem()` baut die Zeile, `grp()` die aufklappbare Gruppe drumherum. Die Tierzeilen
   darin sind dieselben `beastLi()` wie in den Rang-Karten – deshalb funktionieren
   Kartenvorschau (`data-map`) und „Alle Tiere anzeigen“ (`data-more`) dort ohne Zutun.

@@ -260,9 +260,10 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
         ein Klick zeigt die Lehrtiere dazu. <strong>Familien</strong> zeigt, welche Familie was kann.
         <strong>Gebiet</strong> beantwortet „ich bin neu hier – was kann ich in diesem Gebiet mitnehmen?“,
         <strong>Stufe</strong> beantwortet „ich bin aufgestiegen – was ist jetzt dran und wo steht es?“.</li>
-      <li><strong>Lernstand:</strong> Das Häkchen vor einem Rang heißt „kann mein Pet schon“ und gilt auch für alle niedrigeren Ränge –
-        du brauchst also nur den höchsten. Daraus entsteht in <strong>Gebiet</strong> und <strong>Stufe</strong> die Trennung in
-        <em>neu</em>, <em>Upgrade</em> und <em>erledigt</em>. <strong>Schon Gelerntes ausblenden</strong> wirkt in allen vier Ansichten:
+      <li><strong>Lernstand:</strong> Das Häkchen vor einem Rang heißt „kann mein Pet schon“ und gilt nur für genau diesen Rang.
+        Ränge lernt man unabhängig voneinander: Rang 3 abzuhaken heißt nicht, dass Rang 2 gelernt ist – jeder Rang braucht seinen eigenen Haken.
+        Daraus entsteht in <strong>Gebiet</strong> und <strong>Stufe</strong> die Trennung in
+        <em>neu</em> (noch kein Rang abgehakt), <em>Upgrade</em> (ein anderer Rang ist schon abgehakt) und <em>erledigt</em>. <strong>Schon Gelerntes ausblenden</strong> wirkt in allen vier Ansichten:
         In <strong>Fähigkeiten</strong> verschwinden die abgehakten Ränge, in <strong>Familien</strong> eine Fähigkeit dann, wenn kein Rang mehr offen ist.
         Der Lernstand liegt nur in diesem Browser, nicht in der Datei.</li>
       <li><strong>Filter:</strong> Suche, Familie, Zone und Stufe wirken in allen vier Ansichten.
@@ -371,13 +372,25 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   $('source').innerHTML = 'Daten: ' + D.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(', ') +
     `, Stand ${new Date(D.generatedAt).toLocaleDateString('de-DE')}. Aktualisieren mit <code>node tools/fetch-data.mjs</code>.`;
 
-  // known: { Fähigkeitsname: höchster gelernter Rang } – ein Eintrag deckt alle niedrigeren Ränge mit ab
+  // known: { Fähigkeitsname: [gelernte Ränge] } – jeder Rang wird einzeln gelernt, ein hoher Rang
+  // schließt die niedrigeren nicht ein
   // open: aufgeklappte Karten · more: Ränge, deren volle Tierliste ausgeklappt ist (beides nur für diese Sitzung)
   const state = { q: '', fam: '', zone: '', view: 'abil', conf: false, faction: '', srcs: [], open: new Set(), more: new Set(),
     level: 60, known: {}, hideKnown: true };
   try { Object.assign(state, JSON.parse(localStorage.getItem('petState') || '{}'), { open: new Set(), more: new Set() }); } catch {}
   if (!Array.isArray(state.srcs)) state.srcs = [];
   if (!state.known || typeof state.known !== 'object') state.known = {};
+  // Alter Stand speicherte je Fähigkeit nur den höchsten Rang und meinte alles darunter mit.
+  // Das wird einmalig in die Liste der einzeln gelernten Ränge übersetzt.
+  const allRanks = new Map(D.abilities.map((a) => [a.name, a.ranks.map((r) => r.rank)]));
+  for (const [name, v] of Object.entries(state.known)) {
+    const ranks = allRanks.get(name) || [];
+    const list = Array.isArray(v)
+      ? ranks.filter((n) => v.map(Number).includes(n))
+      : ranks.filter((n) => n <= +v);
+    if (list.length) state.known[name] = [...new Set(list)].sort((x, y) => x - y);
+    else delete state.known[name];
+  }
   state.level = Math.min(60, Math.max(1, Math.round(+state.level || 60)));
   const save = () => { try { localStorage.setItem('petState', JSON.stringify({ fam: state.fam, zone: state.zone, view: state.view, conf: state.conf, faction: state.faction, srcs: state.srcs, level: state.level, known: state.known, hideKnown: state.hideKnown })); } catch {} };
 
@@ -492,8 +505,8 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
   }
 
   // ---- Lernstand (gilt in allen Ansichten) ----
-  const ownedRank = (a) => state.known[a.name] || 0;
-  const rankStatus = (a, r) => (r.rank <= ownedRank(a) ? 'known' : ownedRank(a) ? 'upgrade' : 'new');
+  const ownedRanks = (a) => state.known[a.name] || [];
+  const rankStatus = (a, r) => (ownedRanks(a).includes(r.rank) ? 'known' : ownedRanks(a).length ? 'upgrade' : 'new');
   const learnable = (a) => a.kind !== 'trait';               // Angriffstempo kann man nicht lernen
   const rankDone = (a, r) => learnable(a) && rankStatus(a, r) === 'known';
   const rankHidden = (a, r) => state.hideKnown && rankDone(a, r);
@@ -562,7 +575,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
       ? `<p class="refs">Quellen: ${a.refs.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join('')}</p>` : '';
 
     const tick = learnable(a)
-      ? `<label class="tick" onclick="event.stopPropagation()" title="Abhaken = diesen Rang kann dein Pet schon (gilt auch für alle niedrigeren Ränge)">
+      ? `<label class="tick" onclick="event.stopPropagation()" title="Abhaken = diesen Rang kann dein Pet schon (gilt nur für diesen Rang)">
           <input type="checkbox" data-known="${esc(key)}"${done ? ' checked' : ''} aria-label="${esc(a.name)} ${rankLabel} gelernt"></label>`
       : '<span class="tick" aria-hidden="true"></span>';
     return `<details class="card${done ? ' done' : ''}" data-name="${esc(key)}" data-ability="${esc(a.name)}"${state.open.has(key) ? ' open' : ''}>
@@ -700,7 +713,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
       const top = ready[ready.length - 1];
       const kind = rankStatus(a, top.r);
       return { a, ...top, kind, lower: ready.slice(0, -1).map(({ r }) => r.rank),
-        tag: kind === 'upgrade' ? `<span class="chip">du hast Rang ${ownedRank(a)}</span>` : '' };
+        tag: kind === 'upgrade' ? `<span class="chip">du hast Rang ${ownedRanks(a).join(', ')}</span>` : '' };
     }
     if (open.length) {
       const nxt = open[0];
@@ -724,7 +737,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
       : a.source === 'unknown' ? '<p class="ti-note">Keine Quelle nennt ein Lehrtier. Die Familie lernt das vermutlich von selbst.</p>'
       : '<p class="ti-note">Kein passendes Tier in dieser Auswahl.</p>';
     return `<li${done ? ' class="done"' : ''}>
-      <label class="tick" title="Abhaken = diesen Rang kann dein Pet schon (gilt auch für alle niedrigeren Ränge)">
+      <label class="tick" title="Abhaken = diesen Rang kann dein Pet schon (gilt nur für diesen Rang)">
         <input type="checkbox" data-known="${esc(key)}"${done ? ' checked' : ''} aria-label="${esc(a.name)} Rang ${r.rank} gelernt"></label>
       <div class="ti">
         <div class="ti-head">${img(a.icon, a.name)}<span class="ti-name">${esc(a.name)}</span>
@@ -745,7 +758,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     : '');
 
   const learnedFoot = () => {
-    const n = Object.values(state.known).filter((v) => v > 0).length;
+    const n = Object.values(state.known).filter((v) => v.length).length;
     return `<p class="learned">Lernstand: ${n} Fähigkeit${n === 1 ? '' : 'en'} abgehakt, nur in diesem Browser gespeichert.
       ${n ? '<button type="button" data-reset>Lernstand zurücksetzen</button>' : ''}</p>`;
   };
@@ -793,7 +806,7 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
 
     const out = [
       grp('neu', 'Neu für dich', g.new, true, 'hier zähmbar, noch nicht abgehakt'),
-      grp('upgrade', 'Upgrade', g.upgrade, true, 'höherer Rang als abgehakt'),
+      grp('upgrade', 'Upgrade', g.upgrade, true, 'anderer Rang als die abgehakten'),
       grp('high', 'Noch zu hoch', g.high, false, 'Pet-Stufe oder Tierstufe fehlt'),
       state.hideKnown ? '' : grp('known', 'Hast du schon', g.known, false),
       trainerBlock, traitBlock,
@@ -895,14 +908,15 @@ footer { color: var(--muted); font-size: .82rem; padding: 16px 0 32px; border-to
     const n = e.target.dataset?.name;
     if (n) e.target.open ? state.open.add(n) : state.open.delete(n);
   }, true);
-  // Lernstand: ein Haken merkt den höchsten Rang, alle niedrigeren gelten damit als gelernt
+  // Lernstand: ein Haken merkt genau diesen einen Rang – Ränge lernt man unabhängig voneinander
   $('list').addEventListener('change', (e) => {
     const box = e.target.closest('[data-known]');
     if (!box) return;
     const i = box.dataset.known.lastIndexOf('#');
     const name = box.dataset.known.slice(0, i), rank = +box.dataset.known.slice(i + 1);
-    const lvl = box.checked ? rank : rank - 1;
-    if (lvl > 0) state.known[name] = lvl; else delete state.known[name];
+    const list = new Set(state.known[name] || []);
+    box.checked ? list.add(rank) : list.delete(rank);
+    if (list.size) state.known[name] = [...list].sort((x, y) => x - y); else delete state.known[name];
     const y = window.scrollY; save(); render(); window.scrollTo(0, y);
   });
   $('list').addEventListener('click', (e) => {
