@@ -105,12 +105,13 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
     | Ready | Umsetzungsplan steht, wartet auf Freigabe | Maintainer: Plan freigeben oder ändern |
     | Ready for development | Plan freigegeben, die Arbeit kann beginnen | Claude: umsetzen |
     | In Progress | wird bearbeitet | Claude |
+    | Test failed | Test im Spiel fehlgeschlagen; Befund steht im Issue | Claude: nachbessern oder Diagnose anfragen |
     | Testing | wartet auf den Test im Spiel oder wird getestet | Maintainer: testen, Ergebnis ins Issue |
     | Test passed | getestet, wartet auf den PR | Claude: Commit, Push, PR |
     | In pull request | PR offen, wartet auf Review und Merge | Maintainer: mergen |
     | Done | gemergt und geschlossen | Claude: aufräumen |
 
-    Ohne Freigabe des Maintainers wird weder ein Plan geschrieben (*Approved*) noch umgesetzt (*Ready for development*). Der Umsetzungsplan steht als Kommentar im Issue: was sich ändert und wo, Bewertung nach Mehrwert, Komplexität und Risiko, was geprüft wird und was der Maintainer testen soll. Den Status setzt, wer gerade handelt.
+    Ohne Freigabe des Maintainers wird weder ein Plan geschrieben (*Approved*) noch umgesetzt (*Ready for development*). Der Umsetzungsplan steht als Kommentar im Issue: was sich ändert und wo, Bewertung nach Mehrwert, Komplexität und Risiko, was geprüft wird und was der Maintainer testen soll. Den Status setzt, wer gerade handelt. Soll der Maintainer (wieder) testen, kommt das Issue nach *Testing*, und der Kommentar beschreibt **Schritt für Schritt**, was er tun soll – vom `/reload` über jeden Klick bis zu dem, was er zurückmelden soll.
   - **Issue:** Jede Änderung hat ein GitHub-Issue. Gibt es keins, wird eins angelegt.
   - **Branch:** `feature/<Nr>-<issue-titel-als-slug>`, Titel klein, Wörter mit Bindestrich, etwa `feature/3-tiernamen-in-der-sprache-des-clients`, Umlaute als ae, oe, ue, ss. Gemeint ist das Muster „[Issue-Nummer] [Issue-Name]“; Git erlaubt in Branch-Namen weder Leerzeichen noch eckige Klammern.
   - **Commits:** `#<Nr> <Issue-Titel> => <was im Commit passiert ist>`, etwa `#3 Tiernamen in der Sprache des Clients => Namen aus der Sichtung vor den Daten`. Bei einem englischen Issue bleibt der Titel englisch, der Teil nach `=>` ist deutsch wie alle Commit-Meldungen.
