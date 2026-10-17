@@ -80,7 +80,9 @@ Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüch
 node tools/package.mjs            # ZIP nach .pkgmeta in .ignore/dist/, Ordner Forever-Hunter-Pets/, Version aus dem TOC
 ```
 
-Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausnimmt, und ohne Punkt-Dateien – im Stand der Arbeitskopie. Es geht an Tester und beim ersten Mal von Hand zu CurseForge.
+Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausnimmt, und ohne Punkt-Dateien – im Stand der Arbeitskopie. Es geht an Tester; 0.8.0 ging so von Hand zu CurseForge.
+
+**Veröffentlichen** übernimmt seit 0.8.0 die GitHub Action `.github/workflows/release.yml` (BigWigs-Packager): Jedes gepushte Tag `v*` wird gepackt und nach CurseForge hochgeladen (Projekt-ID aus `## X-Curse-Project-ID` im TOC) und als GitHub-Release mit ZIP angelegt. Den Typ bestimmt der Tag-Name: `-beta` → Beta, `-alpha` → Alpha, sonst Release. Changelog ist `CHANGELOG.md` (englisch, `manual-changelog` in `.pkgmeta`), vor jedem Release oben um die neue Version ergänzen. Das CurseForge-API-Token liegt als Secret `CF_API_KEY` im Repo. Von Hand gestartet (Actions → Release → Run workflow) baut die Action nur probeweise, ohne Upload, und hängt das ZIP an den Lauf.
 
 ## Ablauf
 
@@ -92,6 +94,7 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
   - `main` enthält nur veröffentlichte Stände.
   - **Geschützt** (Ruleset „Protect develop and main“ auf GitHub, 17.10.2026): `develop` und `main` lassen sich nicht löschen und nicht per Force-Push überschreiben; Änderungen kommen nur per Pull Request mit einer Freigabe hinein. Ausgenommen ist die Rolle „Repository admin“ – der Maintainer pusht und mergt weiter direkt (GitHub meldet das als „Bypassed rule violations“).
   - **Vorerst:** Bis zur ersten Produktivversion (Entscheidung des Nutzers, 17.10.2026) gibt es **keinen Release-Branch**: Ein Release erhöht die Version im TOC direkt auf `develop` und wird von dort mit `--no-ff` nach `main` gemergt, Tag `v<version>` auf `main`. Getestet wird ohnehin laufend; Release-Branches kommen, sobald es eine richtige Produktivversion gibt.
+  - **Tags vor 1.0.0 sind Betas** (Nutzer, 17.10.2026): `v<version>-beta`, etwa `v0.9.0-beta`; die Version im TOC bleibt `0.9.0`. Ab `v1.0.0` ohne Zusatz. Der Zusatz steuert den Typ auf CurseForge (siehe „Veröffentlichen“). `v0.8.0` stammt von vor dieser Regel.
 - **Inkremente:** ein Schritt nach dem anderen, jeder im Spiel prüfbar. Committet wird, nachdem der Schritt im Spiel getestet ist.
 - **Größere Vorhaben, Pläne und Änderungswünsche** werden als Issues auf GitHub geführt.
 - **Version:** `## Version` in `Forever-Hunter-Pets.toc`. Auf `develop` und in Feature-Branches bleibt dort die Nummer des letzten Releases stehen; erhöht wird sie **erst im Branch `release/<version>`**, als Teil des Releases. So entsteht keine Nummer, die nie veröffentlicht wird (0.4.0 wurde so übersprungen, entschieden am 14.10.2026).

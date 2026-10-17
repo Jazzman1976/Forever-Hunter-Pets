@@ -1,5 +1,10 @@
 package-as: Forever-Hunter-Pets
 
+# Changelog für CurseForge und das GitHub-Release (.github/workflows/release.yml)
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
 # Nur das Addon geht ins CurseForge-Paket; Werkzeuge und Doku bleiben im Repo.
 ignore:
   - tools
