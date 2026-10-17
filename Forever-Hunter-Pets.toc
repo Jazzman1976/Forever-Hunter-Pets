@@ -6,6 +6,7 @@
 ## Version: 0.7.0
 ## X-License: MIT
 ## X-Website: https://github.com/Jazzman1976/Forever-Hunter-Pets
+## X-Curse-Project-ID: 1750003
 ## SavedVariables: ForeverHunterPetsDB
 ## SavedVariablesPerCharacter: ForeverHunterPetsCharDB
 ## IconTexture: Interface\Icons\Ability_Physical_Taunt
