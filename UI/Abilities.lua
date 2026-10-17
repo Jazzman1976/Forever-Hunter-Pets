@@ -13,7 +13,7 @@ local BEAST_H = 36
 local EFFORT_COLOR = { easy = { 0.62, 0.83, 0.37 }, medium = { 1, 0.82, 0 }, hard = { 1, 0.45, 0.35 } }
 local CLS_LABEL = { [1] = "Elite", [2] = "Rare elite", [3] = "Boss", [4] = "Rare" }
 local MAX_OPEN = 8   -- „? unentdecktes Tier“-Zeilen höchstens, dann „und n weitere“
-local CONF_HEAD = { [2] = "Uncertain – reported by fewer than 10 other players", [3] = "Unproven – estimated, not seen yet" }
+local CONF_HEAD = { [2] = "Uncertain – reported by fewer than 3 other players", [3] = "Unproven – estimated, not seen yet" }
 
 local function zonesText(id, b)
   local zones = ns.BeastZones(id)

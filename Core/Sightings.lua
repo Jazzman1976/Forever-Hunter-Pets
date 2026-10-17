@@ -132,9 +132,9 @@ end
 -- ---- Teilen: gesammelt, sparsam ----
 -- Der verborgene Kanal soll nicht volllaufen. Geteilt wird nur, was nötig ist: nicht, was die Daten
 -- kennen; nicht, wenn schon FOREIGN_ENOUGH Melder das Tier gemeldet haben (mehr braucht die Regel
--- „ab 10 Meldern“ nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
+-- „ab 3 Meldern“ in Core/Observe.lua nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
 -- Gesammelt wird höchstens alle SHARE_EVERY Sekunden verschickt, je Runde höchstens SHARE_MAX.
-local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE, FOREIGN_ENOUGH = 300, 20, 200, 10
+local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE, FOREIGN_ENOUGH = 300, 20, 200, 3
 local shareQueue, shareTimer, shared = {}, false, {}   -- shared[npc] = { min, max } dieser Sitzung
 
 local function repCount(npc)

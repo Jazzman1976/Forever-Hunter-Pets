@@ -146,9 +146,9 @@ ns.Locales.deDE = {
   -- Belegung der Lehrtiere
   ["Show uncertain beasts"] = "Unsichere Angaben zeigen",
   ["Show unproven beasts"] = "Unbelegte Angaben zeigen",
-  ["Also lists beasts that fewer than 10 other players have reported so far. In all views and in the tooltip they are marked with “?”."] = "Zeigt auch Tiere, die bisher weniger als 10 andere Spieler gemeldet haben. In allen Ansichten und im Tooltip sind sie mit „?“ gekennzeichnet.",
+  ["Also lists beasts that fewer than 3 other players have reported so far. In all views and in the tooltip they are marked with “?”."] = "Zeigt auch Tiere, die bisher weniger als 3 andere Spieler gemeldet haben. In allen Ansichten und im Tooltip sind sie mit „?“ gekennzeichnet.",
   ["Also lists beasts that are only estimated and have not been seen yet. In all views and in the tooltip they are marked with “!”."] = "Zeigt auch Tiere, die nur geschätzt und noch nicht im Spiel gesehen sind. In allen Ansichten und im Tooltip sind sie mit „!“ gekennzeichnet.",
-  ["Uncertain – reported by fewer than 10 other players"] = "Unsicher – von weniger als 10 anderen Spielern gemeldet",
+  ["Uncertain – reported by fewer than 3 other players"] = "Unsicher – von weniger als 3 anderen Spielern gemeldet",
   ["Unproven – estimated, not seen yet"] = "Unbelegt – geschätzt, noch nicht gesehen",
   ["seen in the game"] = "im Spiel gesehen",
   ["reported by only a few players"] = "erst von wenigen Spielern gemeldet",
@@ -162,7 +162,7 @@ ns.Locales.deDE = {
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel
   ["Share observations"] = "Beobachtungen teilen",
-  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 10 different players saw the same. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und ein verborgener Kanal). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald 10 verschiedene Spieler dasselbe gesehen haben. Ausgeschaltet wird nichts gesendet oder empfangen.",
+  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und ein verborgener Kanal). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald 3 verschiedene Spieler dasselbe gesehen haben. Ausgeschaltet wird nichts gesendet oder empfangen.",
   -- Lehrtiere nach Jägerstufe
   ["Tameable at your level (%d)"] = "Zähmbar auf deiner Stufe (%d)",
   ["Above your level (%d)"] = "Erst ab höherer Stufe (%d)",

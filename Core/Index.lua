@@ -290,8 +290,8 @@ local function enemyZones()
 end
 
 -- ---- Belegung der Lehrtiere: 1 belegt, 2 unsicher, 3 unbelegt (drittes Feld in a.teach) ----
--- belegt: im Spiel gesehen, bei einer eigenen Zähmung oder von mindestens 10 anderen Spielern gemeldet;
--- unsicher: bisher von weniger als 10 anderen Spielern gemeldet; unbelegt: nur geschätzt, noch nicht gesehen
+-- belegt: im Spiel gesehen, bei einer eigenen Zähmung oder von mindestens 3 anderen Spielern gemeldet;
+-- unsicher: bisher von weniger als 3 anderen Spielern gemeldet; unbelegt: nur geschätzt, noch nicht gesehen
 -- (siehe Plan „Lehrtiere schätzen“, bisher gibt es keine).
 -- Was nicht belegt ist, zeigt das Addon nur auf Wunsch (Einstellungen) und dann mit „?“ bzw. „!“.
 -- Widerlegt (4): Eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte. Die Fähigkeiten hängen an

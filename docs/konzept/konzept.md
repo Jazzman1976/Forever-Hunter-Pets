@@ -74,7 +74,7 @@ Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `
 SavedVariables ──tools/import-observations.mjs──> tools/eigene/*.json ──build-data.mjs──> tools/data.json ──build-addon.mjs──> Data/Data.lua
 ```
 
-Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden nicht ausgeliefert, weil je Zelle kein Melder gespeichert ist und die Regel „ab 10 Meldern“ sich nicht prüfen ließe.
+Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden je Melder gespeichert und wie Zähmungen und Sichtungen ab 3 Meldern ausgeliefert (#2).
 
 ### Zur Laufzeit: Daten und eigene Funde zusammen
 
@@ -170,15 +170,15 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 | Stufe | Bedeutung | Anzeige |
 | --- | --- | --- |
-| belegt | eigene Zähmung, oder mindestens 10 verschiedene fremde Melder, oder ein Befund „bestätigt“ | normal |
-| unsicher | weniger als 10 fremde Melder | aus; einschaltbar, Zeichen „?“ |
+| belegt | eigene Zähmung, oder mindestens 3 verschiedene fremde Melder, oder ein Befund „bestätigt“ | normal |
+| unsicher | weniger als 3 fremde Melder | aus; einschaltbar, Zeichen „?“ |
 | unbelegt | nur geschätzt (noch keine Schätzungen, Schalter fehlt) | aus; Zeichen „!“ |
 | widerlegt | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte | nie |
 
 - **Eigene Zähmungen sind Beweis**, gesehen wie nicht gesehen, und gehen allem Fremden vor. Unter Fremden geht gesehen vor widerlegt.
 - **Die Fähigkeiten hängen an der NPC-ID**, nur der Rang an der Stufe. Darum widerlegt eine Zähmung ein Paar endgültig – und darum gibt es **keine Wahrscheinlichkeiten**: Was ein Tier mitbringt, ist kein Zufall. Widersprechen sich Zähmungen derselben NPC-ID, meldet der Generator das; dann wackelt die Annahme.
 - **Das Zauberbuch zeigt nur den höchsten Rang:** Ein höherer Rang widerlegt keinen niedrigeren.
-- **10 Melder** statt anfangs zwei, weil mit mehr als drei Spielern zu rechnen ist; feinjustiert wird in M5.
+- **3 Melder** (17.10.2026, M5, #1): anfangs zwei, dann 10; mit einer Gilde als Spielerschaft wurde 10 kaum erreicht. Drei unabhängige Spieler sind für Spieldaten ein guter Beleg; anheben, wenn es viele Spieler gibt.
 
 ## 11 Lernstand
 

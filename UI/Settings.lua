@@ -178,7 +178,7 @@ local function registerSettings()
     Settings.CreateCheckbox(category, s, text)
   end
   conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain beasts"],
-    L["Also lists beasts that fewer than 10 other players have reported so far. In all views and in the tooltip they are marked with “?”."])
+    L["Also lists beasts that fewer than 3 other players have reported so far. In all views and in the tooltip they are marked with “?”."])
   -- unbelegt heißt geschätzt; solange die Daten keine Schätzung enthalten, fehlt der Schalter
   if ns.HasUnproven() then
     conf("ForeverHunterPets_ShowUnproven", "showUnproven", L["Show unproven beasts"],
@@ -194,7 +194,7 @@ local function registerSettings()
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
   Settings.CreateCheckbox(category, share,
-    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 10 different players saw the same. Switched off, nothing is sent or received."])
+    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Switched off, nothing is sent or received."])
   Settings.RegisterAddOnCategory(category)
   ns.settingsCategory = category
 end
