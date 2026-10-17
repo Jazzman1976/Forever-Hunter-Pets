@@ -1,0 +1,507 @@
+-- Forever Hunter Pets · Beobachtungen im Spiel teilen. Addons kommen nicht ins Internet; die Daten
+-- wandern als Addon-Nachrichten zwischen Spielern, die gleichzeitig online sind: über Gilde, Gruppe
+-- und einen verborgenen Kanal. Abschaltbar in den Einstellungen („Beobachtungen teilen“).
+--
+-- Nachrichten (Prefix FHPets, höchstens 255 Byte):
+--   O1;npc;stufe;zauberIDs;tempo;zeit;melder   eine Beobachtung, wie in ForeverHunterPetsDB.obs
+--   S1;npc;stufe;einstufung;familie;sprache;name;zeit;melder[;tempo]
+--                                              eine Sichtung, wie in ForeverHunterPetsDB.sights; gesendet
+--                                              nur, was die mitgelieferten Daten nicht kennen
+--   F1;npc;uiMapID;zellen;melder               neue eigene Fundort-Zellen (Core/Places.lua), gebündelt
+--                                              höchstens alle 5 Minuten, bis zu 100 Zellen
+--   H1;version;anzahl                          Gruß nach dem Einloggen; Antwort: einige Beobachtungen
+--                                              per Flüstern an den, der gegrüßt hat
+-- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
+-- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Spieler etwas gesehen haben.
+local _, ns = ...
+local D = ns.Data
+
+local PREFIX = "FHPets"
+local CHANNEL = "FHPetsNet"
+local INTERVAL = 2.0          -- Sekunden zwischen zwei Nachrichten (Blizzard drosselt bei etwa 1/s)
+local MAX_QUEUE = 80
+local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
+local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
+local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
+local MAX_STORED = 5000
+local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
+
+local queue, busy = {}, false
+-- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
+-- Je Art (O1 Zähmung, S1 Sichtung, F1 Zellen, H1 Gruß): gesendet, empfangen, davon neu gespeichert, und warum
+-- verworfen. Liegt auch in ForeverHunterPetsDB.shareStats, damit ein Test nach /reload nachlesbar bleibt.
+local KINDS = { "O1", "S1", "F1", "H1" }
+local stats = { sent = {}, recv = {}, new = {}, dropped = {}, last = nil, since = nil }
+local function count(t, k, n) t[k] = (t[k] or 0) + (n or 1) end
+local perSender, greeted = {}, {}
+local selfName, selfRep
+local registered = false
+
+-- ---- Melder-Kürzel ----
+local function hash(s)
+  local h = 5381
+  for i = 1, #s do h = (h * 33 + s:byte(i)) % 4294967296 end
+  return ("%08x"):format(h)
+end
+ns.ReporterHash = hash
+
+local function me()
+  if selfName then return selfName, selfRep end
+  local ok, name, realm = pcall(UnitFullName, "player")
+  name, realm = ok and ns.clean(name), ok and ns.clean(realm)
+  if type(name) ~= "string" then return nil end
+  if type(realm) ~= "string" or realm == "" then
+    local ok2, r = pcall(GetNormalizedRealmName)
+    realm = ok2 and ns.clean(r) or ""
+  end
+  selfName = name .. "-" .. realm
+  selfRep = hash(selfName)
+  return selfName, selfRep
+end
+
+-- Kürzel des eingeloggten Charakters; eigene Beobachtungen tragen es von Anfang an
+function ns.MyRep()
+  local _, rep = me()
+  return rep
+end
+
+-- Die Kürzel aller eigenen Charaktere merkt sich das Konto (ForeverHunterPetsDB.myReps): Beobachtungen
+-- damit sind eigene, auch wenn sie später über andere Spieler zurückkommen. Ältere eigene Einträge ohne
+-- Kürzel (bis zum Teilen im Spiel) bekommen das des Charakters, mit dem man sich einloggt.
+local function claimOwn()
+  local rep = ns.MyRep()
+  if not (rep and ns.db) then return end
+  ns.db.myReps = ns.db.myReps or {}
+  ns.db.myReps[rep] = true
+  local changed = false
+  for i, s in ipairs(ns.db.obs or {}) do
+    if type(s) == "string" and s:sub(-1) == ";" then ns.db.obs[i] = s .. rep; changed = true end
+  end
+  if changed then ns.ObservationsChanged() end
+end
+
+local function enabled()
+  return ns.db and ns.db.ui and ns.db.ui.share and true or false
+end
+
+-- In Kampf und Instanz bleibt alles liegen: geheime Werte, und Addon-Nachrichten sind dort gesperrt
+local function quiet()
+  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
+  if IsInInstance then
+    local ok, inside = pcall(IsInInstance)
+    if ok and ns.clean(inside) then return true end
+  end
+  return false
+end
+
+-- ---- Senden mit Drosselung ----
+local function channelIndex()
+  if not GetChannelName then return nil end
+  local ok, id = pcall(GetChannelName, CHANNEL)
+  id = ok and tonumber(ns.clean(id)) or 0
+  return id > 0 and id or nil
+end
+
+local R = (Enum and Enum.SendAddonMessageResult) or {}
+local THROTTLED = { [R.AddonMessageThrottle or 3] = true, [R.ChannelThrottle or 8] = true }
+
+-- Liefert, ob die Nachricht erledigt ist (gesendet oder verworfen), und was der Client sagte
+local function sendNow(msg, kind, target)
+  if not (C_ChatInfo and C_ChatInfo.SendAddonMessage) then return true, "keine SendAddonMessage" end
+  local ok, res = pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, kind, target)
+  if not ok then return true, "Fehler: " .. tostring(res) end   -- verwerfen, nicht endlos wiederholen
+  res = ns.clean(res)
+  if type(res) == "number" and THROTTLED[res] then return false, "gedrosselt (" .. res .. ")" end
+  return true, "Ergebnis " .. tostring(res)
+end
+
+local pump
+pump = function()
+  if #queue == 0 then busy = false; return end
+  busy = true
+  if enabled() and not quiet() then
+    local item = queue[1]
+    local done, what = sendNow(item.msg, item.kind, item.target)
+    if item.onSent then item.onSent(what) end
+    if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
+    if done then table.remove(queue, 1) end
+  end
+  ns.After(INTERVAL, pump)
+end
+
+local function enqueue(msg, kind, target, onSent)
+  if #msg > 250 or #queue >= MAX_QUEUE then return end
+  queue[#queue + 1] = { msg = msg, kind = kind, target = target, onSent = onSent }
+  if not busy then pump() end
+end
+
+-- an alle Wege, die gerade offen sind
+local function broadcast(msg)
+  if IsInGuild and ns.clean(IsInGuild()) then enqueue(msg, "GUILD") end
+  if IsInRaid and ns.clean(IsInRaid()) then enqueue(msg, "RAID")
+  elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(msg, "PARTY") end
+  local ch = channelIndex()
+  if ch then enqueue(msg, "CHANNEL", ch) end
+end
+
+-- eigene Beobachtungen tragen beim Versand das eigene Kürzel, fremde behalten ihres
+local function outgoing(s)
+  if type(s) ~= "string" then return nil end
+  if s:sub(-1) == ";" then
+    local _, rep = me()
+    if not rep then return nil end
+    return "O1;" .. s .. rep
+  end
+  return "O1;" .. s
+end
+
+function ns.ShareOwn(s)
+  if not enabled() then return end
+  local msg = outgoing(s)
+  if msg then broadcast(msg) end
+end
+
+-- ---- Empfangen und prüfen ----
+local validSpell
+ns.OnAbilitiesChanged(function() validSpell = nil end)
+local function spellOk(id)
+  if not validSpell then
+    validSpell = {}
+    for _, a in ipairs(D.abilities) do
+      for _, r in ipairs(a.ranks) do validSpell[r.id] = true end
+    end
+  end
+  return validSpell[id]
+end
+
+-- Nur, was eine echte Zähmung ergeben kann: Stufe 1–63, bekannte Pet-Zauber, plausibles Tempo und
+-- eine Zeit zwischen September 2026 und morgen. Alles andere wird still verworfen.
+local function valid(s)
+  local o = ns.ParseObservation(s)
+  if not o or o.own or #o.rep ~= 8 then return false end
+  if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false end
+  for id in pairs(o.spells) do
+    -- ein Zauber, den hier noch niemand kennt: zählen, damit man es im Test sieht
+    if not spellOk(id) then return false, "unbekannter Zauber" end
+  end
+  if o.speed and (o.speed < 0.5 or o.speed > 4) then return false end
+  local now = time and time() or 0
+  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false end
+  return true
+end
+
+local function receiveObservation(body, sender)
+  local _, rep = me()
+  local s = body:sub(4)                    -- ohne „O1;“
+  local ok, why = valid(s)
+  if not ok then return false, why or "ungültig" end
+  if rep and s:sub(-8) == rep then return false, "eigene" end   -- die eigene, zurückgeschickt
+  perSender[sender] = (perSender[sender] or 0) + 1
+  if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
+  if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
+  if not ns.AddObservation(s) then return false, "schon bekannt" end
+  ns.receivedNew = (ns.receivedNew or 0) + 1
+  if not ns.refreshPending then
+    ns.refreshPending = true
+    ns.After(5, function()
+      ns.refreshPending = false
+      ns.ObservationsChanged()
+    end)
+  end
+  return true
+end
+
+-- ---- Fundort-Zellen (Core/Places.lua) ----
+function ns.ShareCells(npc, map, cells)
+  local _, rep = me()
+  if enabled() and rep then broadcast(("F1;%d;%d;%s;%s"):format(npc, map, cells, rep)) end
+end
+
+-- Nur gültige Zellen bekannter Form, höchstens ein Bündel je Nachricht und PER_SENDER Nachrichten
+local cellsPerSender = {}
+local function receiveCells(body, sender)
+  local _, myRep = me()
+  local npc, map, cells, rep = body:match("^F1;(%d+);(%d+);([%w]+);(%x+)$")
+  npc, map = tonumber(npc), tonumber(map)
+  if not (npc and map and rep) or #rep ~= 8 or rep == myRep then return false, "ungültig" end
+  if ns.db and ns.db.myReps and ns.db.myReps[rep] then return false, "eigene" end
+  if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "ungültig" end
+  if not ns.ValidCells(cells) then return false, "ungültig" end
+  cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
+  if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
+  if (ns.AddCells(npc, map, cells, true) or 0) == 0 then return false, "schon bekannt" end
+  return true
+end
+
+-- ---- Sichtungen (Core/Sightings.lua) ----
+function ns.ShareSighting(s)
+  if enabled() and type(s) == "string" then broadcast("S1;" .. s) end
+end
+
+-- Nur, was ein Anvisieren ergeben kann: Stufe 1–63, Einstufung 0–4, eine Familie, eine bekannte
+-- Client-Sprache, ein Name ohne Steuerzeichen und eine plausible Zeit
+local sightPerSender = {}
+local function receiveSighting(body, sender)
+  local _, rep = me()
+  local s = body:sub(4)                    -- ohne „S1;“
+  local o = ns.ParseSighting(s)
+  if not o or o.own or #o.rep ~= 8 or (rep and o.rep == rep) then return false, "eigene oder ungültig" end
+  if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "ungültig" end
+  if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "ungültig" end
+  if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "ungültig" end
+  local now = time and time() or 0
+  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
+  sightPerSender[sender] = (sightPerSender[sender] or 0) + 1
+  if sightPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
+  if not ns.AddSighting(s) then return false, "schon bekannt" end
+  return true
+end
+
+-- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
+-- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen.
+local function reply(sender, target)
+  if greeted[sender] then return end
+  greeted[sender] = true
+  target = target or sender
+  local _, rep = me()
+  if rep and ns.OwnCellBundles then
+    for _, b in ipairs(ns.OwnCellBundles(CELL_REPLY)) do
+      enqueue(("F1;%d;%d;%s;%s"):format(b.npc, b.map, b.cells, rep), "WHISPER", target)
+    end
+  end
+  local own, other = {}, {}
+  for _, s in ipairs(ns.db.obs or {}) do
+    if type(s) == "string" then
+      local o = ns.ParseObservation(s)
+      if o and o.own then own[#own + 1] = s elseif o then other[#other + 1] = s end
+    end
+  end
+  local n = 0
+  for _, list in ipairs({ own, other }) do
+    for i = #list, 1, -1 do
+      if n >= REPLY_MAX then return end
+      local msg = outgoing(list[i])
+      if msg then enqueue(msg, "WHISPER", target); n = n + 1 end
+    end
+  end
+end
+
+-- ---- Selbsttest (/fhp teilen test): ohne zweiten Spieler den echten Weg prüfen ----
+-- Schickt über jeden offenen Weg eine Testnachricht „T1;kennung;weg;beobachtung“ an sich selbst. Der Client
+-- gibt eigene Addon-Nachrichten in der Regel zurück; ankommen heißt: Warteschlange, Drosselung, Kanal
+-- und Empfang funktionieren. Die Beobachtung darin wird wie eine fremde geprüft, aber nicht gespeichert.
+local test
+-- Alles landet auch in ForeverHunterPetsDB.probe, damit es nach /reload aus der Datei lesbar ist
+local function testOut(text)
+  if test then test.log[#test.log + 1] = text end
+  ns.Print(text)
+end
+
+local function testDone()
+  if not test then return end
+  local reg = "?"
+  if C_ChatInfo and C_ChatInfo.IsAddonMessagePrefixRegistered then
+    local ok, r = pcall(C_ChatInfo.IsAddonMessagePrefixRegistered, PREFIX)
+    reg = ok and tostring(ns.clean(r)) or "Fehler"
+  end
+  testOut(("Selbsttest: Prefix %s registriert: %s · eigener Name %s · Addon-Nachrichten mit unserem Prefix empfangen: %d")
+    :format(PREFIX, reg, tostring((me())), #test.heard))
+  for _, h in ipairs(test.heard) do testOut("  empfangen: " .. h) end
+  for _, w in ipairs(test.ways) do
+    local r = test.back[w]
+    local sent = test.sent[w] and ("gesendet, " .. test.sent[w]) or "nicht gesendet (Warteschlange, Kampf oder Instanz?)"
+    if r then
+      testOut(("Selbsttest %s: %s, zurück nach %.1f s, Prüfung %s"):format(w, sent, r.after, r.ok and "bestanden" or "NICHT bestanden"))
+    else
+      testOut(("Selbsttest %s: %s, nicht zurückgekommen"):format(w, sent))
+    end
+  end
+  if ns.db then ns.db.probe = test.log end
+  test = nil
+end
+
+function ns.ShareTest()
+  if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
+  if quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
+  local name = me()
+  if not name then ns.Print("Selbsttest: eigener Name nicht lesbar."); return end
+  local id = ("%04x"):format(math.random(0, 65535))
+  -- eine erfundene, aber gültige Beobachtung: Großer Fleischreißer, Stufe 17, Demoralisierendes Kreischen 1
+  local sample = ("154;17;24423;2.0;%d;7e570001"):format(time and time() or MIN_TIME)
+  test = { id = id, started = GetTime(), back = {}, ways = {}, sent = {}, heard = {}, log = {} }
+  testOut("=== Selbsttest Teilen " .. (date and date("%Y-%m-%d %H:%M:%S") or "") .. " · Addon " .. ns.version .. " ===")
+  local function way(label, kind, target)
+    test.ways[#test.ways + 1] = label
+    local t = test
+    enqueue(("T1;%s;%s;%s"):format(id, label, sample), kind, target, function(what) t.sent[label] = what end)
+  end
+  if IsInGuild and ns.clean(IsInGuild()) then way("Gilde", "GUILD") end
+  if IsInRaid and ns.clean(IsInRaid()) then way("Schlachtzug", "RAID")
+  elseif IsInGroup and ns.clean(IsInGroup()) then way("Gruppe", "PARTY") end
+  local ch = channelIndex()
+  if ch then way("Kanal", "CHANNEL", ch) else ns.Print("Selbsttest: Kanal " .. CHANNEL .. " nicht beigetreten.") end
+  way("Flüstern", "WHISPER", name)
+  ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), #test.ways * 2 + 10))
+  ns.After(#test.ways * INTERVAL + 10, testDone)
+end
+
+local function receiveTest(text)
+  if not test then return end
+  local id, label, s = text:match("^T1;(%x+);([^;]+);(.+)$")
+  if id ~= test.id or test.back[label] then return end
+  test.back[label] = { after = GetTime() - test.started, ok = valid(s) }
+end
+
+-- In Forever heißen Charaktere „Vorname Nachname“. Als Absender kommt „Grimmbart Hesingway“ (mit
+-- Leerzeichen), UnitFullName liefert dagegen Vor- und Nachname getrennt, woraus hier „Grimmbart-Hesingway“
+-- wird (Selbsttest 14.10.2026). Verglichen wird deshalb ohne Leerzeichen, Bindestriche und
+-- Groß-/Kleinschreibung – immer der volle Name, nie der Vorname allein: den können andere auch tragen.
+local function plain(s)
+  return (s:gsub("[%s%-]", "")):lower()
+end
+
+local function isSelf(sender, name)
+  return name ~= nil and plain(sender) == plain(name)
+end
+
+ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
+  if not enabled() then return end
+  prefix, text, sender = ns.clean(prefix), ns.clean(text), ns.clean(sender)
+  if prefix ~= PREFIX or type(text) ~= "string" or type(sender) ~= "string" then return end
+  local name = me()
+  if test and #test.heard < 20 then
+    test.heard[#test.heard + 1] = ("%s von %s über %s: %s"):format(text:sub(1, 3), sender, tostring(ns.clean(kind)), text:sub(1, 40))
+  end
+  local own = isSelf(sender, name)
+  if text:sub(1, 3) == "T1;" then
+    if own then receiveTest(text) end
+    return
+  end
+  if own then return end
+  local key = plain(sender)
+  local t = text:sub(1, 2)
+  local ok, why
+  if text:sub(1, 3) == "O1;" then
+    ok, why = receiveObservation(text, key)
+  elseif text:sub(1, 3) == "S1;" then
+    ok, why = receiveSighting(text, key)
+  elseif text:sub(1, 3) == "F1;" then
+    ok, why = receiveCells(text, key)
+  elseif text:sub(1, 3) == "H1;" then
+    ok = true
+    reply(key, sender)   -- zurückgeflüstert wird an den Namen, den der Client nannte
+  else
+    return
+  end
+  count(stats.recv, t)
+  if ok then count(stats.new, t) else count(stats.dropped, t .. " " .. tostring(why)) end
+  stats.last = { at = time and time() or 0, t = t, way = tostring(ns.clean(kind)) }
+  if ns.db then ns.db.shareStats = stats end
+end)
+
+-- ---- Kanal und Gruß ----
+local function hideChannel()
+  if not (ChatFrame_RemoveChannel and NUM_CHAT_WINDOWS) then return end
+  for i = 1, NUM_CHAT_WINDOWS do
+    local frame = _G["ChatFrame" .. i]
+    if frame then pcall(ChatFrame_RemoveChannel, frame, CHANNEL) end
+  end
+end
+
+local function join()
+  if not enabled() or channelIndex() then hideChannel(); return end
+  if JoinTemporaryChannel then pcall(JoinTemporaryChannel, CHANNEL) end
+  ns.After(2, hideChannel)
+end
+
+local function leave()
+  if channelIndex() and LeaveChannelByName then pcall(LeaveChannelByName, CHANNEL) end
+end
+
+local function hello()
+  if not enabled() then return end
+  local msg = ("H1;%s;%d"):format(tostring(ns.version):gsub(";", ""), ns.ObservationCount())
+  broadcast(msg)
+end
+
+local function start()
+  if not registered and C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
+    registered = pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
+  end
+  if not enabled() then return end
+  -- spät beitreten, damit Allgemein, Handel und Co. ihre gewohnten Nummern behalten
+  ns.After(15, function() ns.SafeCall("share", join) end)
+  ns.After(25, function() ns.SafeCall("share", hello) end)
+end
+
+ns.On("PLAYER_LOGIN", function()
+  ns.SafeCall("share", claimOwn)
+  ns.SafeCall("share", start)
+end)
+
+-- Fremde Bestände: Zähmungen, Sichtungen und Zellen anderer Spieler, mit der Zahl der Melder
+-- (Zellen tragen kein Kürzel, die Melder zählen nur Zähmungen und Sichtungen)
+local function foreignStock()
+  local tames, sights, reps = 0, 0, {}
+  for _, s in ipairs((ns.db and ns.db.obs) or {}) do
+    local o = ns.ParseObservation(s)
+    if o and not o.own then tames = tames + 1; reps[o.rep] = true end
+  end
+  for _, s in ipairs((ns.db and ns.db.sights) or {}) do
+    local o = ns.ParseSighting(s)
+    if o and not o.own then sights = sights + 1; reps[o.rep] = true end
+  end
+  local n = 0
+  for _ in pairs(reps) do n = n + 1 end
+  local cells = 0
+  for _, maps in pairs((ns.db and ns.db.locIn) or {}) do
+    for _, c in pairs(maps) do cells = cells + #c / 2 end
+  end
+  return tames, sights, cells, n
+end
+
+local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", H1 = "Grüße" }
+local function perKind(t)
+  local parts = {}
+  for _, k in ipairs(KINDS) do parts[#parts + 1] = NAMES[k] .. " " .. (t[k] or 0) end
+  return table.concat(parts, " · ")
+end
+
+-- /fhp teilen: kurzer Stand im Chat (Entwicklerwerkzeug, nur deutsch)
+function ns.ShareStatus()
+  local own = 0
+  for _, s in ipairs((ns.db and ns.db.obs) or {}) do
+    local o = ns.ParseObservation(s)
+    if o and o.own then own = own + 1 end
+  end
+  local _, rep = me()
+  ns.Print(("Teilen %s · eigene Beobachtungen %d · Kanal %s · Warteschlange %d · dein Kürzel %s")
+    :format(enabled() and "an" or "aus", own, channelIndex() and ("Nr. " .. channelIndex()) or "nicht beigetreten",
+      #queue, rep or "?"))
+  local tames, sights, cells, nReps = foreignStock()
+  ns.Print(("Fremd gespeichert: Zähmungen %d · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
+    :format(tames, sights, cells, nReps))
+  ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
+  ns.Print("Empfangen: " .. perKind(stats.recv))
+  ns.Print("Davon neu gespeichert: " .. perKind(stats.new))
+  local why = {}
+  for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
+  table.sort(why)
+  if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
+  if stats.last then
+    local ago = (time and time() or 0) - stats.last.at
+    ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.last.t] or stats.last.t, stats.last.way, ago))
+  else
+    ns.Print("Noch nichts von anderen Spielern empfangen.")
+  end
+end
+
+-- Einstellung umgeschaltet
+function ns.ShareChanged()
+  if enabled() then
+    start()
+  else
+    queue = {}
+    leave()
+  end
+end

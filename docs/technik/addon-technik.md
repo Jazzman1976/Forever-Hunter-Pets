@@ -1,0 +1,156 @@
+# Das Addon: technischer Aufbau
+
+Ein Addon für den Forever-Client (`## Interface: 16001`), ohne Fremdbibliotheken. Die Wurzel des Repos ist der Addon-Ordner (`Forever-Hunter-Pets`). Es zeigt, welches Tier welchen Rang beibringt, führt den Lernstand und sammelt im Spiel die Daten, aus denen es selbst besteht.
+
+```
+tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──tools/build-addon.mjs──>  Data/Data.lua
+```
+
+`Data.lua` ist generiert ([datenformat.md](datenformat.md)). Jedes Tier steht dort einmal (`beasts[npcId]`), Rang und Belegung hängen an der Fähigkeit (`teach = { { npcId, Rang, conf? } }`). Die Fundorte bleiben gepackt, sechs Ziffern je Punkt, und werden erst entpackt, wenn eine Karte aufgeht. Zonen sind uiMapIDs.
+
+| Datei | Aufgabe |
+| --- | --- |
+| `Core/Init.lua` | Sprache (`L[]`, Schlüssel ist der englische Text), Ereignisse, gespeicherte Daten, `/fhp` |
+| `Core/Index.lua` | Namen in Client-Sprache, Aufwand (`ns.Effort`), Lehrtiere je Rang, Fundorte und Zonen eines Tiers (Daten und gesammelte Zellen), Belegung |
+| `Core/Maps.lua` | Zone → uiMapID, Kartenkacheln, erkundete Gebiete, `/fhp zonen` |
+| `Core/Known.lua` | Lernstand: Ausbildungsfenster, Lernmeldung, Häkchen; was das aktive Pet kann (nur Anzeige); reicht beide Trainer-Listen an die Erhebung weiter |
+| `Core/Observe.lua` | Beobachtungen beim Zähmen: was ein Tier wirklich mitbringt, und was daraus für die Belegung folgt |
+| `Core/Sightings.lua` | Sichtung beim Anvisieren: Name, Stufe, Einstufung, Familie |
+| `Core/Places.lua` | Fundorte als Zellen eines Rasters, nur aus der Nähe |
+| `Core/Discover.lua` | Entdecken: Status je Tier und Zone, was ein Tier lehrt, Fortschritt je Zone; `/fhp gebiet` |
+| `Core/Comm.lua` | Teilen im Spiel: Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` |
+| `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
+| `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
+| `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool |
+| `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
+| `UI/MapCanvas.lua` | Karte mit Fundorten, 3D-Modell und die Kartenseite eines Tiers |
+| `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |
+| `UI/ModeDialog.lua` | Startdialog: Komplett- oder Entdeckermodus, einmal je Charakter |
+| `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y bekannt“ (fertig: nur die Zahl) |
+| `UI/Main.lua` | Fenster, Reiter, Zahnrad zu den Einstellungen (`ns.OpenSettings` öffnet per `Settings.OpenToCategory` die eigene Kategorie und schließt das Fenster) |
+| `UI/Settings.lua` | Seite im Addon-Menü (oben das Logo aus `media/logo.tga`), Knopf an der Minikarte |
+| `UI/Tooltip.lua` | Tier-Tooltip: Status des Tiers in der Zone („Fährte aufgenommen“, Fährte, gefunden, bekannt; nimmt Fährte und Fundort notfalls selbst auf), Angriffstempo, Ränge mit Lernstand |
+| `UI/Scent.lua` | Witterung: Namen, die „Wildtiere aufspüren“ im Minikarten-Tooltip zeigt, geben Tieren der Zone still eine Fährte (keine Anzeige). Nachgesehen wird nur, solange dieser Tooltip offen ist und die Maus über der Minikarte steht |
+
+**Was vom Client kommt.** Fähigkeitsname, Icon und Beschreibung (`C_Spell.GetSpellInfo`, `C_Spell.GetSpellDescription`; fehlt die Beschreibung noch, steht „…“, bis `SPELL_TEXT_UPDATE` kommt), Zonenname (`C_Map.GetMapInfo`), Kartenbild (`C_Map.GetMapArtLayerTextures`) und erkundete Gebiete, das 3D-Modell (`SetCreature`). Tier- und Familiennamen nennt der Client nur für ein Tier, das man gerade sieht: Sie kommen aus der Sichtung (`ns.SeenName`, in Client-Sprache, geht vor) oder aus den Daten; sonst steht „Unbekanntes Tier (#ID)“. Das Icon einer Familie nennt der Client nur für das aktive Pet (`GetPetIcon`); die Erhebung merkt es sich (`survey.familyIcons`), bis dahin steht das Icon von „Wildtier zähmen“ (`ns.FamilyIcon`).
+
+**Lernstand.** In Forever gibt es die alte Craft-API nicht mehr. Das Fenster „Wildtierausbildung“
+ist ein Trainer-Fenster ohne NPC; `GetTrainerServiceInfo(i)` liefert Name, Status, Pet-Stufe und
+Rang, aber keine Zauber-ID. Die nennt der Tooltip der Zeile (`ns.TrainerServiceId`, aus `Core/Survey.lua`); darüber ordnet der Lernstand jeden Rang zu, eindeutig und unabhängig von Name, Rangtext und Sprache (seit 16.10.2026). Nennt der Tooltip keine ID, bleibt der Rückfall über Name und Rang. Die Erhebung reicht die IDs eines Lesens weiter (`ns.trainerIds`), damit der Tooltip je Zeile nur einmal gefragt wird. Die Liste zeigt nur, was die Familie
+des aktiven Pets lernen kann, deshalb sammelt das Addon und entfernt nichts von selbst. Der Filter
+„Bereits bekannt“ ist im Spiel standardmäßig aus; das Addon schaltet ihn zum Lesen kurz ein.
+Zweite Quelle ist die Systemnachricht
+„Ihr habt einen neuen Zauber erlernt: [Sturmangriff].“ (`CHAT_MSG_SYSTEM`). Sie kommt in dem Augenblick,
+in dem der Jäger einem gezähmten Tier einen Rang abgeschaut hat. Gespeichert wird je Charakter in
+`ForeverHunterPetsCharDB.known[Zauber-ID]` mit der Herkunft (`t` Ausbildungsfenster oder Lernmeldung,
+`m` von Hand).
+
+**Die Lernmeldung nennt weder Rang noch dessen ID.** Der Text sagt nur „[Sturmangriff]“, und der Link
+trägt die ID eines eigenen Zaubers des Jägers, nicht die des Pet-Rangs aus den Daten (im Spiel gesehen:
+Link 26185, Sturmangriff Rang 3 ist 26178). Das Addon nimmt deshalb den Namen aus dem Link und dazu den
+Rang, den das aktive Pet schon kann und der Jäger noch nicht. Eine ID aus dem Link zählt nur, wenn sie
+zu genau dieser Fähigkeit gehört. Kann das Pet keinen offenen Rang der Fähigkeit – etwa wenn man beim
+Tierausbilder in der Stadt lernt –, bleibt die Meldung ohne Folge, und der Rang kommt beim nächsten
+Öffnen der Wildtierausbildung dazu. Die letzten 20 Lernmeldungen und was daraus wurde stehen in
+`ForeverHunterPetsDB.learnLog`; `learnUnreadable` zählt Systemmeldungen, die als geheimer Wert kamen.
+
+**Was das Pet kann, ist kein Lernstand.** Ein frisch gezähmtes Tier bringt seinen Rang mit, der Jäger
+kennt ihn aber erst, wenn das Tier ihn im Kampf oft genug eingesetzt hat und die Lernmeldung kommt.
+Bis 0.2.0 trug das Addon alles, was `IsSpellKnown(id, true)` für das aktive Pet meldet, als gelernt
+ein (Herkunft `p`) – zu früh: Wer sich darauf verließ, ließ das Tier frei, bevor er den Rang hatte.
+Seit 0.2.1 dient `IsSpellKnown` nur noch der Anzeige (`ns.PetKnows`, `ns.PetRanks`): Die Ansicht
+„Fähigkeiten“ markiert solche Ränge mit „dein Pet kann es“ (Liste) und „noch nicht gelernt“ (Detail). Alte `p`-Einträge
+werden beim Einloggen entfernt; was wirklich gelernt ist, steht beim nächsten Öffnen der
+Wildtierausbildung wieder da.
+
+**Ausbilden.** Lehren kann nur das Blizzard-Fenster: `BuyTrainerService` ist für Addons gesperrt
+(`ADDON_ACTION_FORBIDDEN`), und `CloseTrainer()` wirkt nicht. Öffnen dagegen geht über einen sicheren
+Knopf (`SecureActionButtonTemplate`, Typ `spell`, Zauber 5149). Er hängt nicht im Hauptfenster, sondern
+liegt als eigenes Element darüber – sonst gälte das Hauptfenster im Kampf als geschützt. Die gewählte
+Zeile im Blizzard-Fenster vorzumarkieren geht nicht: Es führt seine Auswahl im Feld
+`ClassTrainerFrame.selectedService`; setzt ein Addon es, ist danach der Knopf „Ausbilden“ des Fensters
+gesperrt. `SelectTrainerService` ändert nur die Auswahl der API, die das Fenster nicht anzeigt.
+
+**Geheime Werte.** In Kampf und Instanzen gibt der Client „secret values“ zurück, die schon beim
+Vergleichen einen Fehler werfen. Alles, was aus der API kommt, läuft deshalb durch `ns.clean()`,
+und gelesen wird der Lernstand nur außerhalb des Kampfs.
+
+**Zustände in „Ausbildung“.** Je Rang, den der Jäger kennt, für das aktive Pet: `ok` (grün, jetzt lernbar),
+`tp` (gelb, zu wenig freie Trainingspunkte), `later` (rot, Pet-Stufe zu niedrig), `has` (grau, hat das Pet
+schon), `no` (grau, Familie kann es nicht lernen). Stufe geht vor Punkten. Die freien Punkte kommen aus
+`C_PetInfo.GetPetTrainingPoints()` (gesamt minus verbraucht, kann negativ sein). Hat das Pet schon einen
+niedrigeren Rang der Fähigkeit, zählt nur die Differenz der Kosten (`netCost`); ohne Kostenangabe in den
+Daten oder ohne Auskunft des Clients bleibt die Zeile grün. Die Mehrfachauswahl „Anzeigen“ blendet
+Zustände aus und merkt sich das je Charakter in `ForeverHunterPetsCharDB.filters.training`; ohne Pet gibt
+es keine Zustände, dann wirkt sie nicht.
+
+**Tier-Tooltip.** Über `TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, …)`, nur für
+`GameTooltip`; fehlt der Prozessor, über `OnTooltipSetUnit`. Die NPC-ID steckt in der GUID
+(`Creature-0-…-<NPC-ID>-…`); eine geheime GUID wird verworfen. Zeilen gibt es für Tiere aus den Daten und für eigene Funde (`ns.BeastInfo`); über andere wird nichts vermutet. Statuszeile, „lehrt nichts“ und die Regeln je Modus: [konzept.md](../konzept/konzept.md#6-status-eines-tiers). `ns.BeastTeaches(npcId)` ist der umgekehrte Index zu
+`teach`, beim ersten Aufruf gebaut. Die Familie nennt der Client schon. Das angeborene Angriffstempo steht als erste Zeile in der Liste („Schnellerer Angriff III (1,5 s)“, eine Nachkommastelle, weiß, ohne Lernstand), danach jeder erlernbare Rang auf
+einer eigenen Zeile: Fähigkeits-Icon (wie in der Wildtierausbildung), „Name (Rang n)“; gelernt grau mit „– gelernt“, offen grün mit „– neu“ – nie nur
+Farbe. Abschaltbar in den Einstellungen (`ns.db.ui.tooltip`); darunter zwei Unteroptionen für eine Leerzeile davor (Standard an, `tooltipGapBefore`) und danach (Standard aus, `tooltipGapAfter`), als Abstand zu anderen Addons. Sie hängen per `SetParentInitializer` am Hauptschalter und sind ohne ihn gesperrt.
+
+**Belegung der Lehrtiere.** Das dritte Feld eines `teach`-Eintrags ist die Belegung: fehlt es, gilt der Eintrag als belegt; `2` heißt unsicher, `3` unbelegt (geschätzt). Widerlegte Paare stehen nicht in den Daten; im Spiel widerlegte bekommen `ns.CONF_REFUTED` (4). Herkunft in [quellen.md](quellen.md#belegung-der-lehrtiere).
+- `ns.ShowConf(conf)` liest die Schalter `ns.db.ui.showUncertain` und `showUnproven` (Standard aus); widerlegt ist nie sichtbar. Den Schalter für unbelegt gibt es nur, wenn die Daten Schätzungen enthalten (`ns.HasUnproven`).
+- `ns.Teachers` und `ns.BeastTeaches` liefern nur, was gezeigt wird. Sortiert wird zuerst nach Belegung, dann nach Aufwand. `list.hidden` zählt, was ausgeblendet ist.
+- `ns.AllBeastTeaches` liefert alles.
+- In „Fähigkeiten“ stehen Unsicheres und Unbelegtes unter eigenen Überschriften, mit „?“ (unsicher) bzw. „!“ (unbelegt) hinter dem Namen (`ns.ConfMark`) und ohne Stern. Ein Rang ohne Lehrtier zeigt „unentdeckt“.
+- Im Tooltip steht das Zeichen hinter dem Rang: „Beißen (Rang 4)? – neu“.
+- Ändert sich ein Schalter, ruft `ns.ShowConfChanged()` die Ansicht neu auf. Der Tooltip liest die Schalter bei jedem Aufruf.
+
+**Beobachtungen beim Zähmen** (`Core/Observe.lua`). Der Ablauf wurde mit der Zähm-Probe ermittelt, siehe [api-befunde.md](api-befunde.md).
+- **Beim Zauberbeginn** (`UNIT_SPELLCAST_CHANNEL_START`, Wildtier zähmen 1515) merkt sich das Addon NPC-ID und Stufe des Ziels und die Fundort-Zelle (immer, siehe unten). Die GUID des Pets taugt dafür nicht, sie trägt bei jedem Tier dieselbe Pet-ID.
+- **Nach dem Kanal** (`UNIT_SPELLCAST_CHANNEL_STOP`) kommt das neue Pet. Beim zweiten `UNIT_PET` oder bei `SPELLS_CHANGED` steht sein Zauberbuch bereit. Die Zauber-IDs daraus, `UnitLevel("pet")` und `UnitAttackSpeed("pet")` (beim ersten Lesen oft geheim, dann nach 1 bzw. 3 s nachgetragen) gehen als Zeichenkette `npc;stufe;zauberIDs;tempo;zeit;melder` nach `ForeverHunterPetsDB.obs` (kontoweit, ohne Namen); die Zelle vom Zauberbeginn nach `loc`, immer (die Reichweite von „Wildtier zähmen“ ist etwa 30 m). Vorher erhebt das Addon das Zauberbuch, damit ein Rang, den noch kein Pet hatte, schon in der Chatzeile steht: Fähigkeiten und Ränge aus der Erhebung kommen zur Laufzeit zu den Daten (`ns.MergeSurveyAbilities`). Der Melder ist das Kürzel des eigenen Charakters; welche Kürzel einem selbst gehören, steht in `ForeverHunterPetsDB.myReps`.
+- **Kein Eintrag** entsteht, wenn das Zähmen abgebrochen wird oder misslingt, ebenso beim bloßen Rufen eines Pets.
+- **`ns.Observed(npc, a, r)`** gibt „seen“, „refuted“ oder `nil` zurück, immer für genau diese NPC-ID.
+  - Widerlegt ist ein Rang nur, wenn die Stufe beim Zähmen für ihn reichte und das Tier keinen höheren Rang derselben Fähigkeit hatte – das Zauberbuch zeigt nur den höchsten. Das Angriffstempo wird direkt verglichen.
+  - Eigene Zähmungen gelten als bewiesen, gesehen wie nicht gesehen, und gehen vor. Fremde zählen erst ab 10 verschiedenen Meldern; unter Fremden geht gesehen vor widerlegt.
+  - `ns.EffectiveConf` macht daraus belegt bzw. widerlegt. `ns.Teachers` und `ns.AllBeastTeaches` nutzen das und ergänzen Paare, die man gesehen hat, die Daten aber nicht kennen.
+  - Berücksichtigt werden nur Fähigkeiten, die man von Tieren lernt. Knurren und Ähnliches hat jedes Pet vom Tierausbilder.
+- **Chat:** Nach dem Zähmen steht dort eine Zeile „Beobachtet: … brachte … mit“.
+
+**Erhebung** (`Core/Survey.lua`, `/fhp erhebung`). Schreibt still nach `ForeverHunterPetsDB.survey`.
+- **Trainer-Listen:** `Core/Known.lua` ruft `ns.SurveyTrainer(atNpc)` auf, sobald die Liste vollständig zu sehen ist (bei der Wildtierausbildung mit eingeschaltetem „Bereits bekannt“). Die Liste selbst nennt keine Zauber-ID, der Tooltip der Zeile schon: `C_TooltipInfo.GetTrainerService(i).id`, sonst `GameTooltip:SetTrainerService(i)` + `:GetSpell()`. Es ist die ID des Pet-Rangs, in beiden Fenstern gleich und wie im Zauberbuch (geprüft am 16.10.2026). Der Lernstand nutzt dieselben IDs.
+- **Je Rang** (`ranks[Zauber-ID]`): Name, Rang (aus dem Rangtext, sonst `C_Spell.GetSpellSubtext`), Icon; aus der Wildtierausbildung die Pet-Stufe, vom Tierausbilder Jägerstufe und Preis. Beim Tierausbilder ist die vierte Rückgabe die Jägerstufe, 0 heißt „schon gelernt“ und überschreibt nichts.
+- **Je Familie** (`lists[Familien-ID]`): die zuletzt gelesene vollständige Wildtierausbildung mit „Status/angezeigte TP“ je Zauber-ID. Sie ersetzt die vorige; eine Liste, in der eine Zeile ohne Rangtext oder ID steht, gilt als unfertig und ersetzt nichts.
+- **Zauberbuch** (`spells[Zauber-ID]`): beim Öffnen der Ausbildung, beim Rufen eines Pets und bei `SPELLS_CHANGED`.
+- `lastRead` hält die zuletzt gelesene Liste roh, zur Fehlersuche.
+
+**Sichtung** (`Core/Sightings.lua`). Quellen: Ziel (`PLAYER_TARGET_CHANGED`), Maus über einem Tier (`UPDATE_MOUSEOVER_UNIT`) und Namensplaketten (`NAME_PLATE_UNIT_ADDED`/`_REMOVED`; Plaketten für Gegner müssen an sein). Außerhalb von Kampf und Instanz. Vorrang haben wenig Traffic, Speicher und Rechenzeit (16.10.2026).
+- **Ein Beobachter für alle,** geführt nach GUID, höchstens 20 Tiere, ein Durchlauf je Sekunde (`UnitGUID` und `CheckInteractDistance`, etwa 2 Aufrufe je Tier). Der Takt läuft nur, solange etwas beobachtet wird, und ruht in Kampf und Instanz. Ziel und Maus bleiben 10 s, Plaketten, bis sie verschwinden; die Plakette geht vor.
+- **Bedingungen:** Das Ziel ist kein Spieler, nicht vom Spieler kontrolliert (kein Pet), hat eine Familie (`UnitCreatureFamily` liefert Name und ID) und eine Stufe (nicht „??“). Die NPC-ID kommt aus der GUID (`ns.NpcFromGuid`).
+- **Reichweite:** die Fährte (`seenIn`) aus jeder Entfernung, Stammdaten bis etwa 28 m (`CheckInteractDistance` 4), der Fundort aus etwa 10 m (3, sonst 2; beide liefern bei feindlichen Tieren außerhalb des Kampfs true/false, geprüft am 16.10.2026), je Zelle des Spielers einmal. Während „Augen des Wildtiers“ oder „Adlerauge“ (Kanalzauber 1002 bzw. 6197, `ns.Possessing`) entstehen keine Zellen: Der Jäger steht dann woanders als das, was er sieht.
+- **Ablage:** `ForeverHunterPetsDB.sights`, je Sichtung `npc;stufe;einstufung;familie;sprache;name;zeit;melder;tempo`, je Tier, Stufe, Sprache und Melder eine. Das Tempo kommt aus `UnitAttackSpeed` (beim wilden Tier dasselbe wie nach dem Zähmen, geprüft am 16.10.2026); ist es nicht lesbar, fehlt das Feld, und eine spätere Sichtung mit Tempo ersetzt die ohne. Der Familienname geht an die Erhebung (`ns.SurveyFamily`).
+- **Teilen,** gesammelt und höchstens alle 5 Minuten, je Runde höchstens 20 Nachrichten (Warteschlange höchstens 200): nicht, was die mitgelieferten Daten kennen (Name in dieser Sprache, Stufe im Bereich); nicht, wenn schon 10 Melder das Tier gemeldet haben; je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten. Höchstens 10.000 fremde Sichtungen werden gespeichert.
+
+**Fundorte** (`Core/Places.lua`). Der Client nennt nur die Position des Spielers (`C_Map.GetBestMapForUnit`, `C_Map.GetPlayerMapPosition`). Sie wird auf ein Raster von 2 % der Karte gerundet (50 × 50 Zellen, je Zelle zwei Zeichen aus 50).
+- **Ablage:** `ForeverHunterPetsDB.loc[npc][uiMapID]` für eigene, `locIn` für fremde Zellen. Nur neue Zellen zählen, höchstens 500 je Tier und Karte, fremd insgesamt höchstens 20.000. Eigene Zellen werden immer gespeichert (sie gehören zu den eigenen Funden), geteilt aber nur, was die mitgelieferten Daten nicht haben; fremde, die die Daten haben, werden nicht gespeichert.
+- **Anzeige:** `ns.Coords` nimmt die Mittelpunkte der Zellen zu den Punkten der Daten, `ns.ZoneCounts` und `ns.BeastZones` die Karten dazu.
+
+**Entdecken** (`Core/Discover.lua`, Konzept: [konzept.md](../konzept/konzept.md#5-die-zwei-modi)). Alles lokal, gezählt bei Bedarf.
+- **Status je NPC-ID und Zone** (`ns.BeastStatus`): „unknown“, „track“ (in dieser Zone gesichtet, `seenIn`), „found“ (eigene Zelle in dieser Zone), „known“ (dazu eine eigene Zähmung). Ein Tier gehört zu Zonen mit echtem Fundort (`ns.LivesIn`: Daten, Zelle oder eigene Zähmung, `ns.TamedZones`). Hat es nirgends einen Fundort, zählt seine Fährte in den Zonen aus `seenIn`; sonst zählt eine Sichtung über eine Zonengrenze dort nicht.
+- **`seenIn`:** `ForeverHunterPetsDB.seenIn[npc] = "1431,1429"`, die Karte des Spielers je eigener Sichtung und Zähmung; kontoweit, nicht geteilt. Dazu **`trackNames`**: `ForeverHunterPetsDB.trackNames[npc] = "Familie;Name"` für Tiere, die man nur von weitem gesehen hat (die Sichtung speichert erst ab etwa 28 m); kontoweit, nicht geteilt, fällt mit der ersten Sichtung weg.
+- **Was ein Tier lehrt** (`ns.TeachInfo(npc, discover)`): nil = unklar, leer = lehrt nichts. Im Entdeckermodus nur eigene Zähmungen, sonst auch Daten (nur, was die Einstellungen zeigen) und fremde Zähmungen. Gilt zonenübergreifend.
+- **Modus je Charakter** (`ns.ModeChosen`, `ns.Discovering`, `ns.SetMode`): `ForeverHunterPetsCharDB.discover` und `modeChosen` (eigenes Feld, weil die Einstellung beim Registrieren ihren Standard schreiben könnte). Ohne Wahl öffnet `ns.Toggle` den Startdialog statt des Fensters, und der Tier-Tooltip bleibt leer; Sammeln und Teilen laufen weiter. Wechsel melden `ns.OnModeChanged` und `ns.ShowConfChanged`.
+- **Entdeckermodus in den Ansichten:** `ns.Teachers` lässt nur Lehrtiere übrig, bei denen eine eigene Zähmung den Rang zeigte (`ns.OwnSeen`), und zählt die übrigen als `list.undiscovered` („2 unentdeckt“, in den Details „? unentdecktes Tier“). `ns.Coords`, `ns.ZoneCounts` und `ns.BeastZones` nehmen nur eigene Zellen; `ns.ZoneCounts(npc, true)` bleibt beim vollen Bestand (für „X von Y“). Der Tier-Tooltip zeigt nur, was eine eigene Zähmung zeigte (`ns.TeachInfo(npc, true)`). In beiden Modi heißt ein Rang ohne jedes Lehrtier „? unbekannt“.
+- **Fortschritt einer Zone** (`ns.ZoneProgress`): Y aus allem Bekannten (Daten, Zellen, Zähmungen, Fährten); X nur über „Fähigkeiten bekannt“ – im Entdeckermodus eigene Zähmungen, im Komplettmodus alle Daten (`ns.TeachInfo(npc, false)`), dort sind Lehrtiere und Ränge damit vollständig. Dazu je Status die Anzahl (für `/fhp gebiet`), eigene Zellen und alle Fundorte. Status-Tags (`ns.StatusWord`, `ns.StatusText`) nur im Entdeckermodus.
+
+**Teilen im Spiel** (`Core/Comm.lua`, Einstellung „Beobachtungen teilen“, Standard an). Addons kommen nicht ins Internet. Die Daten wandern deshalb als Addon-Nachrichten (Prefix `FHPets`, höchstens 255 Byte) zwischen Spielern, die gleichzeitig online sind.
+- **Nachrichten:**
+  - `O1;npc;stufe;zauberIDs;tempo;zeit;melder` – eine Zähmung, 4 s danach.
+  - `S1;npc;stufe;einstufung;familie;sprache;name;zeit;melder[;tempo]` – eine Sichtung; ein abweichendes Tempo, das die Daten nicht kennen, macht sie teilenswert.
+  - `F1;npc;uiMapID;zellen;melder` – neue eigene Fundort-Zellen, gesammelt und höchstens alle 5 Minuten, bis zu 100 Zellen je Nachricht.
+  - `H1;version;anzahl` – Gruß 25 s nach dem Einloggen. Wer ihn empfängt, flüstert dem Absender einmal bis zu 10 eigene Fundort-Bündel und bis zu 20 Beobachtungen zurück, eigene zuerst.
+- **Wege:** Gilde, Gruppe oder Schlachtzug und der Kanal `FHPetsNet`. Diesem tritt das Addon 15 s nach dem Einloggen bei, damit die üblichen Kanäle ihre Nummern behalten, und entfernt ihn aus allen Chatfenstern.
+- **Melder:** Statt des Namens steht ein Kürzel aus acht Hexziffern, ein djb2-Hash des vollen Namens (in Forever „Vorname Nachname“). Gespeichert werden nur Kürzel; damit lässt sich zählen, wie viele verschiedene Spieler etwas gesehen haben.
+- **Drosselung:** Höchstens eine Nachricht alle 2 s, in einer eigenen Warteschlange (höchstens 80). Meldet der Client eine Drosselung, wird später wiederholt. In Kampf und Instanz bleibt die Warteschlange liegen.
+- **Prüfen beim Empfang:**
+  - Beobachtungen: Stufe 1 bis 63, Zauber-IDs aus den Daten, Tempo 0,5 bis 4 s, Zeit ab September 2026 und höchstens einen Tag in der Zukunft, Kürzel mit genau 8 Zeichen; höchstens 5000 gespeichert.
+  - Sichtungen: Stufe 1 bis 63, Einstufung 0 bis 4, Tempo 0,5 bis 5 s (falls angegeben), eine Familie, eine bekannte Client-Sprache, ein Name ohne Steuerzeichen, plausible Zeit; höchstens 10.000 gespeichert.
+  - Zellen: nur gültige Zeichen, gerade Länge, höchstens ein Bündel je Nachricht.
+  - Eigene Nachrichten und Dubletten werden verworfen; je Absender und Art höchstens 200 pro Sitzung.
+- **Ausgeschaltet** wird nichts gesendet, nichts empfangen und der Kanal verlassen.
+- **Sichtbar** (`/fhp teilen`, M4): je Art gesendet, empfangen, neu gespeichert und verworfen mit Grund (etwa „unbekannter Zauber“ – eine fremde Zähmung mit einem Zauber, den hier noch niemand kennt, wird nicht gespeichert), die zuletzt empfangene Nachricht und in einer Zeile alles Fremde: Zähmungen, Sichtungen, Zellen und die Zahl der Melder (nur aus Zähmungen und Sichtungen, Zellen tragen kein Kürzel). Die Zähler dieser Sitzung stehen auch in `ForeverHunterPetsDB.shareStats`, damit ein Test nach `/reload` nachlesbar ist. Rein lokal, kein zusätzlicher Verkehr.
+
+**Prüfen ohne Spiel.** Auf dem Entwicklungsrechner gibt es kein Lua. Syntax prüft das npm-Paket `luaparse`, ausgeführt wird das Addon mit `fengari` gegen eine nachgebildete WoW-API ([entwicklung.md](entwicklung.md#prüfen-ohne-spiel)). Aussehen und echte Client-Aufrufe zeigt nur der Test im Spiel.

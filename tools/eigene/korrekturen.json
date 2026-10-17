@@ -1,0 +1,51 @@
+[
+  {
+    "npc": 923,
+    "name": "Junger schwarzer Verheerer",
+    "ability": "Bite",
+    "rank": 4,
+    "zauber": 17257,
+    "befund": "widerlegt",
+    "quelle": "rund 20 eigene Zähmungen, keines brachte Beißen 4 mit",
+    "datum": "2026-10-13"
+  },
+  {
+    "npc": 628,
+    "name": "Schwarzer Verheerer",
+    "ability": "Bite",
+    "rank": 4,
+    "zauber": 17257,
+    "befund": "bestätigt",
+    "quelle": "eigene Zähmung (Stufe 24, Dämmerwald), Beißen 4 danach gelernt",
+    "datum": "2026-10-13"
+  },
+  {
+    "npc": 154,
+    "name": "Großer Fleischreißer",
+    "ability": "Demoralizing Screech",
+    "rank": 1,
+    "zauber": 24423,
+    "befund": "bestätigt",
+    "quelle": "eigene Zähmung mit Zähm-Probe (Stufe 17): Zauberbuch nur Demoralisierendes Kreischen 1",
+    "datum": "2026-10-14"
+  },
+  {
+    "npc": 154,
+    "name": "Großer Fleischreißer",
+    "ability": "Bite",
+    "rank": 3,
+    "zauber": 17256,
+    "befund": "widerlegt",
+    "quelle": "eigene Zähmung mit Zähm-Probe (Stufe 17, Rang braucht 16): nicht im Zauberbuch",
+    "datum": "2026-10-14"
+  },
+  {
+    "npc": 154,
+    "name": "Großer Fleischreißer",
+    "ability": "Claw",
+    "rank": 3,
+    "befund": "widerlegt",
+    "quelle": "eigene Zähmung mit Zähm-Probe (Stufe 17, Rang braucht 16): nicht im Zauberbuch",
+    "datum": "2026-10-14"
+  }
+]

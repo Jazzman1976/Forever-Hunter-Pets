@@ -1,0 +1,1030 @@
+{
+ "generatedAt": "2026-10-16T10:37:52.949Z",
+ "families": {
+  "1": {
+   "de": "Wolf",
+   "en": null,
+   "icon": null
+  },
+  "2": {
+   "de": "Katze",
+   "en": null,
+   "icon": null
+  },
+  "3": {
+   "de": "Spinne",
+   "en": null,
+   "icon": null
+  },
+  "4": {
+   "de": "Bär",
+   "en": null,
+   "icon": null
+  },
+  "5": {
+   "de": "Eber",
+   "en": null,
+   "icon": null
+  },
+  "7": {
+   "de": "Aasvogel",
+   "en": null,
+   "icon": null
+  },
+  "319": {
+   "de": "Fuchs",
+   "en": null,
+   "icon": null
+  }
+ },
+ "beasts": {
+  "30": {
+   "de": "Waldspinne",
+   "en": null,
+   "fam": 3,
+   "min": 5,
+   "max": 6,
+   "cls": 0
+  },
+  "113": {
+   "de": "Steinhauereber",
+   "en": null,
+   "fam": 5,
+   "min": 5,
+   "max": 6,
+   "cls": 0
+  },
+  "199": {
+   "de": "Junger Fleischreißer",
+   "en": null,
+   "fam": 7,
+   "min": 10,
+   "max": 10,
+   "cls": 0
+  },
+  "213": {
+   "de": "Ausgehungerter Terrorwolf",
+   "en": null,
+   "fam": 1,
+   "min": 19,
+   "max": 19,
+   "cls": 0
+  },
+  "217": {
+   "de": "Giftweberspinne",
+   "en": null,
+   "fam": 3,
+   "min": 19,
+   "max": 20,
+   "cls": 0
+  },
+  "454": {
+   "de": "Junger Geiferzahn",
+   "en": null,
+   "fam": 5,
+   "min": 13,
+   "max": 13,
+   "cls": 0
+  },
+  "525": {
+   "de": "Räudiger Wolf",
+   "en": null,
+   "fam": 1,
+   "min": 6,
+   "max": 6,
+   "cls": 0
+  },
+  "539": {
+   "de": "Zwerggiftweberspinne",
+   "en": null,
+   "fam": 3,
+   "min": 19,
+   "max": 19,
+   "cls": 0
+  },
+  "547": {
+   "de": null,
+   "en": null,
+   "fam": null,
+   "min": 16,
+   "max": 16,
+   "cls": 0
+  },
+  "565": {
+   "de": "Tollwütiger Terrorwolf",
+   "en": null,
+   "fam": 1,
+   "min": 20,
+   "max": 21,
+   "cls": 0
+  },
+  "569": {
+   "de": "Grüner Eremit",
+   "en": null,
+   "fam": 3,
+   "min": 22,
+   "max": 22,
+   "cls": 0
+  },
+  "628": {
+   "de": "Schwarzer Verheerer",
+   "en": null,
+   "fam": 1,
+   "min": 24,
+   "max": 25,
+   "cls": 0
+  },
+  "822": {
+   "de": "Junger Waldbär",
+   "en": null,
+   "fam": 4,
+   "min": 8,
+   "max": 9,
+   "cls": 0
+  },
+  "923": {
+   "de": "Junger schwarzer Verheerer",
+   "en": null,
+   "fam": 1,
+   "min": 23,
+   "max": 24,
+   "cls": 0
+  },
+  "930": {
+   "de": "Junges einer Schwarzen Witwe",
+   "en": null,
+   "fam": 3,
+   "min": 24,
+   "max": 25,
+   "cls": 0
+  },
+  "1128": {
+   "de": "Junger Schwarzbär",
+   "en": null,
+   "fam": 4,
+   "min": 5,
+   "max": 5,
+   "cls": 0
+  },
+  "1138": {
+   "de": "Schneefährtenleserwolf",
+   "en": null,
+   "fam": 1,
+   "min": 7,
+   "max": 7,
+   "cls": 0
+  },
+  "1196": {
+   "de": "Eisklauenbär",
+   "en": null,
+   "fam": 4,
+   "min": 8,
+   "max": 8,
+   "cls": 0
+  },
+  "1199": {
+   "de": "Halbwüchsiger Schneeleopard",
+   "en": null,
+   "fam": 2,
+   "min": 5,
+   "max": 5,
+   "cls": 0
+  },
+  "1258": {
+   "de": "Schwarzer Verheerermastiff",
+   "en": null,
+   "fam": 1,
+   "min": 25,
+   "max": 25,
+   "cls": 0
+  },
+  "277645": {
+   "de": "Grauer Fuchs",
+   "en": null,
+   "fam": 319,
+   "min": 22,
+   "max": 23,
+   "cls": 0
+  }
+ },
+ "coords": {
+  "113": {
+   "1429": [
+    330,
+    810,
+    330,
+    910,
+    330,
+    890,
+    350,
+    890,
+    370,
+    890,
+    350,
+    870,
+    390,
+    910,
+    410,
+    910
+   ]
+  },
+  "213": {
+   "1431": [
+    110,
+    610,
+    130,
+    290
+   ]
+  },
+  "217": {
+   "1431": [
+    110,
+    450,
+    90,
+    390,
+    670,
+    210
+   ]
+  },
+  "454": {
+   "1436": [
+    630,
+    410,
+    630,
+    390
+   ]
+  },
+  "525": {
+   "1429": [
+    390,
+    650
+   ]
+  },
+  "539": {
+   "1431": [
+    110,
+    450
+   ]
+  },
+  "565": {
+   "1431": [
+    130,
+    310,
+    150,
+    290,
+    710,
+    270
+   ]
+  },
+  "628": {
+   "1431": [
+    570,
+    590,
+    530,
+    610,
+    510,
+    610,
+    530,
+    590,
+    690,
+    330,
+    670,
+    270
+   ]
+  },
+  "822": {
+   "1429": [
+    350,
+    890,
+    430,
+    910
+   ]
+  },
+  "923": {
+   "1431": [
+    590,
+    610,
+    290,
+    650,
+    270,
+    650,
+    250,
+    630,
+    210,
+    790,
+    250,
+    790,
+    250,
+    750,
+    270,
+    730,
+    270,
+    630,
+    310,
+    630,
+    330,
+    630,
+    690,
+    310,
+    670,
+    250
+   ]
+  },
+  "930": {
+   "1431": [
+    350,
+    610
+   ]
+  },
+  "1128": {
+   "1426": [
+    410,
+    590
+   ]
+  },
+  "1199": {
+   "1426": [
+    410,
+    590
+   ]
+  },
+  "1258": {
+   "1431": [
+    670,
+    350
+   ]
+  },
+  "277645": {
+   "1431": [
+    220,
+    810,
+    140,
+    320,
+    120,
+    350,
+    150,
+    590,
+    130,
+    330,
+    150,
+    530,
+    190,
+    510,
+    170,
+    530,
+    230,
+    810,
+    250,
+    790,
+    270,
+    790,
+    270,
+    730,
+    290,
+    690,
+    310,
+    630,
+    330,
+    630
+   ]
+  }
+ },
+ "abilities": [
+  {
+   "en": null,
+   "de": "Ducken",
+   "icon": 132118,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    2,
+    4,
+    5,
+    319
+   ],
+   "ranks": [
+    {
+     "id": 1742,
+     "rank": 1,
+     "level": 5,
+     "tp": 8
+    },
+    {
+     "id": 1753,
+     "rank": 2,
+     "level": 15,
+     "tp": 10
+    }
+   ],
+   "teach": [
+    {
+     "id": 1199,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Knurren",
+   "icon": 132270,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 2649,
+     "rank": 1,
+     "level": 1,
+     "tp": 0
+    },
+    {
+     "id": 14916,
+     "rank": 2,
+     "level": 10,
+     "tp": 0
+    },
+    {
+     "id": 14917,
+     "rank": 3,
+     "level": 20,
+     "tp": 0
+    },
+    {
+     "id": 14918,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 14919,
+     "rank": 5,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 14920,
+     "rank": 6,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 14921,
+     "rank": 7,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Große Ausdauer",
+   "icon": 136112,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 4187,
+     "rank": 1,
+     "level": 1,
+     "tp": 5
+    },
+    {
+     "id": 4188,
+     "rank": 2,
+     "level": 12,
+     "tp": 10
+    },
+    {
+     "id": 4189,
+     "rank": 3,
+     "level": 18,
+     "tp": 15
+    },
+    {
+     "id": 4190,
+     "rank": 4,
+     "level": 24,
+     "tp": 25
+    },
+    {
+     "id": 4191,
+     "rank": 5,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 4192,
+     "rank": 6,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 4193,
+     "rank": 7,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 4194,
+     "rank": 8,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 5041,
+     "rank": 9,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 5042,
+     "rank": 10,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Sturmangriff",
+   "icon": 132184,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    5
+   ],
+   "ranks": [
+    {
+     "id": 7371,
+     "rank": 1,
+     "level": 1,
+     "tp": 5
+    },
+    {
+     "id": 26177,
+     "rank": 2,
+     "level": 12,
+     "tp": null
+    },
+    {
+     "id": 26178,
+     "rank": 3,
+     "level": 24,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 547,
+     "rank": 2,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Klaue",
+   "icon": 132140,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    2,
+    4
+   ],
+   "ranks": [
+    {
+     "id": 16827,
+     "rank": 1,
+     "level": 1,
+     "tp": 1
+    },
+    {
+     "id": 16828,
+     "rank": 2,
+     "level": 8,
+     "tp": 4
+    },
+    {
+     "id": 16829,
+     "rank": 3,
+     "level": 16,
+     "tp": 7
+    }
+   ],
+   "teach": [
+    {
+     "id": 1196,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 822,
+     "rank": 2,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Beißen",
+   "icon": 132278,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    2,
+    4,
+    5,
+    319
+   ],
+   "ranks": [
+    {
+     "id": 17253,
+     "rank": 1,
+     "level": 1,
+     "tp": 1
+    },
+    {
+     "id": 17255,
+     "rank": 2,
+     "level": 8,
+     "tp": 4
+    },
+    {
+     "id": 17256,
+     "rank": 3,
+     "level": 16,
+     "tp": 7
+    },
+    {
+     "id": 17257,
+     "rank": 4,
+     "level": 24,
+     "tp": 10
+    }
+   ],
+   "teach": [
+    {
+     "id": 628,
+     "rank": 4,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Feuerwiderstand",
+   "icon": 135806,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 23992,
+     "rank": 1,
+     "level": 20,
+     "tp": 5
+    },
+    {
+     "id": 24439,
+     "rank": 2,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24444,
+     "rank": 3,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24445,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Frostwiderstand",
+   "icon": 135850,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 24446,
+     "rank": 1,
+     "level": 20,
+     "tp": 5
+    },
+    {
+     "id": 24447,
+     "rank": 2,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24448,
+     "rank": 3,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24449,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Schattenwiderstand",
+   "icon": 136121,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 24488,
+     "rank": 1,
+     "level": 20,
+     "tp": 5
+    },
+    {
+     "id": 24505,
+     "rank": 2,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24506,
+     "rank": 3,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24507,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Naturwiderstand",
+   "icon": 136085,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 24492,
+     "rank": 1,
+     "level": 20,
+     "tp": 5
+    },
+    {
+     "id": 24502,
+     "rank": 2,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24503,
+     "rank": 3,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24504,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Arkanwiderstand",
+   "icon": 136096,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 24493,
+     "rank": 1,
+     "level": 20,
+     "tp": 5
+    },
+    {
+     "id": 24497,
+     "rank": 2,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24500,
+     "rank": 3,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24501,
+     "rank": 4,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Natürliche Rüstung",
+   "icon": 136094,
+   "kind": "general",
+   "source": "trainer",
+   "speed": null,
+   "families": [],
+   "ranks": [
+    {
+     "id": 24545,
+     "rank": 1,
+     "level": 1,
+     "tp": 1
+    },
+    {
+     "id": 24549,
+     "rank": 2,
+     "level": 12,
+     "tp": 5
+    },
+    {
+     "id": 24550,
+     "rank": 3,
+     "level": 18,
+     "tp": 10
+    },
+    {
+     "id": 24551,
+     "rank": 4,
+     "level": 24,
+     "tp": 15
+    },
+    {
+     "id": 24552,
+     "rank": 5,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24553,
+     "rank": 6,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24554,
+     "rank": 7,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24555,
+     "rank": 8,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24629,
+     "rank": 9,
+     "level": null,
+     "tp": null
+    },
+    {
+     "id": 24630,
+     "rank": 10,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Prankenhieb",
+   "icon": 134296,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    4
+   ],
+   "ranks": [
+    {
+     "id": 1264494,
+     "rank": 1,
+     "level": 12,
+     "tp": 0
+    }
+   ],
+   "teach": []
+  },
+  {
+   "en": null,
+   "de": "Tanz des Täuschers",
+   "icon": 458223,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    319
+   ],
+   "ranks": [
+    {
+     "id": 1310612,
+     "rank": 1,
+     "level": 20,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 277645,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Schnellerer Angriff III",
+   "icon": null,
+   "kind": "trait",
+   "source": "tame",
+   "speed": 1.5,
+   "families": [],
+   "ranks": [
+    {
+     "id": 1263102,
+     "rank": 1,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 1199,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Langsamerer Angriff II",
+   "icon": null,
+   "kind": "trait",
+   "source": "tame",
+   "speed": 2.5,
+   "families": [],
+   "ranks": [
+    {
+     "id": 1263113,
+     "rank": 1,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 822,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  }
+ ]
+}

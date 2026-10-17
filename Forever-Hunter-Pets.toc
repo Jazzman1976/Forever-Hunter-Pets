@@ -1,0 +1,37 @@
+## Interface: 16001
+## Title: Forever Hunter Pets
+## Notes: Which beast teaches which rank of a hunter pet ability, and where to find it.
+## Notes-deDE: Welches Tier welchen Rang einer Pet-Fähigkeit beibringt und wo es steht.
+## Author: Elmar Höfinghoff
+## Version: 0.7.0
+## X-License: MIT
+## X-Website: https://github.com/Jazzman1976/Forever-Hunter-Pets
+## SavedVariables: ForeverHunterPetsDB
+## SavedVariablesPerCharacter: ForeverHunterPetsCharDB
+## IconTexture: Interface\Icons\Ability_Physical_Taunt
+## AddonCompartmentFunc: ForeverHunterPets_OnCompartmentClick
+
+Locales\enUS.lua
+Locales\deDE.lua
+Core\Init.lua
+Data\Data.lua
+Core\Index.lua
+Core\Maps.lua
+Core\Known.lua
+Core\Observe.lua
+Core\Sightings.lua
+Core\Places.lua
+Core\Discover.lua
+Core\Comm.lua
+Core\Probe.lua
+Core\Survey.lua
+UI\Widgets.lua
+UI\MapCanvas.lua
+UI\Abilities.lua
+UI\Training.lua
+UI\Area.lua
+UI\Main.lua
+UI\ModeDialog.lua
+UI\Settings.lua
+UI\Tooltip.lua
+UI\Scent.lua

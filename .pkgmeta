@@ -1,0 +1,10 @@
+package-as: Forever-Hunter-Pets
+
+# Nur das Addon geht ins CurseForge-Paket; Werkzeuge und Doku bleiben im Repo.
+ignore:
+  - tools
+  - docs
+  - .ignore
+  - CLAUDE.md
+  - CONTRIBUTING.md
+  - media/logo.png
