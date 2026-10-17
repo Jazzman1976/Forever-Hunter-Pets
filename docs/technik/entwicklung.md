@@ -96,6 +96,21 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
   - **Vorerst:** Bis zur ersten Produktivversion (Entscheidung des Nutzers, 17.10.2026) gibt es **keinen Release-Branch**: Ein Release erhöht die Version im TOC direkt auf `develop` und wird von dort mit `--no-ff` nach `main` gemergt, Tag `v<version>` auf `main`. Getestet wird ohnehin laufend; Release-Branches kommen, sobald es eine richtige Produktivversion gibt.
   - **Tags vor 1.0.0 sind Betas** (Nutzer, 17.10.2026): `v<version>-beta`, etwa `v0.9.0-beta`; die Version im TOC bleibt `0.9.0`. Ab `v1.0.0` ohne Zusatz. Der Zusatz steuert den Typ auf CurseForge (siehe „Veröffentlichen“). `v0.8.0` stammt von vor dieser Regel.
 - **Issue, Branch, PR** (Regel des Nutzers, 17.10.2026):
+  - **Ablauf eines Issues** (Regel des Nutzers, 17.10.2026), abgebildet in der Spalte *Status* des Projects:
+
+    | Status | Bedeutung | Wer handelt |
+    | --- | --- | --- |
+    | Todo | noch nicht begonnen | – |
+    | Approved | vom Maintainer freigegeben; der Umsetzungsplan wird geschrieben | Claude: Plan als Kommentar ins Issue |
+    | Ready | Umsetzungsplan steht, wartet auf Freigabe | Maintainer: Plan freigeben oder ändern |
+    | Ready for development | Plan freigegeben, die Arbeit kann beginnen | Claude: umsetzen |
+    | In Progress | wird bearbeitet | Claude |
+    | Testing | wartet auf den Test im Spiel oder wird getestet | Maintainer: testen, Ergebnis ins Issue |
+    | Test passed | getestet, wartet auf den PR | Claude: Commit, Push, PR |
+    | In pull request | PR offen, wartet auf Review und Merge | Maintainer: mergen |
+    | Done | gemergt und geschlossen | Claude: aufräumen |
+
+    Ohne Freigabe des Maintainers wird weder ein Plan geschrieben (*Approved*) noch umgesetzt (*Ready for development*). Der Umsetzungsplan steht als Kommentar im Issue: was sich ändert und wo, Bewertung nach Mehrwert, Komplexität und Risiko, was geprüft wird und was der Maintainer testen soll. Den Status setzt, wer gerade handelt.
   - **Issue:** Jede Änderung hat ein GitHub-Issue. Gibt es keins, wird eins angelegt.
   - **Branch:** `feature/<Nr>-<issue-titel-als-slug>`, Titel klein, Wörter mit Bindestrich, etwa `feature/3-tiernamen-in-der-sprache-des-clients`, Umlaute als ae, oe, ue, ss. Gemeint ist das Muster „[Issue-Nummer] [Issue-Name]“; Git erlaubt in Branch-Namen weder Leerzeichen noch eckige Klammern.
   - **Commits:** `#<Nr> <Issue-Titel> => <was im Commit passiert ist>`, etwa `#3 Tiernamen in der Sprache des Clients => Namen aus der Sichtung vor den Daten`. Bei einem englischen Issue bleibt der Titel englisch, der Teil nach `=>` ist deutsch wie alle Commit-Meldungen.
