@@ -2,7 +2,9 @@
 
 <img src="media/logo.png" alt="Forever Hunter Pets logo: a dwarf hunter with a rifle behind a roaring bear in the snow" width="160" align="right">
 
-**Find every beast, learn every rank.** An addon for **WoW Forever** that catalogues which beast teaches which rank of a pet ability and where it lives – and turns finding them into a game. Everything it knows was found in the game by players of the addon: what you see and tame is noted and shared, and what nobody has found yet becomes your next hunt. Play in **complete mode** to see everything that is known, or in **explorer mode** to see only what you discovered yourself and how much is still out there.
+**Taming is a game again.** Explore **WoW Forever**, find the beasts that teach each pet ability rank, tame them and train your pet the classic way. What nobody has found yet is your next hunt.
+
+Nothing is copied from websites or databases: everything the addon knows was found in the game by its players. What you see and tame is noted and shared, and the catalogue grows with every hunter – which beast teaches which rank, where it lives, and which ranks you have learned. Play in **complete mode** to see everything that is known, or in **explorer mode** to see only what you discovered yourself and how much is still out there.
 
 ## What it does
 
