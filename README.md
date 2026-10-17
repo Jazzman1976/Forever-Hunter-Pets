@@ -24,6 +24,8 @@ Clone or unpack into `<World of Warcraft>\_classic_beta_\Interface\AddOns\Foreve
 
 The addon ships only data collected in the game and reads names, icons, maps and models from your client – nothing from websites or other addons ([NOTICE.md](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/NOTICE.md)). Code and collected data are released under the [MIT license](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/LICENSE), and so is the logo as far as rights in it exist. Game content belongs to Blizzard Entertainment. World of Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. This project is not affiliated with or endorsed by Blizzard Entertainment.
 
+**Shared observations.** With **Share observations** on (the default), what you see and tame is shared with other players of the addon in the game, and it may become part of the shipped data under the MIT license once enough players have confirmed it. By playing with sharing on, you agree to this. No character names are stored, only a short code derived from the name – this keeps names out of the data, but it is a pseudonym, not full anonymity. Switch the setting off and nothing is sent or received.
+
 ## Contributing
 
 Play with the addon and leave sharing on – that is the easiest contribution. More in [CONTRIBUTING.md](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/CONTRIBUTING.md). The developer documentation is in German: [docs/konzept/konzept.md](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/konzept/konzept.md) (goals, concept, decisions) and the technical pages linked there.

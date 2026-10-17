@@ -6,7 +6,7 @@ The project documentation, code comments and commit messages are in **German**. 
 
 ## Collecting data
 
-The data is collected in game. The simplest way to contribute is to play with the addon and leave **Share observations** switched on: what you see when you target or tame a beast, and what your Beast Training shows, reaches other players of the addon.
+The data is collected in game. The simplest way to contribute is to play with the addon and leave **Share observations** switched on: what you see when you target or tame a beast, and what your Beast Training shows, reaches other players of the addon. Shared observations may become part of the shipped data under the [MIT license](LICENSE), with a short code instead of your character name (details in the [README](README.md#data-and-license)).
 
 ## Reporting a problem
 

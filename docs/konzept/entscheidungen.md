@@ -40,6 +40,8 @@ Jede hier wurde ausdrücklich getroffen. Vor einer Änderung an der betroffenen 
 - **Zauber aus dem Zauberbuch zählen mit** (16.10.2026), auch wenn der Jäger sie noch nicht kennt (Anlass: Tanz des Täuschers).
 - **Fremde Fundort-Zellen werden nicht ausgeliefert** (16.10.2026). Je Zelle ist kein Melder gespeichert, die Regel „ab 10 Meldern“ lässt sich nicht prüfen. Im Spiel werden sie gezeigt; mitgelieferte und fremde Daten gelten dort gleich (Schalter „Fundorte anderer Spieler“ am 16.10.2026 entfernt, siehe Entdeckermodus in [konzept.md](konzept.md)).
 - **Der Name aus der Sichtung geht vor den Daten** (16.10.2026): Er ist in der Sprache des Clients.
+- **Geteilte Daten anderer Spieler kommen in die Stammdaten** (Nutzer, 17.10.2026, nach den ersten Daten aus der Gilde). Wortlaut sinngemäß: Daten, die Spieler sammeln, nehmen wir auf; wer das Addon mit eingeschaltetem Teilen nutzt, ist damit einverstanden. Fremdes zeigt sich im Spiel sofort aus den lokalen Daten; in die Stammdaten kommt es erst, wenn es sicher ist (ab 10 Meldern, siehe Belegung). Hinweis dazu in README, Anleitung und CONTRIBUTING, unter MIT.
+  - Das Kürzel ist ein Hash des Charakternamens, also **pseudonym, nicht anonym**: Wer einen Namen kennt, kann das Kürzel nachrechnen. Vertretbar, weil der Charaktername im Spiel ohnehin öffentlich ist (`/who`) und je Eintrag kein Ort gespeichert wird. Die Texte sagen deshalb nie „anonym“.
 
 ## Projekt
 
