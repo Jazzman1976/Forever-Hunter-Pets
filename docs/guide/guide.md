@@ -23,6 +23,7 @@ The addon follows the language of your client (English and German).
 
 The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file inside it.
 
+- **With the CurseForge app** (easiest): pick WoW Forever and install [Forever Hunter Pets](https://www.curseforge.com/wow/addons/forever-hunter-pets). The app picks the right folder and keeps the addon up to date.
 - **With git** (easy to update with `git pull`):
   ```
   cd "<World of Warcraft>\_classic_beta_\Interface\AddOns"
@@ -33,7 +34,7 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 `_classic_beta_` is the client folder during the beta; use the folder of the client you play WoW Forever with. Start the game (a new addon needs a full restart, `/reload` is not enough) and make sure **Forever Hunter Pets** is ticked under **AddOns** on the character selection screen.
 
-**Updating:** `git pull` or replace the folder. Your progress and collected data live in the client's `WTF` folder and survive the update. After an update that adds new files, restart the game once.
+**Updating:** the CurseForge app, `git pull`, or replace the folder. Your progress and collected data live in the client's `WTF` folder and survive the update. After an update that adds new files, restart the game once.
 
 **Coming from version 0.5.0 or older:** the folder used to be called `ForeverHunterPets`. Delete the old folder, and in `WTF\Account\<account>\SavedVariables` (and in each character's `SavedVariables` folder) rename `ForeverHunterPets.lua` to `Forever-Hunter-Pets.lua` to keep your progress.
 
