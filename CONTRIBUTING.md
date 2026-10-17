@@ -1,6 +1,8 @@
 # Contributing
 
-Thanks for your interest. Bug reports, findings from the game and pull requests are welcome.
+Thanks for your interest. Bug reports, findings from the game and pull requests are welcome. Please keep it friendly and on topic – see the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+What is planned and in progress: [milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) and the [project board](https://github.com/users/Jazzman1976/projects/2).
 
 The project documentation, code comments and commit messages are in **German**. Issues and pull requests in English are just as welcome.
 
@@ -10,7 +12,7 @@ The data is collected in game. The simplest way to contribute is to play with th
 
 ## Reporting a problem
 
-Open an [issue](https://github.com/Jazzman1976/Forever-Hunter-Pets/issues) and include:
+Open an [issue](https://github.com/Jazzman1976/Forever-Hunter-Pets/issues/new/choose) – the forms for bugs and data findings help, but every field is optional and a plain issue is fine too. Useful to include:
 
 - the addon version (shown in chat at login) and your client language
 - what you did, what you expected and what happened

@@ -259,10 +259,10 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M1 Eigene Daten | fremde Daten raus, Sammeln im Spiel | abgeschlossen (16.10.2026) |
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
-| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | läuft: 0.7.0 und öffentliches Repo (17.10.2026), Screenshots neu, Beta 0.8.0 auf CurseForge (17.10.2026) |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | nach M4 |
+| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026), Issues #1–#4 |
 
-Pläne und Aufgaben werden künftig als Issues auf GitHub geführt.
+Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 
 ## 17 Wo was steht
 

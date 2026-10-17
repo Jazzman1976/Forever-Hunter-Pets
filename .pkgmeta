@@ -12,4 +12,5 @@ ignore:
   - .ignore
   - CLAUDE.md
   - CONTRIBUTING.md
+  - CODE_OF_CONDUCT.md
   - media/logo.png
