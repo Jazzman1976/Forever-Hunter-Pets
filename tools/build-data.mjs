@@ -60,6 +60,12 @@ const warnings = [];
 // - TP: Die Wildtierausbildung zeigt beim aktuellen Rang des Pets 0, bei höheren den Preis abzüglich dessen,
 //   bei niedrigeren den vollen Preis (UI/Training.lua). Daraus wird der Preis zurückgerechnet; was sich noch
 //   nicht rechnen lässt, bleibt leer.
+// - Aktueller Rang (#4): gelernt („used“) – oder mit 0 angezeigt, und Pets dieser Familie hatten ihn im
+//   Zauberbuch. Die Liste zeigt einen Rang, den das Pet mitbrachte, nicht immer als gelernt (Ducken beim
+//   Weitschreiter: 0 und 2 statt 8 und 10).
+// - Eine 0 als voller Preis ist nur ein Preis, wenn mindestens zwei Familien sie zeigen (verfügbar oder
+//   gelernt) und keine Gleichung mehr ergibt (#4). Sonst bleibt der Preis leer: Prankenhieb und Gespinst
+//   standen nur mit 0 da, ohne jeden Gegenbeleg; Knurren zeigen viele Familien mit 0.
 // Tempo-Einträge heißen alle gleich; das Tempo macht sie eindeutig
 const label = (a) => (a.en || a.de) + (a.kind === 'trait' ? ` ${a.speed} s` : '');
 const nameOf = (n) => n.deDE ?? n.enUS ?? n.enGB ?? Object.values(n)[0];
@@ -83,27 +89,35 @@ function abilitiesFromSurvey() {
   }
   // TP: aus jeder Liste Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
   const rankOfId = new Map([...groups.values()].flat().map((r) => [r.id, r]));
+  const inBook = (id, fam) => (survey.zauberbuch?.[id]?.familien || []).map(Number).includes(Number(fam));
   const equations = [];
   for (const [fam, l] of Object.entries(survey.listen)) {
-    const current = new Map(); // Name → Rang-Eintrag mit Status „used“ und höchstem Rang
+    const current = new Map(); // Name → aktueller Rang (gelernt oder mitgebracht) mit höchstem Rang
     const rows = Object.entries(l.zeilen).map(([id, v]) => {
       const [status, shown] = v.split('/');
       return { r: rankOfId.get(+id), status, shown: Number(shown) };
     }).filter((x) => x.r && Number.isFinite(x.shown));
     for (const x of rows) {
       const name = nameOf(x.r.name);
-      if (x.status === 'used' && x.r.rang > (current.get(name)?.rang ?? 0)) current.set(name, x.r);
+      const known = x.status === 'used' || (x.shown === 0 && inBook(x.r.id, fam));
+      if (known && x.r.rang > (current.get(name)?.rang ?? 0)) current.set(name, x.r);
     }
     for (const x of rows) {
       const cur = current.get(nameOf(x.r.name));
-      if (!cur || x.r.rang < cur.rang) equations.push({ id: x.r.id, tp: x.shown, fam });
+      if (!cur || x.r.rang < cur.rang) equations.push({ id: x.r.id, tp: x.shown, fam, status: x.status });
       else if (x.r.rang > cur.rang) equations.push({ id: x.r.id, tp: x.shown, plus: cur.id, fam });
     }
   }
+  // Eine 0 als voller Preis zählt erst, wenn sie belegt ist (siehe oben); bis dahin rechnet sie nicht mit
+  const zeros = new Map(); // Zauber-ID → Familien, die ihn mit 0 als vollem Preis zeigen (verfügbar oder gelernt)
+  for (const q of equations) {
+    if (q.plus == null && q.tp === 0 && q.status !== 'unavailable') (zeros.get(q.id) ?? zeros.set(q.id, new Set()).get(q.id)).add(q.fam);
+  }
   const tp = new Map();
-  for (let changed = true; changed;) {
+  const solve = () => { for (let changed = true; changed;) {
     changed = false;
     for (const q of equations) {
+      if (q.plus == null && q.tp === 0) continue;
       if (q.plus != null && !tp.has(q.plus)) continue;
       const v = q.tp + (q.plus != null ? tp.get(q.plus) : 0);
       if (!tp.has(q.id)) { tp.set(q.id, v); changed = true; } else if (tp.get(q.id) !== v && !q.warned) {
@@ -111,7 +125,10 @@ function abilitiesFromSurvey() {
         warnings.push(`TP für Zauber ${q.id} widersprechen sich: ${tp.get(q.id)} und ${v} (Familie ${q.fam})`);
       }
     }
-  }
+  } };
+  solve();
+  for (const [id, fams] of zeros) if (!tp.has(id) && fams.size >= 2) tp.set(id, 0);
+  solve();
 
   const out = [];
   for (const [name, ranks] of groups) {

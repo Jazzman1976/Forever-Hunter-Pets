@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-10-17T22:10:44.108Z",
+  generatedAt = "2026-10-17T23:20:10.151Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -314,7 +314,7 @@ ns.Data = {
       de = "Prankenhieb", icon = 134296, kind = "family", source = "tame",
       families = { 4 },
       ranks = {
-        { id = 1264494, rank = 1, level = 12, tp = 0 },
+        { id = 1264494, rank = 1, level = 12 },
       },
       teach = {  },
     },
@@ -330,7 +330,7 @@ ns.Data = {
       de = "Meins!", icon = 136063, kind = "family", source = "tame",
       families = { 26 },
       ranks = {
-        { id = 1265054, rank = 1, level = 10, tp = 0 },
+        { id = 1265054, rank = 1, level = 10 },
       },
       teach = { { 270196, 1 }, { 270298, 1 } },
     },
@@ -338,8 +338,8 @@ ns.Data = {
       de = "Gespinst", icon = 136113, kind = "family", source = "tame",
       families = { 2, 3 },
       ranks = {
-        { id = 1265843, rank = 1, level = 12, tp = 0 },
-        { id = 1265878, rank = 2, level = 24, tp = 0 },
+        { id = 1265843, rank = 1, level = 12 },
+        { id = 1265878, rank = 2, level = 24 },
       },
       teach = {  },
     },
@@ -347,7 +347,7 @@ ns.Data = {
       de = "Staubwolke", icon = 136090, kind = "family", source = "tame",
       families = { 12 },
       ranks = {
-        { id = 1265899, rank = 1, level = 12, tp = 0 },
+        { id = 1265899, rank = 1, level = 12 },
       },
       teach = { { 2322, 1 } },
     },
