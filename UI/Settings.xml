@@ -1,0 +1,21 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- Forever Hunter Pets · Logo oben auf der Einstellungsseite (#5). Eine eigene Vorlage, damit die
+       Einstellungsliste für das Logo einen eigenen Pool von Rahmen hält: Diese Rahmen erscheinen nie auf
+       fremden Seiten, und fremde Rahmen kommen nie mit unserem Code in Berührung. Sie erbt von der
+       Überschrift des Clients und bringt so deren Init mit – beim Aufbau der Liste läuft kein Code des
+       Addons. Höhe und Logo stehen hier; die Höhe übernimmt die Liste aus der Vorlage. -->
+  <Frame name="ForeverHunterPetsLogoTemplate" inherits="SettingsListSectionHeaderTemplate" virtual="true">
+    <Size y="176"/>
+    <Layers>
+      <Layer level="ARTWORK">
+        <!-- linksbündig auf Höhe der Beschriftungen darunter -->
+        <Texture parentKey="FHPLogo" file="Interface\AddOns\Forever-Hunter-Pets\media\logo">
+          <Size x="160" y="160"/>
+          <Anchors>
+            <Anchor point="TOPLEFT" x="37" y="-8"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Frame>
+</Ui>
