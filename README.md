@@ -14,6 +14,10 @@
 
 The addon is available in English and German and follows the language of your client.
 
+![The Abilities tab: ranks with pet level, training points and teaching beasts, and a selected beast with its spawn points on the zone map (German client)](docs/images/abilities.jpg)
+
+More screenshots in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md).
+
 **Full documentation: [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md)** – modes, every view, how the addon learns, sharing, settings, commands.
 
 ## Installation
