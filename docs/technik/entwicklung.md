@@ -90,6 +90,7 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
   - `release/<version>` geht von `develop` ab, wird getestet, bekommt nur noch Korrekturen und die Versionsnummer, und wird dann nach `main` **und** zurück nach `develop` gemergt. Der Merge auf `main` bekommt das Tag `v<version>`.
   - `hotfix/<version>` geht von `main` ab und wird ebenfalls nach `main` und `develop` gemergt.
   - `main` enthält nur veröffentlichte Stände.
+  - **Geschützt** (Ruleset „Protect develop and main“ auf GitHub, 17.10.2026): `develop` und `main` lassen sich nicht löschen und nicht per Force-Push überschreiben; Änderungen kommen nur per Pull Request mit einer Freigabe hinein. Ausgenommen ist die Rolle „Repository admin“ – der Maintainer pusht und mergt weiter direkt (GitHub meldet das als „Bypassed rule violations“).
   - **Vorerst:** Bis zur ersten Produktivversion (Entscheidung des Nutzers, 17.10.2026) gibt es **keinen Release-Branch**: Ein Release erhöht die Version im TOC direkt auf `develop` und wird von dort mit `--no-ff` nach `main` gemergt, Tag `v<version>` auf `main`. Getestet wird ohnehin laufend; Release-Branches kommen, sobald es eine richtige Produktivversion gibt.
 - **Inkremente:** ein Schritt nach dem anderen, jeder im Spiel prüfbar. Committet wird, nachdem der Schritt im Spiel getestet ist.
 - **Größere Vorhaben, Pläne und Änderungswünsche** werden als Issues auf GitHub geführt.

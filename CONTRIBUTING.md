@@ -20,7 +20,7 @@ Please do not edit `Data/Data.lua` or `tools/data.json` by hand – both are gen
 
 ## Changing code
 
-1. The project follows [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). Branch from `develop` (`feature/<topic>`) and open your pull request against `develop`. `main` only receives releases.
+1. The project follows [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). Branch from `develop` (`feature/<topic>`) and open your pull request against `develop`. `main` only receives releases. Both branches are protected: changes go in by pull request and need one approval from the maintainer.
 2. Read [docs/technik/entwicklung.md](docs/technik/entwicklung.md) for setup and testing, [docs/technik/addon-technik.md](docs/technik/addon-technik.md) for how the addon is built, and [docs/konzept/konzept.md](docs/konzept/konzept.md) for the concept and the decisions behind it.
 3. Keep a change small enough to be tested in game in one go.
 4. Say in the pull request what you tested and how – in game, or only with the offline checks.
