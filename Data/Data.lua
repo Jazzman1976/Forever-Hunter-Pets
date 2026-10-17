@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-10-17T21:31:05.714Z",
+  generatedAt = "2026-10-17T22:10:44.108Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -89,9 +89,9 @@ ns.Data = {
     [2322] = { de = "Waldschreiter", fam = 12, min = 14, max = 16, cls = 0, zones = { 1439 } },
     [2323] = { de = "Riesiger Waldschreiter", fam = 12, min = 17, max = 19, cls = 0, zones = { 1439 } },
     [2958] = { de = "Präriewolf", fam = 1, min = 6, max = 6, cls = 0, zones = {  } },
-    [3809] = { min = 22, max = 22, cls = 0, zones = {  } },
+    [3809] = { de = "Ashenvalebär", min = 22, max = 22, cls = 0, zones = {  } },
     [3814] = { de = "Stachelkriecher", fam = 8, min = 20, max = 20, cls = 0, zones = {  } },
-    [3823] = { min = 20, max = 20, cls = 0, zones = {  } },
+    [3823] = { de = "Geisterpfotenläufer", min = 20, max = 20, cls = 0, zones = {  } },
     [4692] = { de = "Schreckenssturzflieger", fam = 7, min = 32, max = 33, cls = 0, zones = { 1443 } },
     [7319] = { de = "Lady Sathrah", fam = 3, min = 12, max = 12, cls = 0, zones = { 1438 } },
     [253529] = { de = "Schnaubschnauze der Borstennacken", fam = 5, min = 42, max = 42, cls = 0, zones = {  } },
