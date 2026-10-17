@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-17T22:10:44.108Z",
+ "generatedAt": "2026-10-17T23:20:10.151Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -2008,7 +2008,7 @@
      "id": 1264494,
      "rank": 1,
      "level": 12,
-     "tp": 0
+     "tp": null
     }
    ],
    "teach": []
@@ -2064,7 +2064,7 @@
      "id": 1265054,
      "rank": 1,
      "level": 10,
-     "tp": 0
+     "tp": null
     }
    ],
    "teach": [
@@ -2096,13 +2096,13 @@
      "id": 1265843,
      "rank": 1,
      "level": 12,
-     "tp": 0
+     "tp": null
     },
     {
      "id": 1265878,
      "rank": 2,
      "level": 24,
-     "tp": 0
+     "tp": null
     }
    ],
    "teach": []
@@ -2122,7 +2122,7 @@
      "id": 1265899,
      "rank": 1,
      "level": 12,
-     "tp": 0
+     "tp": null
     }
    ],
    "teach": [

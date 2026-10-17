@@ -36,7 +36,7 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 | `families` | `{ ID: { de, en, icon } }` |
 | `beasts` | `{ NPC-ID: { de, en, fam, min, max, cls } }`; `cls` ist die Einstufung: 0 normal, 1 Elite, 2 Rar-Elite, 3 Boss, 4 Rar |
 | `coords` | `{ NPC-ID: { uiMapID: [x, y, x, y, …] } }` in Promille der Karte |
-| `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }` |
+| `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }`; `tp` ist leer (`null`), solange kein Preis belegt ist – eine 0 nur aus einer einzigen Familie reicht nicht (#4) |
 
 - `kind`: `general` (alle Familien), `family` (die in `families`), `trait` (Angriffstempo, `speed` in Sekunden): ein passiver Zauber aus dem Zauberbuch, dessen Tempo die Zähmungen zeigen; ist der Zauber für ein Tempo noch nicht gesehen, eine negative Ersatz-ID (etwa −150 für 1,5 s), für die das Addon den Client nicht fragt.
 - `source`: `tame` (von einem Tier abschauen), `trainer` (Tierausbilder), `unknown`.
