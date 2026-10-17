@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-17T21:31:05.714Z",
+ "generatedAt": "2026-10-17T22:10:44.108Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -544,7 +544,7 @@
    "cls": 0
   },
   "3809": {
-   "de": null,
+   "de": "Ashenvalebär",
    "en": null,
    "fam": null,
    "min": 22,
@@ -560,7 +560,7 @@
    "cls": 0
   },
   "3823": {
-   "de": null,
+   "de": "Geisterpfotenläufer",
    "en": null,
    "fam": null,
    "min": 20,

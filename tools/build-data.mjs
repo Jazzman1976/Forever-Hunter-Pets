@@ -361,8 +361,11 @@ const abilities = abilitiesIn.map((a) => {
 
 // ---- Sichtungen: Name, Stufe, Familie, Einstufung je Tier ----
 // Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_NEEDED verschiedene Melder das Tier gesehen haben (wie
-// beim Zähmen). Name je Sprache: der eigene, sonst der häufigste; Familie und Einstufung ebenso.
+// beim Zähmen). Familie und Einstufung: die eigene, sonst die häufigste.
+// Namen (#3): je Sprache aus allen Sichtungen dieser Sprache, ohne Schwelle – ein Name ist kein Beleg. Sie kommen
+// nur an Tiere, die ohnehin ausgeliefert werden (siehe beastIds unten). Der eigene Name geht vor, sonst der häufigste.
 const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
+const sightedNames = new Map(); // NPC-ID → { de, en }
 {
   const byNpc = new Map();
   for (const s of sightings) {
@@ -378,14 +381,16 @@ const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
     return [...count].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
   };
   for (const [npc, list] of byNpc) {
+    sightedNames.set(npc, {
+      de: pick(list.filter((s) => s.sprache === 'deDE'), (s) => s.name),
+      en: pick(list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
+    });
     const own = list.filter((s) => ownReps.has(s.melder));
     const foreignReps = new Set(list.filter((s) => !ownReps.has(s.melder)).map((s) => s.melder));
     const use = own.length ? own : foreignReps.size >= FOREIGN_NEEDED ? list : null;
     if (!use) continue;
     const levels = use.map((s) => s.stufe);
     sighted.set(npc, {
-      de: pick(use.filter((s) => s.sprache === 'deDE'), (s) => s.name),
-      en: pick(use.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
       fam: pick(use, (s) => s.familie), cls: pick(use, (s) => s.einstufung),
       min: Math.min(...levels), max: Math.max(...levels),
     });
@@ -404,11 +409,12 @@ const beasts = {};
 for (const id of [...beastIds].sort((x, y) => x - y)) {
   const b = beastsIn[id] || {};
   const s = sighted.get(id) || {};
+  const n = sightedNames.get(id) || {};
   const lv = [level.get(id), s.min != null ? [s.min, s.max] : null].filter(Boolean);
   const min = lv.length ? Math.min(...lv.map((x) => x[0])) : null;
   const max = lv.length ? Math.max(...lv.map((x) => x[1])) : null;
   beasts[id] = {
-    de: b.de || s.de || null, en: b.en || s.en || null, fam: b.fam ?? s.fam ?? null,
+    de: b.de || n.de || null, en: b.en || n.en || null, fam: b.fam ?? s.fam ?? null,
     min: b.min ?? min, max: b.max ?? max, cls: b.cls ?? s.cls ?? 0,
   };
 }
