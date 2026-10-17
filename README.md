@@ -2,7 +2,9 @@
 
 <img src="media/logo.png" alt="Forever Hunter Pets logo: a dwarf hunter with a rifle behind a roaring bear in the snow" width="160" align="right">
 
-**Find every beast, learn every rank.** An addon for **WoW Forever** that catalogues which beast teaches which rank of a pet ability and where it lives – and turns finding them into a game. Everything it knows was found in the game by players of the addon: what you see and tame is noted and shared, and what nobody has found yet becomes your next hunt. Play in **complete mode** to see everything that is known, or in **explorer mode** to see only what you discovered yourself and how much is still out there.
+**Taming is a game again.** Explore **WoW Forever**, find the beasts that teach each pet ability rank, tame them and train your pet the classic way. What nobody has found yet is your next hunt.
+
+Nothing is copied from websites or databases: everything the addon knows was found in the game by its players. What you see and tame is noted and shared, and the catalogue grows with every hunter – which beast teaches which rank, where it lives, and which ranks you have learned. Play in **complete mode** to see everything that is known, or in **explorer mode** to see only what you discovered yourself and how much is still out there.
 
 ## What it does
 
@@ -14,15 +16,21 @@
 
 The addon is available in English and German and follows the language of your client.
 
+![The Abilities tab: ranks with pet level, training points and teaching beasts, and a selected beast with its spawn points on the zone map (German client)](docs/images/abilities.jpg)
+
+More screenshots in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md).
+
 **Full documentation: [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md)** – modes, every view, how the addon learns, sharing, settings, commands.
 
 ## Installation
 
-Clone or unpack into `<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets` (the folder name must match the `.toc` file), start the game and type `/fhp`. Details in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md#installation).
+Install it from [CurseForge](https://www.curseforge.com/wow/addons/forever-hunter-pets) (the CurseForge app does everything for you), or clone or unpack into `<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets` (the folder name must match the `.toc` file). Start the game and type `/fhp`. Details in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md#installation).
 
 ## Data and license
 
 The addon ships only data collected in the game and reads names, icons, maps and models from your client – nothing from websites or other addons ([NOTICE.md](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/NOTICE.md)). Code and collected data are released under the [MIT license](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/LICENSE), and so is the logo as far as rights in it exist. Game content belongs to Blizzard Entertainment. World of Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. This project is not affiliated with or endorsed by Blizzard Entertainment.
+
+**Shared observations.** With **Share observations** on (the default), what you see and tame is shared with other players of the addon in the game, and it may become part of the shipped data under the MIT license once enough players have confirmed it. By playing with sharing on, you agree to this. No character names are stored, only a short code derived from the name – this keeps names out of the data, but it is a pseudonym, not full anonymity. Switch the setting off and nothing is sent or received.
 
 ## Contributing
 

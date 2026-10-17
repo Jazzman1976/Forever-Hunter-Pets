@@ -195,7 +195,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` zwischen Spielern, die gleichzeitig online sind. Ein Gruß nach dem Einloggen holt Neues von anderen.
 - **Was:** Zähmungen (`O1`), Sichtungen (`S1`), Fundort-Zellen (`F1`), Gruß (`H1`). Nicht geteilt: Fährten, Fernnamen, Status, Lernstand.
 - **Sparsam:** gedrosselt (eine Nachricht je 2 s, Bündel alle 5 Minuten), nur was die Daten noch nicht kennen, Obergrenzen für Gespeichertes. Einzelheiten und Zahlen in [addon-technik.md](../technik/addon-technik.md).
-- **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen.
+- **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026).
 - **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen, Kanal verlassen.
 - **Ungeprüft** mit mehreren Spielern – das gehört zu M5.
 
@@ -259,7 +259,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M1 Eigene Daten | fremde Daten raus, Sammeln im Spiel | abgeschlossen (16.10.2026) |
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
-| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | läuft (Release 0.7.0, 17.10.2026) |
+| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | läuft: 0.7.0 und öffentliches Repo (17.10.2026), Screenshots neu, Beta 0.8.0 auf CurseForge (17.10.2026) |
 | M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | nach M4 |
 
 Pläne und Aufgaben werden künftig als Issues auf GitHub geführt.

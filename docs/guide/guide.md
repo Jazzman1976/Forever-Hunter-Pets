@@ -23,6 +23,7 @@ The addon follows the language of your client (English and German).
 
 The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file inside it.
 
+- **With the CurseForge app** (easiest): pick WoW Forever and install [Forever Hunter Pets](https://www.curseforge.com/wow/addons/forever-hunter-pets). The app picks the right folder and keeps the addon up to date.
 - **With git** (easy to update with `git pull`):
   ```
   cd "<World of Warcraft>\_classic_beta_\Interface\AddOns"
@@ -33,7 +34,7 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 `_classic_beta_` is the client folder during the beta; use the folder of the client you play WoW Forever with. Start the game (a new addon needs a full restart, `/reload` is not enough) and make sure **Forever Hunter Pets** is ticked under **AddOns** on the character selection screen.
 
-**Updating:** `git pull` or replace the folder. Your progress and collected data live in the client's `WTF` folder and survive the update. After an update that adds new files, restart the game once.
+**Updating:** the CurseForge app, `git pull`, or replace the folder. Your progress and collected data live in the client's `WTF` folder and survive the update. After an update that adds new files, restart the game once.
 
 **Coming from version 0.5.0 or older:** the folder used to be called `ForeverHunterPets`. Delete the old folder, and in `WTF\Account\<account>\SavedVariables` (and in each character's `SavedVariables` folder) rename `ForeverHunterPets.lua` to `Forever-Hunter-Pets.lua` to keep your progress.
 
@@ -67,6 +68,8 @@ Three tabs: **Abilities**, **Area** and **Training**. Top right: the current mod
 
 Every pet ability, rank by rank, and the beasts that teach it.
 
+![Abilities tab: ranks with pet level, training points and teaching beasts on the left, a selected beast with its spawn points on the zone map on the right (German client)](../images/abilities.jpg)
+
 **The list (left).** One row per rank: name, rank, from which pet level, training point cost, and how many beasts teach it (*3 beasts*). In explorer mode, beasts you have not identified yet are counted instead (*2 undiscovered*). *? unknown* means nobody has found a beast for this rank yet. The checkbox shows whether **you, the hunter,** have learned the rank (see [learning progress](#your-learning-progress)). *your pet knows it* marks ranks your current pet has, but you haven't learned yet – don't release that pet too early.
 
 **Filters (top).**
@@ -81,6 +84,8 @@ Every pet ability, rank by rank, and the beasts that teach it.
 ## Area
 
 A progress book for one zone at a time. Pick the zone at the top; it starts with the zone you are in.
+
+![Area tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
 **The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet.
 
@@ -110,11 +115,15 @@ When everything is known (X = Y), only the number is shown, without a bar. In ex
 
 Your learning progress as a list for your **active pet**, coloured like the game's own window – and always with a word, never by colour alone: **learnable** (green), **not enough TP** (yellow), **pet level too low** (red), **already learned** and **for other families** (grey). Hover for the reason. Training points: only the difference counts – if your pet has *Bite 3*, *Bite 4* costs only the difference. **Show** hides any of these states.
 
+![Training tab for a boar: every rank with its state and cost on the left, the selected rank with requirements, cost and the families that can learn it on the right (German client)](../images/training.jpg)
+
 The button **Open Beast Training** opens the game's window. Teaching happens there: the game does not let addons teach.
 
 ## Beast tooltip
 
 When you hover over a beast, the addon adds its lines below **Forever Hunter Pets**:
+
+![Beast tooltip: below the beast's name and level, Forever Hunter Pets lists the rank it teaches and that you have learned it (German client)](../images/tooltip.jpg)
 
 1. **Status** (explorer mode only): *tracked*, *beast found* or *abilities known*.
 2. **Attack speed** if it differs from normal (for example *Faster Attack III (1.5 s)*) – your pet takes it over.
@@ -166,6 +175,8 @@ What your pet knows does not count – you only have the rank once the game says
 
 Addons can't reach the internet, so players share in the game: over your guild, your group and a hidden channel (`FHPetsNet`). Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. Messages are throttled, so the channel stays quiet.
 
+What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity.
+
 Switch **Share observations** off and nothing is sent or received.
 
 ## Trustworthy data
@@ -178,6 +189,8 @@ Switch **Share observations** off and nothing is sent or received.
 ## Settings
 
 Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
+
+![Settings page with the logo and the options from explorer mode to Share observations (German client)](../images/settings.jpg)
 
 | Setting | Default | What it does |
 | --- | --- | --- |
