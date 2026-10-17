@@ -84,6 +84,7 @@ Gezähmt wurde ein Großer Fleischreißer (NPC 154) auf Stufe 17.
 
 - **Erkundete Gebiete:** `C_MapExplorationInfo.GetExploredMapTextures(uiMapID)` liefert die aufgedeckten Kartenteile – auch für Zonen, in denen der Charakter gerade nicht steht. Das Addon nutzt nur das; eine fremde Overlay-Tabelle, wie Karten-Aufdecker sie mitbringen, kommt aus Lizenzgründen nicht in Frage.
 - **Einstellungsseite:** Die moderne `Settings`-API (`RegisterAddOnSetting` mit Variablentabelle) funktioniert im Forever-Client.
+- **Keine Rahmen oder Funktionen der Einstellungsliste anfassen** (18.10.2026, #5): Die Liste verwendet ihre Rahmen für alle Seiten der Spieloptionen wieder. Seit 0.7.0 war das Logo eine Überschrift des Clients mit ersetztem `InitFrame` und `GetExtent`; damit richtete Code des Addons Rahmen ein, die sich alle Seiten teilen. Nachdem die Addon-Seite offen war, meldete der Client beim Scrollen auf *Kontakte* „Forever-Hunter-Pets wurde geblockt“ (Taint) – ohne vorheriges Öffnen der Addon-Seite nicht. Ein zusätzlicher `hooksecurefunc(frame, "Init", …)` und ein Kind-Rahmen mit `OnUpdate` änderten daran nichts. Sauberer Weg: eigene XML-Vorlage, die von der Vorlage des Clients erbt, und `Settings.CreateElementInitializer` – eigener Pool, kein Addon-Code beim Aufbau der Liste. Ob das reicht, zeigt der Test zu #5.
 - **Zone → Karte:** Fehlt eine Zone in `ZONE_MAP`, findet das Addon die Karte über den Zonennamen (`C_Map.GetAreaInfo` gegen `C_Map.GetMapInfo`); `/fhp zones` listet, was übrig bleibt.
 
 ## Geheime Werte

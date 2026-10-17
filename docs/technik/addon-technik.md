@@ -28,7 +28,8 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `UI/ModeDialog.lua` | Startdialog: Komplett- oder Entdeckermodus, einmal je Charakter |
 | `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y bekannt“ (fertig: nur die Zahl) |
 | `UI/Main.lua` | Fenster, Reiter, Zahnrad zu den Einstellungen (`ns.OpenSettings` öffnet per `Settings.OpenToCategory` die eigene Kategorie und schließt das Fenster) |
-| `UI/Settings.lua` | Seite im Addon-Menü (oben das Logo aus `media/logo.tga`), Knopf an der Minikarte |
+| `UI/Settings.lua` | Seite im Addon-Menü, Knopf an der Minikarte; oben das Logo als eigenes Element (`Settings.CreateElementInitializer` mit der Vorlage aus `UI/Settings.xml`, #5) |
+| `UI/Settings.xml` | Vorlage `ForeverHunterPetsLogoTemplate` für das Logo (aus `media/logo.tga`): erbt von der Überschrift des Clients (`SettingsListSectionHeaderTemplate`) und damit deren `Init`, bringt Höhe und Bild mit. Eigene Vorlage heißt eigener Pool in der Einstellungsliste – die Rahmen erscheinen nie auf fremden Seiten, und beim Aufbau der Liste läuft kein Code des Addons |
 | `UI/Tooltip.lua` | Tier-Tooltip: Status des Tiers in der Zone („Fährte aufgenommen“, Fährte, gefunden, bekannt; nimmt Fährte und Fundort notfalls selbst auf), Angriffstempo, Ränge mit Lernstand |
 | `UI/Scent.lua` | Witterung: Namen, die „Wildtiere aufspüren“ im Minikarten-Tooltip zeigt, geben Tieren der Zone still eine Fährte (keine Anzeige). Nachgesehen wird nur, solange dieser Tooltip offen ist und die Maus über der Minikarte steht |
 

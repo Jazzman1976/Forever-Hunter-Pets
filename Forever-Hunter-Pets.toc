@@ -33,6 +33,7 @@ UI\Training.lua
 UI\Area.lua
 UI\Main.lua
 UI\ModeDialog.lua
+UI\Settings.xml
 UI\Settings.lua
 UI\Tooltip.lua
 UI\Scent.lua
