@@ -4,7 +4,7 @@ Thanks for your interest. Bug reports, findings from the game and pull requests 
 
 What is planned and in progress: [milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) and the [project board](https://github.com/users/Jazzman1976/projects/2).
 
-The project documentation, code comments and commit messages are in **German**. Issues and pull requests in English are just as welcome.
+The project documentation, code comments and commit messages are in **German**, and so are the issues the maintainer opens. Please open issues and pull requests in English (or German, if you like) – an issue opened in English is discussed in English.
 
 ## Collecting data
 
@@ -22,7 +22,7 @@ Please do not edit `Data/Data.lua` or `tools/data.json` by hand – both are gen
 
 ## Changing code
 
-1. The project follows [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). Branch from `develop` (`feature/<topic>`) and open your pull request against `develop`. `main` only receives releases. Both branches are protected: changes go in by pull request and need one approval from the maintainer.
+1. The project follows [GitFlow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). Every change has an issue – open one if there is none. Branch from `develop` as `feature/<issue number>-<issue-title-as-slug>` (for example `feature/3-tiernamen-in-der-sprache-des-clients`) and open your pull request against `develop`. Commit messages follow `#<issue number> <issue title> => <what the commit does>`. The pull request explains what changed, why, and what the consequences are. `main` only receives releases. Both branches are protected: changes go in by pull request and need one approval from the maintainer.
 2. Read [docs/technik/entwicklung.md](docs/technik/entwicklung.md) for setup and testing, [docs/technik/addon-technik.md](docs/technik/addon-technik.md) for how the addon is built, and [docs/konzept/konzept.md](docs/konzept/konzept.md) for the concept and the decisions behind it.
 3. Keep a change small enough to be tested in game in one go.
 4. Say in the pull request what you tested and how – in game, or only with the offline checks.
