@@ -5,5 +5,15 @@
   {"npc":277645,"stufe":23,"zauber":[1310612],"tempo":2,"zeit":1792141032,"melder":"758ea066"},
   {"npc":1199,"stufe":5,"zauber":[1742,1263102],"tempo":1.5,"zeit":1792145461,"melder":"758ea066"},
   {"npc":1196,"stufe":8,"zauber":[16827],"tempo":2,"zeit":1792145747,"melder":"758ea066"},
-  {"npc":822,"stufe":9,"zauber":[16828,1263113],"tempo":2.5,"zeit":1792146014,"melder":"758ea066"}
+  {"npc":822,"stufe":9,"zauber":[16828,1263113],"tempo":2.5,"zeit":1792146014,"melder":"758ea066"},
+  {"npc":834,"stufe":10,"zauber":[17255],"tempo":2,"zeit":1792186154,"melder":"758ea066"},
+  {"npc":199,"stufe":11,"zauber":[24423],"tempo":2,"zeit":1792186474,"melder":"758ea066"},
+  {"npc":199,"stufe":10,"zauber":[24423],"tempo":2,"zeit":1792186549,"melder":"758ea066"},
+  {"npc":454,"stufe":12,"zauber":[26177],"tempo":2,"zeit":1792187586,"melder":"758ea066"},
+  {"npc":1109,"stufe":14,"zauber":[],"tempo":2,"zeit":1792188270,"melder":"758ea066"},
+  {"npc":833,"stufe":11,"zauber":[17255,24604],"tempo":2,"zeit":1792191273,"melder":"758ea066"},
+  {"npc":157,"stufe":15,"zauber":[26177],"tempo":2,"zeit":1792191842,"melder":"758ea066"},
+  {"npc":525,"stufe":5,"zauber":[1263099],"tempo":1.7,"zeit":1792192884,"melder":"758ea066"},
+  {"npc":822,"stufe":8,"zauber":[16828,1263113],"tempo":2.5,"zeit":1792227714,"melder":"758ea066"},
+  {"npc":30,"stufe":6,"zauber":[17253],"tempo":2,"zeit":1792228675,"melder":"758ea066"}
 ]
