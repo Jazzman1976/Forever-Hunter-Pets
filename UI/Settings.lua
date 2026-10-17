@@ -102,30 +102,21 @@ end
 -- ---- Seite im Addon-Menü des Spiels (Optionen → AddOns) ----
 -- Die Einstellungen lesen und schreiben ns.db.ui selbst; hier folgt nur der Knopf nach.
 -- „Filter merken“ braucht das nicht: es wirkt beim nächsten Aufbau des Fensters.
--- Logo oben auf der Seite: eine Abschnitts-Überschrift des Clients, höher gemacht und mit dem Bild
--- bestückt – sie bringt alles mit, was die Einstellungsliste von einem Element erwartet. Fehlt die
--- Funktion im Client, bleibt die Seite ohne Logo. Linksbündig auf Höhe der Beschriftungen darunter;
--- rechts daneben ist Platz für einen Text (später: was das Addon macht, Version).
-local LOGO = "Interface\\AddOns\\Forever-Hunter-Pets\\media\\logo"
-local LOGO_SIZE = 160
-local LOGO_LEFT = 37   -- Einzug der Beschriftungen in der Einstellungsliste
+-- Logo oben auf der Seite: ein eigenes Element aus der Vorlage in UI/Settings.xml (#5). Bis 0.8.0 war es
+-- eine Überschrift des Clients mit ersetztem InitFrame und GetExtent – damit richtete unser Code Rahmen ein,
+-- die sich alle Seiten der Optionen teilen, und der Client blockierte auf fremden Seiten Aktionen („wurde
+-- geblockt“, etwa auf „Kontakte“). Jetzt ersetzt das Addon keine Funktion und fasst keinen Rahmen an: Die
+-- Vorlage erbt Init von der Überschrift des Clients, die Liste hält für sie einen eigenen Pool.
+-- Passt etwas nicht zum Client, bleibt die Seite ohne Logo – lieber kein Logo als eine blockierte Aktion.
+local LOGO_TEMPLATE = "ForeverHunterPetsLogoTemplate"
 local function addLogo(layout)
-  if not (layout and layout.AddInitializer and CreateSettingsListSectionHeaderInitializer) then return end
-  local init = CreateSettingsListSectionHeaderInitializer("")
-  if not (init and init.InitFrame) then return end
-  local base = init.InitFrame
-  init.GetExtent = function() return LOGO_SIZE + 16 end
-  init.InitFrame = function(self, frame)
-    base(self, frame)
-    if not frame.fhpLogo then
-      frame.fhpLogo = frame:CreateTexture(nil, "ARTWORK")
-      frame.fhpLogo:SetSize(LOGO_SIZE, LOGO_SIZE)
-      frame.fhpLogo:SetPoint("TOPLEFT", LOGO_LEFT, -8)
-    end
-    frame.fhpLogo:SetTexture(LOGO)
-    frame.fhpLogo:Show()
-  end
-  layout:AddInitializer(init)
+  if not (layout and layout.AddInitializer and Settings.CreateElementInitializer
+    and CreateSettingsListSectionHeaderInitializer) then return end
+  -- Die Vorlage erbt von „SettingsListSectionHeaderTemplate“; nur wenn die Überschrift des Clients so heißt
+  local header = CreateSettingsListSectionHeaderInitializer("")
+  if not (header and header.GetTemplate and header:GetTemplate() == "SettingsListSectionHeaderTemplate") then return end
+  if not (C_XMLUtil and C_XMLUtil.GetTemplateInfo and C_XMLUtil.GetTemplateInfo(LOGO_TEMPLATE)) then return end
+  layout:AddInitializer(Settings.CreateElementInitializer(LOGO_TEMPLATE, { name = "" }))
 end
 
 local function registerSettings()
