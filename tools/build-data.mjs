@@ -97,9 +97,12 @@ function abilitiesFromSurvey() {
   // Zauber aus dem Zauberbuch eines Pets, die in keiner Liste stehen: Das Pet kann sie, der Jäger noch
   // nicht (etwa Tanz des Täuschers, 16.10.2026). Sie kommen dazu, ohne Pet-Stufe und TP; die Familien
   // sind die der Pets, die sie hatten.
+  // Die Familien aus dem Zauberbuch gelten auch für Ränge aus den Listen: Eine Liste zählt nur vollständig, ein
+  // Rang kann also in einer Wildtierausbildung gestanden haben, deren Liste fehlt (Wildes Verwunden, #30).
   const fromBook = new Map(); // Zauber-ID → Familien
   for (const [id, z] of Object.entries(survey.zauberbuch || {})) {
-    if (survey.raenge[id] || z.rang == null) continue;
+    if (z.rang == null) continue;
+    if (survey.raenge[id]) { fromBook.set(+id, z.familien || []); continue; }
     const name = nameOf(z.name);
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name).push({ id: +id, name: z.name, rang: z.rang, datum: z.datum });

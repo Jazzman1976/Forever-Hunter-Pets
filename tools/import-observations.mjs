@@ -86,9 +86,13 @@ function record(s, ownRep) {
   return r;
 }
 
-const args = process.argv.slice(2);
+// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
+// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
+// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
+const NO_TRAINER = process.argv.includes('--ohne-tierausbilder');
+const args = process.argv.slice(2).filter((a) => a !== '--ohne-tierausbilder');
 if (!args.length) {
-  console.error('Aufruf: node tools/import-observations.mjs <SavedVariables-Datei oder WoW-Ordner> […]');
+  console.error('Aufruf: node tools/import-observations.mjs [--ohne-tierausbilder] <SavedVariables-Datei oder WoW-Ordner> […]');
   process.exit(1);
 }
 const files = [...new Set(args.flatMap((a) => findFiles(path.resolve(a))))]
@@ -263,11 +267,13 @@ for (const f of files) {
     if (!/^\d+$/.test(id)) continue; // ohne Zauber-ID nicht verwertbar
     const r = (survey.raenge[id] ??= { name: {} });
     r.name[lang] = e.name;
-    for (const [to, from] of [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel'], ['jaegerStufe', 'hunterLevel'], ['preis', 'gold']]) {
+    const fields = [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel']];
+    if (!NO_TRAINER) fields.push(['jaegerStufe', 'hunterLevel'], ['preis', 'gold']);
+    for (const [to, from] of fields) {
       if (e[from] != null) r[to] = e[from];
     }
     if (e.bw) r.wildtierausbildung = true;
-    if (e.npc) r.tierausbilder = true;
+    if (e.npc && !NO_TRAINER) r.tierausbilder = true;
     if (e.t) r.datum = r.datum && r.datum < day(e.t) ? r.datum : day(e.t);
   }
   for (const [fam, l] of Object.entries(s.lists || {})) {
