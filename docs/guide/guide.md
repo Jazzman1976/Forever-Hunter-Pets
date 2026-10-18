@@ -130,6 +130,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 2. **Attack speed** if it differs from normal (for example *Faster Attack III (1.5 s)*) – your pet takes it over.
 3. **Every rank it teaches**, with the ability icon: *– learned* (grey) if you already know the rank, *– new* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
+5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already know (*Show known abilities* – this also hides *teaches nothing*).
 

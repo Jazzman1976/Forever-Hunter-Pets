@@ -1,5 +1,6 @@
 -- Forever Hunter Pets · Tooltip eines Tiers: sein Status in dieser Zone (Fährte, gefunden, bekannt), dann
--- Angriffstempo und die Ränge, die es beibringt, jeweils mit Lernstand des Jägers („gelernt“/„neu“). Nur für Tiere aus den Daten; über andere wird nichts vermutet.
+-- Angriffstempo und die Ränge, die es beibringt, jeweils mit Lernstand des Jägers („gelernt“/„neu“). Über die Lehre wird nichts vermutet: Weiß
+-- sie noch niemand, sagt das im Komplettmodus eine eigene Zeile (#23).
 -- Gelernt / neu unterscheiden Farbe und Wort – nie die Farbe allein. Was nicht belegt ist, erscheint nur
 -- nach den Einstellungen und trägt ein „?“ bzw. „!“; erklärt wird das dort, nicht hier.
 local _, ns = ...
@@ -93,7 +94,12 @@ local function addLines(tooltip, guid)
   local info = id and ns.TeachInfo(id, ns.Discovering())
   -- wie die gelernten Ränge: mit „Bekannte Fähigkeiten anzeigen“ aus nicht zeigen (Wunsch des Nutzers)
   local nothing = info ~= nil and #info == 0 and ns.db.ui.tooltipShowKnown ~= false
-  if #list == 0 and not status and not nothing then return end
+  -- Komplettmodus: Weiß noch niemand, was ein wildes Tier lehrt, sagt der Tooltip das, statt zu schweigen (#23,
+  -- sonst wirkt es, als könne das Tier nichts). Geprüft wird roh, nicht nach den Einstellungen: ausgeblendete
+  -- unsichere Angaben sind keine fehlenden Daten.
+  local missing = id and not ns.Discovering() and #ns.ObservationsOf(id) == 0
+    and #(ns.AllBeastTeaches(id) or {}) == 0 and wildBeastUnderMouse(guid)
+  if #list == 0 and not status and not nothing and not missing then return end
 
   -- Leerzeilen davor und danach trennen die Zeilen von denen anderer Addons (Einstellungen)
   if ns.db.ui.tooltipGapBefore then tooltip:AddLine(" ") end
@@ -101,6 +107,9 @@ local function addLines(tooltip, guid)
   -- alle Zeilen bündig mit der Kopfzeile (Wunsch des Nutzers)
   if status then tooltip:AddLine(status, 1, 0.82, 0) end
   if nothing then tooltip:AddLine(L["teaches nothing"], 0.6, 0.6, 0.6) end   -- grau wie „gelernt“
+  if missing then   -- gold wie der Status
+    tooltip:AddLine(L["No hunter knows yet what this beast teaches. Tame it and help!"], 1, 0.82, 0, true)
+  end
   for _, e in ipairs(list) do
     local text = iconTag(e.a) .. " " .. ns.AbilityName(e.a)
     if not ns.Learnable(e.a) then
