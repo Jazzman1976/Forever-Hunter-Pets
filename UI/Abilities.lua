@@ -602,6 +602,9 @@ function ns.BuildAbilities(parent)
     local old = self.selected
     local level = playerLevel()
     local keep
+    -- eine neue Fähigkeit aus der Erhebung (ns.MergeSurveyAbilities, etwa gleich nach dem Zähmen) gleich
+    -- mitnehmen, nicht erst nach /reload (#17); neue Ränge vorhandener Fähigkeiten kommen über a.ranks ohnehin mit
+    if #abilities ~= #D.abilities then abilities = orderedAbilities() end
     self.entries = {}
     for _, e in ipairs(buildEntries(abilities, self.fam, self.zone)) do
       -- „angeboren“ ist eine eigene Achse: es blendet das Angriffstempo aus oder lässt es zu,
