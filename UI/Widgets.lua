@@ -77,6 +77,11 @@ function W.Scroll(parent, width, height)
     self:SetVerticalScroll(math.max(0, math.min(self:MaxScroll(), v or 0)))
     self:UpdateThumb()
   end
+  function sf:SetViewHeight(h)
+    height = h
+    self:SetHeight(h)
+    self:ScrollTo(self:GetVerticalScroll())
+  end
   function sf:SetContentHeight(h)
     content:SetHeight(math.max(1, h))
     self:ScrollTo(self:GetVerticalScroll())
@@ -89,6 +94,7 @@ end
 
 -- Auswahlliste: ein Knopf mit dem gewählten Eintrag, darunter klappt eine scrollbare Liste auf.
 -- options = { { value = …, label = "…" }, … }; onSelect(value) läuft bei jeder Wahl.
+-- dd:SetOptions(options) tauscht die Einträge aus (der Reiter „Gebiet“ lernt neue Gebiete dazu, #22).
 local DD_ROW, DD_MAX = 20, 320
 function W.Dropdown(parent, width, options, onSelect)
   local dd = CreateFrame("Button", nil, parent)
@@ -113,7 +119,7 @@ function W.Dropdown(parent, width, options, onSelect)
   catcher:Hide()
   catcher:SetScript("OnClick", function(self) self:Hide() end)
 
-  local height = math.min(#options * DD_ROW, DD_MAX)
+  local height = math.max(DD_ROW, math.min(#options * DD_ROW, DD_MAX))
   local popup = CreateFrame("Frame", nil, catcher)
   popup:SetSize(width + 8, height + 8)
   popup:SetPoint("TOPLEFT", dd, "BOTTOMLEFT", 0, -2)
@@ -125,12 +131,12 @@ function W.Dropdown(parent, width, options, onSelect)
   inner:SetColorTexture(0.1, 0.11, 0.14, 1)
   local scroll = W.Scroll(popup, width, height)
   scroll:SetPoint("TOPLEFT", 4, -4)
-  scroll:SetContentHeight(#options * DD_ROW)
 
-  local rows = {}
+  local rows, count = {}, 0
   function dd:SetValue(value)
     self.value = value
-    for _, row in ipairs(rows) do
+    for i = 1, count do
+      local row = rows[i]
       local on = row.option.value == value
       if on then
         self.label:SetText(row.option.label)
@@ -141,25 +147,40 @@ function W.Dropdown(parent, width, options, onSelect)
     end
   end
 
-  for i, option in ipairs(options) do
-    local row = CreateFrame("Button", nil, scroll.content)
-    row:SetHeight(DD_ROW)
-    row:SetPoint("TOPLEFT", 0, -(i - 1) * DD_ROW)
-    row:SetPoint("TOPRIGHT", 0, -(i - 1) * DD_ROW)
-    row.option = option
-    row.hl = row:CreateTexture(nil, "HIGHLIGHT")
-    row.hl:SetAllPoints()
-    row.hl:SetColorTexture(1, 1, 1, 0.1)
-    row.label = W.Text(row, "GameFontHighlightSmall")
-    row.label:SetPoint("LEFT", 6, 0)
-    row.label:SetText(option.label)
-    row:SetScript("OnClick", function(self)
-      catcher:Hide()
-      dd:SetValue(self.option.value)
-      onSelect(self.option.value)
-    end)
-    rows[i] = row
+  -- Zeilen werden wiederverwendet; überzählige bleiben versteckt
+  function dd:SetOptions(list)
+    for i, option in ipairs(list) do
+      local row = rows[i]
+      if not row then
+        row = CreateFrame("Button", nil, scroll.content)
+        row:SetHeight(DD_ROW)
+        row:SetPoint("TOPLEFT", 0, -(i - 1) * DD_ROW)
+        row:SetPoint("TOPRIGHT", 0, -(i - 1) * DD_ROW)
+        row.hl = row:CreateTexture(nil, "HIGHLIGHT")
+        row.hl:SetAllPoints()
+        row.hl:SetColorTexture(1, 1, 1, 0.1)
+        row.label = W.Text(row, "GameFontHighlightSmall")
+        row.label:SetPoint("LEFT", 6, 0)
+        row:SetScript("OnClick", function(self)
+          catcher:Hide()
+          dd:SetValue(self.option.value)
+          onSelect(self.option.value)
+        end)
+        rows[i] = row
+      end
+      row.option = option
+      row.label:SetText(option.label)
+      row:Show()
+    end
+    for i = #list + 1, #rows do rows[i]:Hide() end
+    count = #list
+    height = math.max(DD_ROW, math.min(count * DD_ROW, DD_MAX))
+    popup:SetHeight(height + 8)
+    scroll:SetViewHeight(height)
+    scroll:SetContentHeight(count * DD_ROW)
+    self:SetValue(self.value)
   end
+  dd:SetOptions(options)
 
   dd:SetScript("OnClick", function() catcher:SetShown(not catcher:IsShown()) end)
   dd:SetScript("OnHide", function() catcher:Hide() end)

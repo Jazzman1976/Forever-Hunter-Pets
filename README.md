@@ -9,7 +9,7 @@ Nothing is copied from websites or databases: everything the addon knows was fou
 ## What it does
 
 - **Abilities** – every rank, the beasts that teach it, their spawn points on the zone map, and which ranks you have learned.
-- **Area** – a progress book per zone: which beasts live here, what they teach, and how many you know.
+- **Zone** – a progress book per zone: which beasts live here, what they teach, and how many you know.
 - **Training** – what your active pet can learn right now, like the classic training window.
 - **Beast tooltips** – what a beast teaches and whether you know it already, as you hover over it.
 - **Collects as you play** – targeting, hovering, nameplates, *Track Beasts*, taming and *Beast Training* all feed the catalogue, and players of the addon share with each other in the game.

@@ -2,7 +2,7 @@
 
 Everything the addon does, how it works and why it behaves the way it does. Short version in the [README](../../README.md).
 
-**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Area](#area) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
+**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
 
 ## The idea
 
@@ -54,15 +54,15 @@ Until you choose, the addon shows nothing that could spoil the search; it alread
 | Meant for | players who want the answer | players who want to search |
 | Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself |
 | Beasts you have not found | shown with their name, like all others | shown anonymously as *? undiscovered beast*, or as a count (*2 undiscovered*) |
-| Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Area tab |
-| Progress in the Area tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
+| Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
+| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
 | Collecting and sharing | on | on – explorers help everybody |
 
 Your finds count for your whole account: a beast one of your characters found counts as found for your other characters as well. The mode is chosen per character.
 
 ## The window
 
-Three tabs: **Abilities**, **Area** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
+Three tabs: **Abilities**, **Zone** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
 
 ## Abilities
 
@@ -81,11 +81,11 @@ Every pet ability, rank by rank, and the beasts that teach it.
 
 **Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points. The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
 
-## Area
+## Zone
 
-A progress book for one zone at a time. Pick the zone at the top; it starts with the zone you are in.
+A progress book for one zone at a time. At the top, *Current zone* is selected: it shows the zone you are in and follows you when you move to another zone. Pick a zone from the list to stay on it, and *Current zone* to follow again. In a zone without known beasts (a capital city, for example) the list says so. A zone you discover appears in the list right away.
 
-![Area tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
+![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
 **The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet.
 

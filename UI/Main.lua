@@ -116,7 +116,7 @@ local function create()
   end
   local x = 8
   -- Reihenfolge: Fähigkeiten, Gebiet, Ausbildung (Wunsch des Nutzers, 16.10.2026)
-  for _, t in ipairs({ { "abilities", L["Abilities"] }, { "area", L["Area"] }, { "training", L["Training"] } }) do
+  for _, t in ipairs({ { "abilities", L["Abilities"] }, { "area", L["Zone"] }, { "training", L["Training"] } }) do
     local tab = CreateFrame("Button", nil, f)
     tab.bg = ns.W.Fill(tab, 1, 1, 1, 0.06)
     tab.hl = tab:CreateTexture(nil, "HIGHLIGHT")

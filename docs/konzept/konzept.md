@@ -213,6 +213,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 **Gebiet:**
 - Liste links, Karte rechts oben, bündig mit der Liste; der Kartentitel steht in der Kopfzeile neben der Zonenauswahl (wie „Ausbildung“), die Zähler darunter.
 - Immer ein Tier gewählt.
+- **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
 - Kästchen aus „Fähigkeiten“, Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile.
 - Erklärung der Status im Tooltip des Zählers „Tiere“.
