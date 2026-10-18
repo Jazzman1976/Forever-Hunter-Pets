@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-17T23:20:10.151Z",
+ "generatedAt": "2026-10-18T13:59:26.687Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -29,7 +29,7 @@
   "6": {
    "de": "Krokilisk",
    "en": null,
-   "icon": null
+   "icon": 132187
   },
   "7": {
    "de": "Aasvogel",
@@ -41,20 +41,40 @@
    "en": null,
    "icon": 132186
   },
+  "11": {
+   "de": "Raptor",
+   "en": null,
+   "icon": 132193
+  },
   "12": {
    "de": "Weitschreiter",
    "en": null,
    "icon": 132198
   },
+  "15": {
+   "de": "Teufelsjäger",
+   "en": null,
+   "icon": null
+  },
   "20": {
    "de": "Skorpid",
    "en": null,
-   "icon": null
+   "icon": 132195
+  },
+  "25": {
+   "de": "Hyäne",
+   "en": null,
+   "icon": 132190
   },
   "26": {
    "de": "Raubvogel",
    "en": null,
    "icon": 132192
+  },
+  "27": {
+   "de": "Windnatter",
+   "en": null,
+   "icon": 132202
   },
   "319": {
    "de": "Fuchs",
@@ -191,6 +211,14 @@
    "max": 25,
    "cls": 0
   },
+  "687": {
+   "de": "Dschungelpirscher",
+   "en": null,
+   "fam": 11,
+   "min": 40,
+   "max": 41,
+   "cls": 0
+  },
   "708": {
    "de": null,
    "en": null,
@@ -198,6 +226,14 @@
    "min": 3,
    "max": 3,
    "cls": 0
+  },
+  "730": {
+   "de": "Tethis",
+   "en": null,
+   "fam": 11,
+   "min": 43,
+   "max": 43,
+   "cls": 1
   },
   "822": {
    "de": "Junger Waldbär",
@@ -221,6 +257,14 @@
    "fam": 1,
    "min": 10,
    "max": 11,
+   "cls": 0
+  },
+  "854": {
+   "de": "Junger Dschungelpirscher",
+   "en": null,
+   "fam": 11,
+   "min": 37,
+   "max": 37,
    "cls": 0
   },
   "923": {
@@ -288,7 +332,7 @@
    "cls": 0
   },
   "1132": {
-   "de": null,
+   "de": "Holzplanke",
    "en": null,
    "fam": null,
    "min": 10,
@@ -303,11 +347,75 @@
    "max": 7,
    "cls": 0
   },
+  "1184": {
+   "de": "Klippenlauerer",
+   "en": null,
+   "fam": null,
+   "min": 14,
+   "max": 14,
+   "cls": 0
+  },
+  "1185": {
+   "de": "Holzlauerer",
+   "en": null,
+   "fam": null,
+   "min": 17,
+   "max": 17,
+   "cls": 0
+  },
+  "1188": {
+   "de": "Ergrauter Schwarzbär",
+   "en": null,
+   "fam": null,
+   "min": 13,
+   "max": 13,
+   "cls": 0
+  },
+  "1189": {
+   "de": "Schwarzbärenpatriarch",
+   "en": null,
+   "fam": null,
+   "min": 16,
+   "max": 16,
+   "cls": 0
+  },
+  "1190": {
+   "de": "Bergeber",
+   "en": null,
+   "fam": null,
+   "min": 10,
+   "max": 10,
+   "cls": 0
+  },
+  "1191": {
+   "de": "Räudiger Bergeber",
+   "en": null,
+   "fam": null,
+   "min": 15,
+   "max": 15,
+   "cls": 0
+  },
+  "1192": {
+   "de": "Alter Bergeber",
+   "en": null,
+   "fam": null,
+   "min": 17,
+   "max": 17,
+   "cls": 0
+  },
+  "1195": {
+   "de": "Waldlauerer",
+   "en": null,
+   "fam": null,
+   "min": 10,
+   "max": 10,
+   "cls": 0
+  },
   "1196": {
    "de": "Eisklauenbär",
    "en": null,
    "fam": 4,
-   "min": 8,
+   "min": 7,
    "max": 8,
    "cls": 0
   },
@@ -327,12 +435,52 @@
    "max": 25,
    "cls": 0
   },
+  "1689": {
+   "de": "Vernarbter Klippeneber",
+   "en": null,
+   "fam": null,
+   "min": 10,
+   "max": 10,
+   "cls": 0
+  },
   "1922": {
    "de": "Grauer Forstwolf",
    "en": null,
    "fam": 1,
    "min": 7,
    "max": 8,
+   "cls": 0
+  },
+  "1961": {
+   "de": null,
+   "en": null,
+   "fam": null,
+   "min": 11,
+   "max": 11,
+   "cls": 0
+  },
+  "1984": {
+   "de": "Junger Disteleber",
+   "en": null,
+   "fam": 5,
+   "min": 1,
+   "max": 2,
+   "cls": 0
+  },
+  "1985": {
+   "de": "Disteleber",
+   "en": null,
+   "fam": 5,
+   "min": 2,
+   "max": 3,
+   "cls": 0
+  },
+  "1986": {
+   "de": "Waldweberspinne",
+   "en": null,
+   "fam": 3,
+   "min": 3,
+   "max": 4,
    "cls": 0
   },
   "1995": {
@@ -372,7 +520,7 @@
    "en": null,
    "fam": 3,
    "min": 7,
-   "max": 7,
+   "max": 8,
    "cls": 0
   },
   "2000": {
@@ -391,6 +539,22 @@
    "max": 11,
    "cls": 0
   },
+  "2031": {
+   "de": "Junger Nachtsäbler",
+   "en": null,
+   "fam": 2,
+   "min": 1,
+   "max": 1,
+   "cls": 0
+  },
+  "2032": {
+   "de": "Räudiger Nachtsäbler",
+   "en": null,
+   "fam": 2,
+   "min": 2,
+   "max": 2,
+   "cls": 0
+  },
   "2033": {
    "de": "Alter Nachtsäbler",
    "en": null,
@@ -405,6 +569,14 @@
    "fam": 2,
    "min": 10,
    "max": 11,
+   "cls": 0
+  },
+  "2042": {
+   "de": "Nachtsäbler",
+   "en": null,
+   "fam": 2,
+   "min": 5,
+   "max": 6,
    "cls": 0
   },
   "2043": {
@@ -535,20 +707,292 @@
    "max": 19,
    "cls": 0
   },
+  "2956": {
+   "de": "Erwachsener Ebenenschreiter",
+   "en": null,
+   "fam": 12,
+   "min": 6,
+   "max": 7,
+   "cls": 0
+  },
+  "2957": {
+   "de": "Alter Ebenenschreiter",
+   "en": null,
+   "fam": 12,
+   "min": 8,
+   "max": 9,
+   "cls": 0
+  },
   "2958": {
    "de": "Präriewolf",
    "en": null,
    "fam": 1,
-   "min": 6,
+   "min": 5,
    "max": 6,
+   "cls": 0
+  },
+  "2959": {
+   "de": "Präriepirscher",
+   "en": null,
+   "fam": 1,
+   "min": 7,
+   "max": 8,
+   "cls": 0
+  },
+  "2960": {
+   "de": "Präriewolfalpha",
+   "en": null,
+   "fam": 1,
+   "min": 9,
+   "max": 10,
+   "cls": 0
+  },
+  "2969": {
+   "de": "Drahtiger Sturzflieger",
+   "en": null,
+   "fam": 7,
+   "min": 6,
+   "max": 7,
+   "cls": 0
+  },
+  "2970": {
+   "de": "Sturzflieger",
+   "en": null,
+   "fam": 7,
+   "min": 7,
+   "max": 8,
+   "cls": 0
+  },
+  "2971": {
+   "de": "Kralliger Sturzflieger",
+   "en": null,
+   "fam": 7,
+   "min": 9,
+   "max": 9,
+   "cls": 0
+  },
+  "3035": {
+   "de": "Flachlandpuma",
+   "en": null,
+   "fam": 2,
+   "min": 7,
+   "max": 8,
+   "cls": 0
+  },
+  "3099": {
+   "de": "Scheckiger Terroreber",
+   "en": null,
+   "fam": 5,
+   "min": 6,
+   "max": 7,
+   "cls": 0
+  },
+  "3100": {
+   "de": "Alter scheckiger Eber",
+   "en": null,
+   "fam": 5,
+   "min": 8,
+   "max": 9,
+   "cls": 0
+  },
+  "3110": {
+   "de": "Schaudermagenkrokilisk",
+   "en": null,
+   "fam": 6,
+   "min": 9,
+   "max": 10,
+   "cls": 0
+  },
+  "3122": {
+   "de": "Blutkrallenschwanzpeitscher",
+   "en": null,
+   "fam": 11,
+   "min": 7,
+   "max": 8,
+   "cls": 0
+  },
+  "3123": {
+   "de": "Blutkrallensensenschlund",
+   "en": null,
+   "fam": 11,
+   "min": 8,
+   "max": 10,
+   "cls": 0
+  },
+  "3125": {
+   "de": "Rasselnder Skorpid",
+   "en": null,
+   "fam": 20,
+   "min": 5,
+   "max": 6,
+   "cls": 0
+  },
+  "3126": {
+   "de": "Gepanzerter Skorpid",
+   "en": null,
+   "fam": 20,
+   "min": 7,
+   "max": 8,
+   "cls": 0
+  },
+  "3127": {
+   "de": "Siechstachelskorpid",
+   "en": null,
+   "fam": 20,
+   "min": 9,
+   "max": 10,
+   "cls": 0
+  },
+  "3226": {
+   "de": "Verderbter Skorpid",
+   "en": null,
+   "fam": 20,
+   "min": 10,
+   "max": 10,
+   "cls": 0
+  },
+  "3227": {
+   "de": "Verderbter Blutkrallensensenschlund",
+   "en": null,
+   "fam": 11,
+   "min": 11,
+   "max": 11,
+   "cls": 0
+  },
+  "3241": {
+   "de": "Savannenpatriarch",
+   "en": null,
+   "fam": 2,
+   "min": 15,
+   "max": 16,
+   "cls": 0
+  },
+  "3244": {
+   "de": "Großer Ebenenschreiter",
+   "en": null,
+   "fam": 12,
+   "min": 11,
+   "max": 12,
+   "cls": 0
+  },
+  "3245": {
+   "de": "Störrischer Ebenenschreiter",
+   "en": null,
+   "fam": 12,
+   "min": 16,
+   "max": 17,
+   "cls": 0
+  },
+  "3246": {
+   "de": "Flüchtiger Ebenenschreiter",
+   "en": null,
+   "fam": 12,
+   "min": 13,
+   "max": 13,
+   "cls": 0
+  },
+  "3247": {
+   "de": "Donnerfalkenjungtier",
+   "en": null,
+   "fam": 27,
+   "min": 18,
+   "max": 20,
+   "cls": 0
+  },
+  "3249": {
+   "de": "Großer Donnerfalke",
+   "en": null,
+   "fam": 27,
+   "min": 23,
+   "max": 23,
+   "cls": 0
+  },
+  "3250": {
+   "de": "Silithidkrabbler",
+   "en": null,
+   "fam": 20,
+   "min": 21,
+   "max": 21,
+   "cls": 0
+  },
+  "3252": {
+   "de": "Silithidschwärmer",
+   "en": null,
+   "fam": 20,
+   "min": 21,
+   "max": 22,
+   "cls": 0
+  },
+  "3254": {
+   "de": "Bluthornschmetterschwanz",
+   "en": null,
+   "fam": 11,
+   "min": 12,
+   "max": 12,
+   "cls": 0
+  },
+  "3255": {
+   "de": "Bluthornkreischer",
+   "en": null,
+   "fam": 11,
+   "min": 13,
+   "max": 15,
+   "cls": 0
+  },
+  "3256": {
+   "de": "Bluthornsensenklaue",
+   "en": null,
+   "fam": 11,
+   "min": 16,
+   "max": 18,
+   "cls": 0
+  },
+  "3424": {
+   "de": "Donnerfalkenwolkenkitzler",
+   "en": null,
+   "fam": 27,
+   "min": 20,
+   "max": 20,
+   "cls": 0
+  },
+  "3566": {
+   "de": "Flachlandstreuner",
+   "en": null,
+   "fam": 2,
+   "min": 9,
+   "max": 9,
+   "cls": 0
+  },
+  "3774": {
+   "de": "Teufelstöter",
+   "en": null,
+   "fam": 15,
+   "min": 22,
+   "max": 22,
    "cls": 0
   },
   "3809": {
    "de": "Ashenvalebär",
    "en": null,
-   "fam": null,
-   "min": 22,
+   "fam": 4,
+   "min": 21,
    "max": 22,
+   "cls": 0
+  },
+  "3810": {
+   "de": "Alter Ashenvalebär",
+   "en": null,
+   "fam": 4,
+   "min": 25,
+   "max": 26,
+   "cls": 0
+  },
+  "3812": {
+   "de": "Rasselnder Kriecher",
+   "en": null,
+   "fam": 8,
+   "min": 19,
+   "max": 19,
    "cls": 0
   },
   "3814": {
@@ -556,15 +1000,87 @@
    "en": null,
    "fam": 8,
    "min": 20,
-   "max": 20,
+   "max": 21,
+   "cls": 0
+  },
+  "3819": {
+   "de": "Wilddornpirscher",
+   "en": null,
+   "fam": 3,
+   "min": 20,
+   "max": 21,
+   "cls": 0
+  },
+  "3820": {
+   "de": "Wilddorngiftspucker",
+   "en": null,
+   "fam": 3,
+   "min": 24,
+   "max": 25,
+   "cls": 0
+  },
+  "3821": {
+   "de": "Wilddornlauerer",
+   "en": null,
+   "fam": 3,
+   "min": 29,
+   "max": 29,
    "cls": 0
   },
   "3823": {
    "de": "Geisterpfotenläufer",
    "en": null,
-   "fam": null,
-   "min": 20,
+   "fam": 1,
+   "min": 19,
    "max": 20,
+   "cls": 0
+  },
+  "3824": {
+   "de": "Geisterpfotenheuler",
+   "en": null,
+   "fam": 1,
+   "min": 23,
+   "max": 23,
+   "cls": 0
+  },
+  "3825": {
+   "de": "Geisterpfotenalpha",
+   "en": null,
+   "fam": 1,
+   "min": 27,
+   "max": 27,
+   "cls": 0
+  },
+  "4127": {
+   "de": "Fleischreißerhyäne",
+   "en": null,
+   "fam": 25,
+   "min": 15,
+   "max": 16,
+   "cls": 0
+  },
+  "4128": {
+   "de": "Fleischreißerpirscher",
+   "en": null,
+   "fam": 25,
+   "min": 22,
+   "max": 23,
+   "cls": 0
+  },
+  "4129": {
+   "de": "Fleischreißerkläffer",
+   "en": null,
+   "fam": 25,
+   "min": 18,
+   "max": 19,
+   "cls": 0
+  },
+  "4316": {
+   "de": "Rudelhund der Kolkar",
+   "en": null,
+   "fam": 25,
+   "min": 13,
+   "max": 13,
    "cls": 0
   },
   "4692": {
@@ -591,6 +1107,22 @@
    "max": 42,
    "cls": 0
   },
+  "266849": {
+   "de": "Kammschattenlauerer",
+   "en": null,
+   "fam": 3,
+   "min": 6,
+   "max": 6,
+   "cls": 0
+  },
+  "266850": {
+   "de": "Kammschattenkrabbler",
+   "en": null,
+   "fam": 3,
+   "min": 5,
+   "max": 5,
+   "cls": 0
+  },
   "270196": {
    "de": "Jai'vhanel",
    "en": null,
@@ -605,6 +1137,14 @@
    "fam": 26,
    "min": 11,
    "max": 12,
+   "cls": 0
+  },
+  "272096": {
+   "de": "Besudelter Waldweber",
+   "en": null,
+   "fam": 3,
+   "min": 11,
+   "max": 11,
    "cls": 0
   },
   "277645": {
@@ -795,6 +1335,12 @@
     270
    ]
   },
+  "687": {
+   "1434": [
+    310,
+    430
+   ]
+  },
   "822": {
    "1429": [
     350,
@@ -937,9 +1483,65 @@
     350
    ]
   },
+  "1984": {
+   "1438": [
+    590,
+    450,
+    630,
+    430,
+    550,
+    410,
+    570,
+    410,
+    570,
+    430
+   ]
+  },
+  "1985": {
+   "1438": [
+    630,
+    390,
+    630,
+    370,
+    610,
+    350,
+    610,
+    330,
+    570,
+    370,
+    570,
+    390,
+    550,
+    390,
+    550,
+    410,
+    570,
+    410
+   ]
+  },
+  "1986": {
+   "1438": [
+    590,
+    330
+   ]
+  },
   "1995": {
    "1438": [
     470,
+    490,
+    550,
+    570,
+    630,
+    530,
+    630,
+    510,
+    610,
+    510,
+    590,
+    570,
+    530,
+    570,
+    450,
     490
    ]
   },
@@ -954,7 +1556,25 @@
     410,
     550,
     390,
-    550
+    550,
+    410,
+    710,
+    430,
+    710,
+    430,
+    730,
+    470,
+    750,
+    450,
+    750,
+    450,
+    770,
+    430,
+    770,
+    430,
+    790,
+    510,
+    770
    ]
   },
   "1997": {
@@ -982,7 +1602,11 @@
   "1999": {
    "1438": [
     430,
-    530
+    530,
+    450,
+    770,
+    550,
+    730
    ]
   },
   "2000": {
@@ -1001,6 +1625,34 @@
     270
    ]
   },
+  "2031": {
+   "1438": [
+    610,
+    450,
+    610,
+    430,
+    630,
+    430,
+    650,
+    410,
+    610,
+    470
+   ]
+  },
+  "2032": {
+   "1438": [
+    630,
+    390,
+    630,
+    370,
+    590,
+    350,
+    590,
+    330,
+    590,
+    310
+   ]
+  },
   "2033": {
    "1438": [
     390,
@@ -1015,10 +1667,20 @@
     270
    ]
   },
+  "2042": {
+   "1438": [
+    490,
+    510
+   ]
+  },
   "2043": {
    "1438": [
     410,
-    550
+    550,
+    410,
+    570,
+    470,
+    750
    ]
   },
   "2069": {
@@ -1042,7 +1704,9 @@
     450,
     550,
     430,
-    570
+    570,
+    450,
+    410
    ]
   },
   "2071": {
@@ -1194,7 +1858,9 @@
     430,
     230,
     390,
-    330
+    330,
+    450,
+    410
    ]
   },
   "2322": {
@@ -1226,7 +1892,407 @@
     610,
     150,
     630,
-    90
+    90,
+    430,
+    810
+   ]
+  },
+  "2956": {
+   "1412": [
+    530,
+    710,
+    530,
+    690,
+    530,
+    450,
+    370,
+    570,
+    370,
+    650,
+    370,
+    670,
+    370,
+    710,
+    410,
+    750
+   ]
+  },
+  "2957": {
+   "1412": [
+    630,
+    630,
+    490,
+    410,
+    490,
+    350,
+    510,
+    310,
+    470,
+    270,
+    470,
+    250,
+    410,
+    290,
+    450,
+    290,
+    470,
+    290,
+    450,
+    470,
+    590,
+    650
+   ]
+  },
+  "2958": {
+   "1412": [
+    370,
+    570,
+    390,
+    730
+   ]
+  },
+  "2959": {
+   "1412": [
+    550,
+    650,
+    470,
+    570
+   ]
+  },
+  "2960": {
+   "1412": [
+    630,
+    650,
+    410,
+    270
+   ]
+  },
+  "2969": {
+   "1412": [
+    370,
+    590,
+    370,
+    610,
+    370,
+    710
+   ]
+  },
+  "2970": {
+   "1412": [
+    510,
+    450
+   ]
+  },
+  "2971": {
+   "1412": [
+    510,
+    310,
+    490,
+    270
+   ]
+  },
+  "3035": {
+   "1412": [
+    510,
+    470,
+    390,
+    470
+   ]
+  },
+  "3099": {
+   "1411": [
+    410,
+    510,
+    470,
+    450,
+    510,
+    490,
+    530,
+    550,
+    530,
+    710,
+    510,
+    510
+   ]
+  },
+  "3100": {
+   "1411": [
+    350,
+    550
+   ]
+  },
+  "3110": {
+   "1411": [
+    350,
+    570
+   ],
+   "1413": [
+    650,
+    310
+   ]
+  },
+  "3122": {
+   "1411": [
+    410,
+    510,
+    430,
+    470
+   ]
+  },
+  "3123": {
+   "1411": [
+    370,
+    530
+   ]
+  },
+  "3125": {
+   "1411": [
+    530,
+    530
+   ]
+  },
+  "3126": {
+   "1411": [
+    410,
+    510
+   ]
+  },
+  "3127": {
+   "1411": [
+    370,
+    570,
+    370,
+    490
+   ]
+  },
+  "3227": {
+   "1411": [
+    370,
+    490
+   ]
+  },
+  "3241": {
+   "1413": [
+    470,
+    130,
+    470,
+    150,
+    450,
+    170
+   ]
+  },
+  "3244": {
+   "1413": [
+    470,
+    130,
+    470,
+    150
+   ]
+  },
+  "3245": {
+   "1413": [
+    490,
+    130,
+    470,
+    130,
+    490,
+    490
+   ]
+  },
+  "3246": {
+   "1413": [
+    550,
+    370,
+    650,
+    350,
+    650,
+    330,
+    630,
+    310,
+    630,
+    290
+   ]
+  },
+  "3247": {
+   "1413": [
+    470,
+    570
+   ]
+  },
+  "3249": {
+   "1413": [
+    470,
+    730
+   ]
+  },
+  "3250": {
+   "1413": [
+    450,
+    730
+   ]
+  },
+  "3252": {
+   "1413": [
+    450,
+    710
+   ]
+  },
+  "3254": {
+   "1413": [
+    470,
+    150
+   ]
+  },
+  "3255": {
+   "1413": [
+    450,
+    190,
+    410,
+    250
+   ]
+  },
+  "3256": {
+   "1413": [
+    490,
+    130,
+    490,
+    490
+   ]
+  },
+  "3424": {
+   "1413": [
+    490,
+    590
+   ]
+  },
+  "3566": {
+   "1412": [
+    490,
+    410,
+    490,
+    390,
+    470,
+    290
+   ]
+  },
+  "3809": {
+   "1440": [
+    390,
+    550,
+    370,
+    390,
+    330,
+    410,
+    370,
+    710,
+    390,
+    710,
+    410,
+    710,
+    570,
+    550
+   ]
+  },
+  "3810": {
+   "1440": [
+    630,
+    550,
+    650,
+    570,
+    650,
+    590,
+    670,
+    610,
+    690,
+    610,
+    730,
+    510
+   ]
+  },
+  "3812": {
+   "1440": [
+    130,
+    150
+   ]
+  },
+  "3814": {
+   "1440": [
+    150,
+    170
+   ]
+  },
+  "3819": {
+   "1440": [
+    310,
+    470,
+    290,
+    550,
+    310,
+    590,
+    390,
+    550,
+    370,
+    390
+   ]
+  },
+  "3820": {
+   "1440": [
+    630,
+    550,
+    650,
+    550,
+    670,
+    630,
+    690,
+    610,
+    730,
+    530,
+    730,
+    490
+   ]
+  },
+  "3821": {
+   "1440": [
+    810,
+    470,
+    890,
+    690
+   ]
+  },
+  "3823": {
+   "1440": [
+    270,
+    170
+   ]
+  },
+  "3824": {
+   "1440": [
+    590,
+    670
+   ]
+  },
+  "4127": {
+   "1413": [
+    450,
+    190,
+    430,
+    190,
+    430,
+    210
+   ]
+  },
+  "4128": {
+   "1413": [
+    470,
+    730
+   ]
+  },
+  "4129": {
+   "1413": [
+    470,
+    550,
+    450,
+    570
    ]
   },
   "4692": {
@@ -1241,6 +2307,12 @@
     250
    ]
   },
+  "266850": {
+   "1411": [
+    510,
+    510
+   ]
+  },
   "270196": {
    "1439": [
     450,
@@ -1253,6 +2325,12 @@
     590,
     450,
     570
+   ]
+  },
+  "272096": {
+   "1438": [
+    490,
+    490
    ]
   },
   "277645": {
@@ -1304,9 +2382,14 @@
     3,
     4,
     5,
+    7,
     8,
+    11,
     12,
+    20,
+    25,
     26,
+    27,
     319
    ],
    "ranks": [
@@ -1321,11 +2404,22 @@
      "rank": 2,
      "level": 15,
      "tp": 10
+    },
+    {
+     "id": 1755,
+     "rank": 4,
+     "level": 35,
+     "tp": 14
     }
    ],
    "teach": [
     {
      "id": 1199,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2042,
      "rank": 1,
      "conf": 1
     },
@@ -1340,6 +2434,21 @@
      "conf": 1
     },
     {
+     "id": 2957,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3035,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3246,
+     "rank": 1,
+     "conf": 1
+    },
+    {
      "id": 2237,
      "rank": 2,
      "conf": 1
@@ -1347,6 +2456,16 @@
     {
      "id": 2323,
      "rank": 2,
+     "conf": 1
+    },
+    {
+     "id": 3245,
+     "rank": 2,
+     "conf": 1
+    },
+    {
+     "id": 3241,
+     "rank": 4,
      "conf": 1
     }
    ]
@@ -1492,7 +2611,7 @@
      "id": 7371,
      "rank": 1,
      "level": 1,
-     "tp": null
+     "tp": 5
     },
     {
      "id": 26177,
@@ -1519,7 +2638,42 @@
      "conf": 1
     },
     {
+     "id": 1984,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 1985,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3099,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3100,
+     "rank": 1,
+     "conf": 1
+    },
+    {
      "id": 708,
+     "rank": 1,
+     "conf": 2
+    },
+    {
+     "id": 1125,
+     "rank": 1,
+     "conf": 2
+    },
+    {
+     "id": 1190,
+     "rank": 1,
+     "conf": 2
+    },
+    {
+     "id": 1689,
      "rank": 1,
      "conf": 2
     },
@@ -1537,6 +2691,16 @@
      "id": 547,
      "rank": 2,
      "conf": 1
+    },
+    {
+     "id": 1191,
+     "rank": 2,
+     "conf": 2
+    },
+    {
+     "id": 1192,
+     "rank": 2,
+     "conf": 2
     }
    ]
   },
@@ -1548,8 +2712,12 @@
    "source": "tame",
    "speed": null,
    "families": [
+    2,
     4,
+    7,
     8,
+    11,
+    20,
     26
    ],
    "ranks": [
@@ -1570,6 +2738,12 @@
      "rank": 3,
      "level": 16,
      "tp": 7
+    },
+    {
+     "id": 16830,
+     "rank": 4,
+     "level": 24,
+     "tp": 10
     }
    ],
    "teach": [
@@ -1580,6 +2754,11 @@
     },
     {
      "id": 1995,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2970,
      "rank": 1,
      "conf": 1
     },
@@ -1604,9 +2783,34 @@
      "conf": 1
     },
     {
+     "id": 3127,
+     "rank": 2,
+     "conf": 1
+    },
+    {
+     "id": 1961,
+     "rank": 2,
+     "conf": 2
+    },
+    {
      "id": 3809,
      "rank": 3,
+     "conf": 1
+    },
+    {
+     "id": 3812,
+     "rank": 3,
+     "conf": 1
+    },
+    {
+     "id": 1189,
+     "rank": 3,
      "conf": 2
+    },
+    {
+     "id": 3810,
+     "rank": 4,
+     "conf": 1
     }
    ]
   },
@@ -1623,7 +2827,11 @@
     3,
     4,
     5,
+    6,
+    7,
     12,
+    25,
+    27,
     319
    ],
    "ranks": [
@@ -1669,6 +2877,21 @@
      "conf": 1
     },
     {
+     "id": 2958,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2959,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3110,
+     "rank": 1,
+     "conf": 1
+    },
+    {
      "id": 1138,
      "rank": 1,
      "conf": 2
@@ -1694,6 +2917,11 @@
      "conf": 1
     },
     {
+     "id": 2960,
+     "rank": 2,
+     "conf": 1
+    },
+    {
      "id": 7319,
      "rank": 2,
      "conf": 1
@@ -1704,7 +2932,17 @@
      "conf": 2
     },
     {
+     "id": 1195,
+     "rank": 2,
+     "conf": 2
+    },
+    {
      "id": 3823,
+     "rank": 3,
+     "conf": 1
+    },
+    {
+     "id": 1185,
      "rank": 3,
      "conf": 2
     },
@@ -1750,6 +2988,43 @@
     }
    ],
    "teach": []
+  },
+  {
+   "en": null,
+   "de": "Demoralisierendes Kreischen",
+   "icon": 132200,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    2,
+    7
+   ],
+   "ranks": [
+    {
+     "id": 24423,
+     "rank": 1,
+     "level": 8,
+     "tp": 10
+    }
+   ],
+   "teach": [
+    {
+     "id": 154,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 199,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2971,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
   },
   {
    "en": null,
@@ -1995,6 +3270,79 @@
   },
   {
    "en": null,
+   "de": "Skorpidgift",
+   "icon": 132274,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    11,
+    20
+   ],
+   "ranks": [
+    {
+     "id": 24640,
+     "rank": 1,
+     "level": 8,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 3127,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3250,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3252,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
+   "de": "Blitzschlagatem",
+   "icon": 136048,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    27
+   ],
+   "ranks": [
+    {
+     "id": 25008,
+     "rank": 2,
+     "level": 12,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 3247,
+     "rank": 2,
+     "conf": 1
+    },
+    {
+     "id": 3249,
+     "rank": 2,
+     "conf": 1
+    },
+    {
+     "id": 3424,
+     "rank": 2,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
    "de": "Prankenhieb",
    "icon": 134296,
    "kind": "family",
@@ -2011,7 +3359,13 @@
      "tp": null
     }
    ],
-   "teach": []
+   "teach": [
+    {
+     "id": 1188,
+     "rank": 1,
+     "conf": 2
+    }
+   ]
   },
   {
    "en": null,
@@ -2051,6 +3405,32 @@
   },
   {
    "en": null,
+   "de": "Sehnenriss",
+   "icon": 132190,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    25
+   ],
+   "ranks": [
+    {
+     "id": 1265038,
+     "rank": 1,
+     "level": 12,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 4127,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
    "de": "Meins!",
    "icon": 136063,
    "kind": "family",
@@ -2082,13 +3462,44 @@
   },
   {
    "en": null,
+   "de": "Wildes Verwunden",
+   "icon": 132193,
+   "kind": "family",
+   "source": "tame",
+   "speed": null,
+   "families": [
+    11
+   ],
+   "ranks": [
+    {
+     "id": 1265065,
+     "rank": 1,
+     "level": 12,
+     "tp": null
+    },
+    {
+     "id": 1265066,
+     "rank": 2,
+     "level": 24,
+     "tp": null
+    }
+   ],
+   "teach": [
+    {
+     "id": 3255,
+     "rank": 1,
+     "conf": 1
+    }
+   ]
+  },
+  {
+   "en": null,
    "de": "Gespinst",
    "icon": 136113,
    "kind": "family",
    "source": "tame",
    "speed": null,
    "families": [
-    2,
     3
    ],
    "ranks": [
@@ -2105,7 +3516,23 @@
      "tp": null
     }
    ],
-   "teach": []
+   "teach": [
+    {
+     "id": 3819,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 1184,
+     "rank": 1,
+     "conf": 2
+    },
+    {
+     "id": 3820,
+     "rank": 2,
+     "conf": 1
+    }
+   ]
   },
   {
    "en": null,
@@ -2128,6 +3555,11 @@
    "teach": [
     {
      "id": 2322,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3246,
      "rank": 1,
      "conf": 1
     }
@@ -2154,37 +3586,6 @@
    "teach": [
     {
      "id": 277645,
-     "rank": 1,
-     "conf": 1
-    }
-   ]
-  },
-  {
-   "en": null,
-   "de": "Demoralisierendes Kreischen",
-   "icon": null,
-   "kind": "family",
-   "source": "tame",
-   "speed": null,
-   "families": [
-    7
-   ],
-   "ranks": [
-    {
-     "id": 24423,
-     "rank": 1,
-     "level": null,
-     "tp": null
-    }
-   ],
-   "teach": [
-    {
-     "id": 154,
-     "rank": 1,
-     "conf": 1
-    },
-    {
-     "id": 199,
      "rank": 1,
      "conf": 1
     }
@@ -2226,6 +3627,21 @@
      "id": 2237,
      "rank": 1,
      "conf": 1
+    },
+    {
+     "id": 3241,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3245,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 3825,
+     "rank": 1,
+     "conf": 1
     }
    ]
   },
@@ -2252,7 +3668,17 @@
      "conf": 1
     },
     {
+     "id": 2042,
+     "rank": 1,
+     "conf": 1
+    },
+    {
      "id": 2043,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2960,
      "rank": 1,
      "conf": 1
     }
@@ -2287,6 +3713,11 @@
     },
     {
      "id": 2958,
+     "rank": 1,
+     "conf": 1
+    },
+    {
+     "id": 2959,
      "rank": 1,
      "conf": 1
     }

@@ -72,6 +72,8 @@ node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe d
 node tools/build-addon.mjs     # erzeugt Data/Data.lua
 ```
 
+`--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig, solange das Addon die Wildtierausbildung manchmal als Tierausbilder erhebt (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Vor jedem Import prüfen, ob dieser Fehler behoben ist.
+
 Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüche zwischen Zähmungen derselben NPC-ID oder TP, die nicht zueinander passen. Ein Lauf ohne Änderung an Code oder Daten darf `tools/data.json` nur im Feld `generatedAt` verändern. `tools/lua-table.mjs` liest SavedVariables-Dateien und wird vom Import benutzt.
 
 ## Paket bauen
