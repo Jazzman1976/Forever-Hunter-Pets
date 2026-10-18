@@ -20,7 +20,7 @@
 -- tools/import-observations.mjs holt das nach tools/eigene/. Nur außerhalb des Kampfs.
 local _, ns = ...
 
-local VERSION = 9
+local VERSION = 10
 
 local function now() return time and time() or 0 end
 
@@ -47,7 +47,7 @@ local function store()
   end
   if s.v == 2 or s.v == 3 then
     for _, e in pairs(s.ranks or {}) do e.tp, e.tpSeen, e.fam, e.used = nil, nil, nil, nil end
-  elseif s.v ~= VERSION and not (type(s.v) == "number" and s.v >= 4 and s.v <= 8) then
+  elseif s.v ~= VERSION and not (type(s.v) == "number" and s.v >= 4 and s.v <= 9) then
     s.ranks, s.lists, s.lastRead = nil, nil, nil
   end
   -- Bis Version 8 galt die Wildtierausbildung als Tierausbilder, wenn zugleich ein NPC angesprochen war (#32):
@@ -59,6 +59,23 @@ local function store()
       if type(e) == "table" and e.npc then
         e.npc, e.hunterLevel, e.gold = nil, nil, nil
         if not e.bw and not (s.spells and s.spells[key]) then s.ranks[key] = nil end
+      end
+    end
+  end
+  -- Version 9 konnte beim Wirken der Wildtierausbildung neben dem Jägerlehrer dessen Liste als Wildtierausbildung
+  -- lesen (#34): Ränge der Wildtierausbildung, die weder die Daten noch ein Pet-Zauberbuch kennen, fallen weg,
+  -- ebenso Listen mit solchen Rängen. Ein echter neuer Rang kommt beim nächsten Öffnen der Wildtierausbildung zurück.
+  if s.v == 9 then
+    local function known(id)
+      return type(id) == "number" and ((ns.IsDataTrainerRank and ns.IsDataTrainerRank(id))
+        or (ns.IsDataBeastRank and ns.IsDataBeastRank(id)) or (s.spells and s.spells[id] ~= nil))
+    end
+    for key, e in pairs(s.ranks or {}) do
+      if type(e) == "table" and e.bw and not e.npc and not known(key) then s.ranks[key] = nil end
+    end
+    for fam, list in pairs(s.lists or {}) do
+      for id in pairs(type(list) == "table" and list.rows or {}) do
+        if not known(id) then s.lists[fam] = nil; break end
       end
     end
   end

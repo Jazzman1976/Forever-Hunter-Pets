@@ -238,6 +238,10 @@ local function readTrainer()
   -- Erhebung (Core/Survey.lua) liest beide Listen, der Lernstand nur die Wildtierausbildung
   local npc = atNpc()
   ns.trainerIds = nil
+  -- Ohne einen einzigen Pet-Rang aus den Daten ist es weder Wildtierausbildung noch Tierausbilder: der
+  -- Jägerlehrer, oder seine Liste kurz nach dem Wirken von 5149, bevor die Wildtierausbildung sie ersetzt (#34)
+  local l = scanList()
+  if not (l.trainer or l.beast) then return end
   if npc and not isPetTrainer() then return end   -- Jägerlehrer: nichts erheben
   if ns.SurveyTrainer then ns.SafeCall("survey", ns.SurveyTrainer, npc) end
   if npc then return end
@@ -258,7 +262,7 @@ end
 
 -- Ist die eigene Wildtierausbildung gerade offen?
 function ns.BeastTrainingOpen()
-  if not trainerOpen() or atNpc() then return false end
+  if not trainerOpen() or atNpc() or not scanList().beast and not scanList().trainer then return false end
   local ok, n = pcall(GetNumTrainerServices)
   return ok and (tonumber(ns.clean(n)) or 0) > 0
 end
