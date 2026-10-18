@@ -108,9 +108,9 @@ local function verdict(o, a, r)
 end
 
 -- Alle Zähmungen eines Tiers zusammen. Eigene gelten als bewiesen, gesehen wie nicht gesehen, und gehen
--- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten erst ab 10 verschiedenen Meldern;
--- unter Fremden geht gesehen vor widerlegt. Widersprechen sich Zähmungen, meldet das der Generator.
-local FOREIGN_NEEDED = 10
+-- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten erst ab 3 verschiedenen Meldern
+-- (bis 17.10.2026: 10; wie FOREIGN_NEEDED in tools/build-data.mjs, #1); unter Fremden geht gesehen vor widerlegt. Widersprechen sich Zähmungen, meldet das der Generator.
+local FOREIGN_NEEDED = 3
 function ns.Observed(npcId, a, r)
   local list = index()[npcId]
   if not list then return nil end

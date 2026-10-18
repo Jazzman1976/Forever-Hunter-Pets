@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: User Guide
+    url: https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md
+    about: How the addon works – modes, views, sharing, settings, commands.

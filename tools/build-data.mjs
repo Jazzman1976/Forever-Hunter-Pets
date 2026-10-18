@@ -19,7 +19,7 @@ const read = (name) => JSON.parse(fs.readFileSync(path.join(OWN, name), 'utf8'))
 const CONF_SURE = 1, CONF_UNSURE = 2;
 // Fremde Beobachtungen zählen ab so vielen verschiedenen Meldern als belegt – wie im Addon (Core/Observe.lua).
 // Eigene gelten sofort als bewiesen, gesehen wie nicht gesehen.
-const FOREIGN_NEEDED = 10;
+const FOREIGN_NEEDED = 3; // bis 17.10.2026: 10 (#1)
 
 // faehigkeiten.json: von Hand, was die Erhebung nicht liefert (etwa das Angriffstempo):
 //   [{ en?, de?, icon?, kind: general|family|trait, source: tame|trainer|unknown,
@@ -44,6 +44,8 @@ const corrections = read('korrekturen.json');
 const places = read('fundorte.json');
 // zellen.json: { npc: { uiMapID: "xyxy…" } }, eigene Fundort-Zellen aus dem Spiel (tools/import-observations.mjs)
 const cells = fs.existsSync(path.join(OWN, 'zellen.json')) ? read('zellen.json') : {};
+// zellen-fremd.json: { npc: { uiMapID: { melder: "xyxy…" } } }, Zellen anderer Spieler (tools/import-observations.mjs)
+const foreignCells = fs.existsSync(path.join(OWN, 'zellen-fremd.json')) ? read('zellen-fremd.json') : {};
 
 const problems = [];
 const need = (cond, msg) => { if (!cond) problems.push(msg); };
@@ -58,6 +60,12 @@ const warnings = [];
 // - TP: Die Wildtierausbildung zeigt beim aktuellen Rang des Pets 0, bei höheren den Preis abzüglich dessen,
 //   bei niedrigeren den vollen Preis (UI/Training.lua). Daraus wird der Preis zurückgerechnet; was sich noch
 //   nicht rechnen lässt, bleibt leer.
+// - Aktueller Rang (#4): gelernt („used“) – oder mit 0 angezeigt, und Pets dieser Familie hatten ihn im
+//   Zauberbuch. Die Liste zeigt einen Rang, den das Pet mitbrachte, nicht immer als gelernt (Ducken beim
+//   Weitschreiter: 0 und 2 statt 8 und 10).
+// - Eine 0 als voller Preis ist nur ein Preis, wenn mindestens zwei Familien sie zeigen (verfügbar oder
+//   gelernt) und keine Gleichung mehr ergibt (#4). Sonst bleibt der Preis leer: Prankenhieb und Gespinst
+//   standen nur mit 0 da, ohne jeden Gegenbeleg; Knurren zeigen viele Familien mit 0.
 // Tempo-Einträge heißen alle gleich; das Tempo macht sie eindeutig
 const label = (a) => (a.en || a.de) + (a.kind === 'trait' ? ` ${a.speed} s` : '');
 const nameOf = (n) => n.deDE ?? n.enUS ?? n.enGB ?? Object.values(n)[0];
@@ -81,27 +89,35 @@ function abilitiesFromSurvey() {
   }
   // TP: aus jeder Liste Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
   const rankOfId = new Map([...groups.values()].flat().map((r) => [r.id, r]));
+  const inBook = (id, fam) => (survey.zauberbuch?.[id]?.familien || []).map(Number).includes(Number(fam));
   const equations = [];
   for (const [fam, l] of Object.entries(survey.listen)) {
-    const current = new Map(); // Name → Rang-Eintrag mit Status „used“ und höchstem Rang
+    const current = new Map(); // Name → aktueller Rang (gelernt oder mitgebracht) mit höchstem Rang
     const rows = Object.entries(l.zeilen).map(([id, v]) => {
       const [status, shown] = v.split('/');
       return { r: rankOfId.get(+id), status, shown: Number(shown) };
     }).filter((x) => x.r && Number.isFinite(x.shown));
     for (const x of rows) {
       const name = nameOf(x.r.name);
-      if (x.status === 'used' && x.r.rang > (current.get(name)?.rang ?? 0)) current.set(name, x.r);
+      const known = x.status === 'used' || (x.shown === 0 && inBook(x.r.id, fam));
+      if (known && x.r.rang > (current.get(name)?.rang ?? 0)) current.set(name, x.r);
     }
     for (const x of rows) {
       const cur = current.get(nameOf(x.r.name));
-      if (!cur || x.r.rang < cur.rang) equations.push({ id: x.r.id, tp: x.shown, fam });
+      if (!cur || x.r.rang < cur.rang) equations.push({ id: x.r.id, tp: x.shown, fam, status: x.status });
       else if (x.r.rang > cur.rang) equations.push({ id: x.r.id, tp: x.shown, plus: cur.id, fam });
     }
   }
+  // Eine 0 als voller Preis zählt erst, wenn sie belegt ist (siehe oben); bis dahin rechnet sie nicht mit
+  const zeros = new Map(); // Zauber-ID → Familien, die ihn mit 0 als vollem Preis zeigen (verfügbar oder gelernt)
+  for (const q of equations) {
+    if (q.plus == null && q.tp === 0 && q.status !== 'unavailable') (zeros.get(q.id) ?? zeros.set(q.id, new Set()).get(q.id)).add(q.fam);
+  }
   const tp = new Map();
-  for (let changed = true; changed;) {
+  const solve = () => { for (let changed = true; changed;) {
     changed = false;
     for (const q of equations) {
+      if (q.plus == null && q.tp === 0) continue;
       if (q.plus != null && !tp.has(q.plus)) continue;
       const v = q.tp + (q.plus != null ? tp.get(q.plus) : 0);
       if (!tp.has(q.id)) { tp.set(q.id, v); changed = true; } else if (tp.get(q.id) !== v && !q.warned) {
@@ -109,7 +125,10 @@ function abilitiesFromSurvey() {
         warnings.push(`TP für Zauber ${q.id} widersprechen sich: ${tp.get(q.id)} und ${v} (Familie ${q.fam})`);
       }
     }
-  }
+  } };
+  solve();
+  for (const [id, fams] of zeros) if (!tp.has(id) && fams.size >= 2) tp.set(id, 0);
+  solve();
 
   const out = [];
   for (const [name, ranks] of groups) {
@@ -247,7 +266,7 @@ for (const o of observations) {
   }
 }
 // Angriffstempo aus den Sichtungen: Das wilde Tier hat das Tempo, das es gezähmt hat (Probe 16.10.2026).
-// Belegt wie beim Zähmen: eigene sofort, fremde ab 10 Meldern.
+// Belegt wie beim Zähmen: eigene sofort, fremde ab FOREIGN_NEEDED Meldern.
 for (const s of sightings) {
   if (s.tempo == null || Math.abs(s.tempo - NORMAL_SPEED) < 0.05) continue;
   const t = abilitiesIn.find((a) => a.kind === 'trait' && Math.abs(Number(a.speed) - s.tempo) < 0.05);
@@ -300,18 +319,42 @@ for (const p of places) {
   const list = ((coords[p.npc] ??= {})[p.map] ??= []);
   for (const [x, y] of p.punkte) list.push(Math.round(x * 10), Math.round(y * 10));
 }
-// eigene Zellen aus dem Spiel: Mittelpunkt jeder Zelle (Raster 50 × 50, Core/Places.lua)
+// Zellen aus dem Spiel: Mittelpunkt jeder Zelle (Raster 50 × 50, Core/Places.lua). Eigene sofort, fremde wie
+// Zähmungen und Sichtungen: ab FOREIGN_NEEDED verschiedenen Meldern, ein eigenes Kürzel gilt als eigen (#2).
 const CELL_ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn';
+const shipCells = new Map(); // "npc:map" → Set der Zellen
 for (const [npc, maps] of Object.entries(cells)) {
   for (const [map, s] of Object.entries(maps)) {
-    const list = ((coords[npc] ??= {})[map] ??= []);
-    for (const c of s.match(/../g) || []) {
-      const cx = CELL_ALPHA.indexOf(c[0]), cy = CELL_ALPHA.indexOf(c[1]);
-      need(cx >= 0 && cy >= 0, `Zelle „${c}“ bei ${npc} ungültig`);
-      list.push(Math.round((cx + 0.5) * 20), Math.round((cy + 0.5) * 20));
-    }
+    const set = shipCells.get(`${npc}:${map}`) ?? new Set();
+    for (const c of s.match(/../g) || []) set.add(c);
+    shipCells.set(`${npc}:${map}`, set);
   }
 }
+let foreignShipped = 0;
+for (const [npc, maps] of Object.entries(foreignCells)) {
+  for (const [map, byRep] of Object.entries(maps)) {
+    const reps = new Map(); // Zelle → Set der Melder
+    for (const [rep, s] of Object.entries(byRep)) {
+      for (const c of s.match(/../g) || []) (reps.get(c) ?? reps.set(c, new Set()).get(c)).add(rep);
+    }
+    const set = shipCells.get(`${npc}:${map}`) ?? new Set();
+    for (const [c, who] of reps) {
+      if (set.has(c)) continue;
+      if (who.size >= FOREIGN_NEEDED || [...who].some((r) => ownReps.has(r))) { set.add(c); foreignShipped++; }
+    }
+    if (set.size) shipCells.set(`${npc}:${map}`, set);
+  }
+}
+for (const [key, set] of shipCells) {
+  const [npc, map] = key.split(':');
+  const list = ((coords[npc] ??= {})[map] ??= []);
+  for (const c of set) {
+    const cx = CELL_ALPHA.indexOf(c[0]), cy = CELL_ALPHA.indexOf(c[1]);
+    need(cx >= 0 && cy >= 0, `Zelle „${c}“ bei ${npc} ungültig`);
+    list.push(Math.round((cx + 0.5) * 20), Math.round((cy + 0.5) * 20));
+  }
+}
+if (foreignShipped) console.log(`${foreignShipped} fremde Fundort-Zellen belegt (ab ${FOREIGN_NEEDED} Meldern)`);
 
 if (problems.length) {
   console.error(`Abbruch – ${problems.length} Angaben ohne Beleg oder fehlerhaft:\n  ` + problems.join('\n  '));
@@ -334,9 +377,12 @@ const abilities = abilitiesIn.map((a) => {
 });
 
 // ---- Sichtungen: Name, Stufe, Familie, Einstufung je Tier ----
-// Eigene Sichtungen zählen sofort, fremde erst, wenn 10 verschiedene Melder das Tier gesehen haben (wie
-// beim Zähmen). Name je Sprache: der eigene, sonst der häufigste; Familie und Einstufung ebenso.
+// Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_NEEDED verschiedene Melder das Tier gesehen haben (wie
+// beim Zähmen). Familie und Einstufung: die eigene, sonst die häufigste.
+// Namen (#3): je Sprache aus allen Sichtungen dieser Sprache, ohne Schwelle – ein Name ist kein Beleg. Sie kommen
+// nur an Tiere, die ohnehin ausgeliefert werden (siehe beastIds unten). Der eigene Name geht vor, sonst der häufigste.
 const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
+const sightedNames = new Map(); // NPC-ID → { de, en }
 {
   const byNpc = new Map();
   for (const s of sightings) {
@@ -352,14 +398,16 @@ const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
     return [...count].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
   };
   for (const [npc, list] of byNpc) {
+    sightedNames.set(npc, {
+      de: pick(list.filter((s) => s.sprache === 'deDE'), (s) => s.name),
+      en: pick(list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
+    });
     const own = list.filter((s) => ownReps.has(s.melder));
     const foreignReps = new Set(list.filter((s) => !ownReps.has(s.melder)).map((s) => s.melder));
     const use = own.length ? own : foreignReps.size >= FOREIGN_NEEDED ? list : null;
     if (!use) continue;
     const levels = use.map((s) => s.stufe);
     sighted.set(npc, {
-      de: pick(use.filter((s) => s.sprache === 'deDE'), (s) => s.name),
-      en: pick(use.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
       fam: pick(use, (s) => s.familie), cls: pick(use, (s) => s.einstufung),
       min: Math.min(...levels), max: Math.max(...levels),
     });
@@ -378,11 +426,12 @@ const beasts = {};
 for (const id of [...beastIds].sort((x, y) => x - y)) {
   const b = beastsIn[id] || {};
   const s = sighted.get(id) || {};
+  const n = sightedNames.get(id) || {};
   const lv = [level.get(id), s.min != null ? [s.min, s.max] : null].filter(Boolean);
   const min = lv.length ? Math.min(...lv.map((x) => x[0])) : null;
   const max = lv.length ? Math.max(...lv.map((x) => x[1])) : null;
   beasts[id] = {
-    de: b.de || s.de || null, en: b.en || s.en || null, fam: b.fam ?? s.fam ?? null,
+    de: b.de || n.de || null, en: b.en || n.en || null, fam: b.fam ?? s.fam ?? null,
     min: b.min ?? min, max: b.max ?? max, cls: b.cls ?? s.cls ?? 0,
   };
 }

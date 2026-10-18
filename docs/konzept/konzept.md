@@ -74,7 +74,7 @@ Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `
 SavedVariables ──tools/import-observations.mjs──> tools/eigene/*.json ──build-data.mjs──> tools/data.json ──build-addon.mjs──> Data/Data.lua
 ```
 
-Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden nicht ausgeliefert, weil je Zelle kein Melder gespeichert ist und die Regel „ab 10 Meldern“ sich nicht prüfen ließe.
+Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden je Melder gespeichert und wie Zähmungen und Sichtungen ab 3 Meldern ausgeliefert (#2).
 
 ### Zur Laufzeit: Daten und eigene Funde zusammen
 
@@ -170,15 +170,15 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 | Stufe | Bedeutung | Anzeige |
 | --- | --- | --- |
-| belegt | eigene Zähmung, oder mindestens 10 verschiedene fremde Melder, oder ein Befund „bestätigt“ | normal |
-| unsicher | weniger als 10 fremde Melder | aus; einschaltbar, Zeichen „?“ |
+| belegt | eigene Zähmung, oder mindestens 3 verschiedene fremde Melder, oder ein Befund „bestätigt“ | normal |
+| unsicher | weniger als 3 fremde Melder | aus; einschaltbar, Zeichen „?“ |
 | unbelegt | nur geschätzt (noch keine Schätzungen, Schalter fehlt) | aus; Zeichen „!“ |
 | widerlegt | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte | nie |
 
 - **Eigene Zähmungen sind Beweis**, gesehen wie nicht gesehen, und gehen allem Fremden vor. Unter Fremden geht gesehen vor widerlegt.
 - **Die Fähigkeiten hängen an der NPC-ID**, nur der Rang an der Stufe. Darum widerlegt eine Zähmung ein Paar endgültig – und darum gibt es **keine Wahrscheinlichkeiten**: Was ein Tier mitbringt, ist kein Zufall. Widersprechen sich Zähmungen derselben NPC-ID, meldet der Generator das; dann wackelt die Annahme.
 - **Das Zauberbuch zeigt nur den höchsten Rang:** Ein höherer Rang widerlegt keinen niedrigeren.
-- **10 Melder** statt anfangs zwei, weil mit mehr als drei Spielern zu rechnen ist; feinjustiert wird in M5.
+- **3 Melder** (17.10.2026, M5, #1): anfangs zwei, dann 10; mit einer Gilde als Spielerschaft wurde 10 kaum erreicht. Drei unabhängige Spieler sind für Spieldaten ein guter Beleg; anheben, wenn es viele Spieler gibt.
 
 ## 11 Lernstand
 
@@ -247,7 +247,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Erst proben, dann bauen:** Unklare API-Fragen klärt eine Probe (`/fhp …`, Protokoll in den SavedVariables), Ergebnisse in [api-befunde.md](../technik/api-befunde.md).
 - **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung.
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
-- **GitFlow:** Arbeit auf `develop`, Größeres in `feature/<thema>`, mit `--no-ff` zurück, Branch löschen; `main` nur Releases. Bis zur ersten Produktivversion (Entscheidung des Nutzers, 17.10.2026) gibt es **keinen Release-Branch**: Ein Release erhöht die Version im TOC direkt auf `develop` und wird von dort mit `--no-ff` nach `main` gemergt, Tag `v<version>` auf `main`. Getestet wird ohnehin laufend; Release-Branches kommen, sobald es eine richtige Produktivversion gibt. Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
+- **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>-beta` (vor 1.0.0); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>-beta`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
 - **Bekanntes, das nicht zum Auftrag gehört,** wird genannt, nicht ungefragt angefasst.
 - **Forever ändert sich wöchentlich**, solange die Beta läuft; erhobene Daten können veralten.
 - Doku, Kommentare, Commits deutsch; README, NOTICE, CONTRIBUTING und die Anleitung `docs/guide/guide.md` englisch.
@@ -259,10 +259,10 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M1 Eigene Daten | fremde Daten raus, Sammeln im Spiel | abgeschlossen (16.10.2026) |
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
-| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | läuft: 0.7.0 und öffentliches Repo (17.10.2026), Screenshots neu, Beta 0.8.0 auf CurseForge (17.10.2026) |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | nach M4 |
+| M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026) |
 
-Pläne und Aufgaben werden künftig als Issues auf GitHub geführt.
+Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 
 ## 17 Wo was steht
 

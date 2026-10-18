@@ -16,6 +16,7 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 | `sichtungen.json` | `[{ npc, stufe, einstufung, familie, sprache, name, zeit, melder, tempo? }]`, je Tier, Stufe, Sprache und Melder einer | Import aus `ForeverHunterPetsDB.sights` |
 | `beobachtungen.json` | `[{ npc, stufe, zauber: [IDs], tempo, zeit, melder }]`, eine je Zähmung | Import aus `ForeverHunterPetsDB.obs` |
 | `zellen.json` | `{ npc: { uiMapID: "xyxy…" } }`, eigene Fundort-Zellen, zwei Zeichen je Zelle (Spalte, Zeile im Raster 50 × 50, Alphabet `0–9 A–Z a–n`) | Import aus `ForeverHunterPetsDB.loc` |
+| `zellen-fremd.json` | `{ npc: { uiMapID: { melder: "xyxy…" } } }`, Fundort-Zellen anderer Spieler je Melder, Format wie `zellen.json`; ausgeliefert wird eine Zelle ab 3 Meldern oder mit einem eigenen Kürzel | Import aus `ForeverHunterPetsDB.locIn` (Einträge ohne Melder entfallen) |
 | `eigene-melder.json` | Kürzel der eigenen Charaktere | Import aus `ForeverHunterPetsDB.myReps` |
 | `korrekturen.json` | `[{ npc, name, ability, rank, zauber?, befund: bestätigt\|widerlegt, quelle, datum }]`; `zauber` ist die ID des Rangs und geht vor dem Namen | von Hand |
 | `fundorte.json` | `[{ npc, name, map, punkte: [[x, y], …] in Prozent, quelle, datum }]` | von Hand |
@@ -35,7 +36,7 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 | `families` | `{ ID: { de, en, icon } }` |
 | `beasts` | `{ NPC-ID: { de, en, fam, min, max, cls } }`; `cls` ist die Einstufung: 0 normal, 1 Elite, 2 Rar-Elite, 3 Boss, 4 Rar |
 | `coords` | `{ NPC-ID: { uiMapID: [x, y, x, y, …] } }` in Promille der Karte |
-| `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }` |
+| `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }`; `tp` ist leer (`null`), solange kein Preis belegt ist – eine 0 nur aus einer einzigen Familie reicht nicht (#4) |
 
 - `kind`: `general` (alle Familien), `family` (die in `families`), `trait` (Angriffstempo, `speed` in Sekunden): ein passiver Zauber aus dem Zauberbuch, dessen Tempo die Zähmungen zeigen; ist der Zauber für ein Tempo noch nicht gesehen, eine negative Ersatz-ID (etwa −150 für 1,5 s), für die das Addon den Client nicht fragt.
 - `source`: `tame` (von einem Tier abschauen), `trainer` (Tierausbilder), `unknown`.

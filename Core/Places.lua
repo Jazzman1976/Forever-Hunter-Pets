@@ -4,9 +4,11 @@
 -- Raster von 2 % der Karte gerundet (50 × 50 Zellen, je nach Zone etwa 60–100 m). Die Karte zeigt so
 -- „hier ungefähr“; wandernde Tiere ergeben eine Kette von Zellen.
 --
--- Ablage kontoweit: ForeverHunterPetsDB.loc[npc][uiMapID] = „xyxy…“ für eigene, locIn ebenso für fremde
--- Zellen; je Zelle zwei Zeichen aus ALPHA (Spalte, Zeile). Nur neue Zellen zählen, höchstens MAX_CELLS je
--- Tier und Karte. Neue eigene Zellen werden gesammelt und höchstens alle 5 Minuten geteilt (Core/Comm.lua).
+-- Ablage kontoweit: ForeverHunterPetsDB.loc[npc][uiMapID] = „xyxy…“ für eigene Zellen, je Zelle zwei Zeichen
+-- aus ALPHA (Spalte, Zeile). Fremde tragen ihren Melder, damit der Import die Regel „ab 3 Meldern“ prüfen
+-- kann (#2): locIn[npc][uiMapID][melder] = „xyxy…“; ältere Einträge ohne Melder (bis 0.8.0 ein String je
+-- Karte) liegen unter OLD – sichtbar, sie zählen aber nicht. Nur neue Zellen zählen, höchstens MAX_CELLS je
+-- Tier, Karte und Melder. Neue eigene Zellen werden gesammelt und höchstens alle 5 Minuten geteilt (Core/Comm.lua).
 local _, ns = ...
 
 local GRID = 50
@@ -14,12 +16,23 @@ local ALPHA = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"   -- 50 Zeich
 local MAX_CELLS = 500
 local MAX_FOREIGN = 20000
 local SEND_EVERY = 300
+local OLD = "-"             -- Melder älterer fremder Zellen (unbekannt)
+local FOREIGN_ENOUGH = 3    -- mehr Melder je Zelle braucht die Regel „ab 3 Meldern“ (Core/Observe.lua) nicht
 ns.CELL_BUNDLE = 100        -- Zellen je Nachricht (200 Zeichen)
 
+local migrated = false
 local function store(foreign)
   if not ns.db then return nil end
   local key = foreign and "locIn" or "loc"
   ns.db[key] = ns.db[key] or {}
+  if foreign and not migrated then
+    migrated = true
+    for _, maps in pairs(ns.db.locIn) do
+      for map, v in pairs(maps) do
+        if type(v) == "string" then maps[map] = v ~= "" and { [OLD] = v } or nil end
+      end
+    end
+  end
   return ns.db[key]
 end
 
@@ -28,6 +41,27 @@ local function hasCell(cells, cell)
     if cells:sub(i, i + 1) == cell then return true end
   end
   return false
+end
+
+-- Wie viele Melder (ohne OLD) haben die Zelle gemeldet? byRep = locIn[npc][uiMapID]
+local function reporters(byRep, cell)
+  local n = 0
+  for rep, cells in pairs(byRep or {}) do
+    if rep ~= OLD and hasCell(cells, cell) then n = n + 1 end
+  end
+  return n
+end
+
+-- Fremde Zellen eines Tiers auf einer Karte, alle Melder zusammen, jede einmal: „xyxy…“
+local function foreignCells(npc, map)
+  local all, set = {}, {}
+  for _, cells in pairs(((store(true) or {})[npc] or {})[map] or {}) do
+    for i = 1, #cells - 1, 2 do
+      local cell = cells:sub(i, i + 1)
+      if not set[cell] then set[cell] = true; all[#all + 1] = cell end
+    end
+  end
+  return table.concat(all)
 end
 
 function ns.ValidCells(cells)
@@ -84,10 +118,15 @@ local function countForeign()
   if foreignCount then return foreignCount end
   foreignCount = 0
   for _, maps in pairs(store(true) or {}) do
-    for _, cells in pairs(maps) do foreignCount = foreignCount + #cells / 2 end
+    for _, byRep in pairs(maps) do
+      for _, cells in pairs(byRep) do foreignCount = foreignCount + #cells / 2 end
+    end
   end
   return foreignCount
 end
+
+-- Fremde Zellen insgesamt (für /fhp teilen)
+function ns.ForeignCellCount() return countForeign() end
 
 local pending, flushing = {}, false   -- neue eigene Zellen bis zum nächsten Teilen: ["npc:map"] = Zellen
 local function flush()
@@ -128,26 +167,35 @@ local function inData(npc, map, cell)
 end
 
 -- Eigene Zellen werden immer gespeichert – auch was die Daten schon kennen, gehört zu den eigenen Funden –,
--- geteilt aber nur, was die Daten nicht haben. Fremde Zellen, die die Daten haben, werden nicht gespeichert.
+-- geteilt aber nur, was die Daten nicht haben. Fremde Zellen werden nicht gespeichert, wenn die Daten oder die
+-- eigenen Zellen sie haben oder schon FOREIGN_ENOUGH andere Melder sie gemeldet haben.
+-- foreign: Kürzel des Melders bei fremden Zellen, sonst nil.
 function ns.AddCells(npc, map, cells, foreign)
   local s = store(foreign)
   if not (s and npc and map and ns.ValidCells(cells)) then return 0 end
   s[npc] = s[npc] or {}
-  local have = s[npc][map] or ""
+  local byRep = foreign and (s[npc][map] or {})
+  local have = (foreign and byRep[foreign]) or (not foreign and s[npc][map]) or ""
   local mine = (not foreign and "") or ((store(false)[npc] or {})[map] or "")
   local added, toShare = "", ""
   for i = 1, #cells - 1, 2 do
     local cell = cells:sub(i, i + 1)
     if #have / 2 >= MAX_CELLS then break end
     if foreign and countForeign() >= MAX_FOREIGN then break end
-    if not hasCell(have, cell) and not hasCell(mine, cell) and not (foreign and inData(npc, map, cell)) then
+    if not hasCell(have, cell) and not hasCell(mine, cell)
+        and not (foreign and (inData(npc, map, cell) or reporters(byRep, cell) >= FOREIGN_ENOUGH)) then
       have = have .. cell
       added = added .. cell
       if foreign then foreignCount = countForeign() + 1 elseif not inData(npc, map, cell) then toShare = toShare .. cell end
     end
   end
   if added == "" then return 0 end
-  s[npc][map] = have
+  if foreign then
+    byRep[foreign] = have
+    s[npc][map] = byRep
+  else
+    s[npc][map] = have
+  end
   if toShare ~= "" then
     local key = npc .. ":" .. map
     pending[key] = (pending[key] or "") .. toShare
@@ -193,15 +241,16 @@ function ns.CellPoints(npc, map, ownOnly)
     end
   end
   add(((store(false) or {})[npc] or {})[map])
-  if not ownOnly then add(((store(true) or {})[npc] or {})[map]) end
+  if not ownOnly then add(foreignCells(npc, map)) end
   return pts
 end
 
 -- Karten, auf denen Zellen eines Tiers liegen: { [uiMapID] = Zahl }
 function ns.CellMaps(npc, ownOnly)
   local out = {}
-  for _, foreign in ipairs(ownOnly and { false } or { false, true }) do
-    for map, cells in pairs(((store(foreign) or {})[npc]) or {}) do out[map] = (out[map] or 0) + #cells / 2 end
+  for map, cells in pairs(((store(false) or {})[npc]) or {}) do out[map] = #cells / 2 end
+  if not ownOnly then
+    for map in pairs(((store(true) or {})[npc]) or {}) do out[map] = (out[map] or 0) + #foreignCells(npc, map) / 2 end
   end
   return out
 end

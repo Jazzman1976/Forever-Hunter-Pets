@@ -1,0 +1,43 @@
+# Paket bauen und hochladen (BigWigs-Packager): Bei jedem Tag „v*“ geht das ZIP nach CurseForge (Projekt-ID
+# aus dem TOC, Typ aus dem Tag-Namen: „-beta“ = Beta, ohne Zusatz = Release) und als GitHub-Release.
+# Changelog ist CHANGELOG.md (.pkgmeta). Von Hand gestartet nur ein Probelauf ohne Upload; das ZIP hängt dann
+# als Artefakt am Lauf.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paket bauen und hochladen
+        if: github.ref_type == 'tag'
+        uses: BigWigsMods/packager@v2.6.1
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Probelauf ohne Upload
+        if: github.ref_type != 'tag'
+        uses: BigWigsMods/packager@v2.6.1
+        with:
+          args: -d
+
+      - name: ZIP des Probelaufs
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: .release/*.zip
+          # .release ist ein versteckter Ordner; ohne das lässt upload-artifact@v4 ihn aus
+          include-hidden-files: true

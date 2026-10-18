@@ -102,30 +102,21 @@ end
 -- ---- Seite im Addon-Menü des Spiels (Optionen → AddOns) ----
 -- Die Einstellungen lesen und schreiben ns.db.ui selbst; hier folgt nur der Knopf nach.
 -- „Filter merken“ braucht das nicht: es wirkt beim nächsten Aufbau des Fensters.
--- Logo oben auf der Seite: eine Abschnitts-Überschrift des Clients, höher gemacht und mit dem Bild
--- bestückt – sie bringt alles mit, was die Einstellungsliste von einem Element erwartet. Fehlt die
--- Funktion im Client, bleibt die Seite ohne Logo. Linksbündig auf Höhe der Beschriftungen darunter;
--- rechts daneben ist Platz für einen Text (später: was das Addon macht, Version).
-local LOGO = "Interface\\AddOns\\Forever-Hunter-Pets\\media\\logo"
-local LOGO_SIZE = 160
-local LOGO_LEFT = 37   -- Einzug der Beschriftungen in der Einstellungsliste
+-- Logo oben auf der Seite: ein eigenes Element aus der Vorlage in UI/Settings.xml (#5). Bis 0.8.0 war es
+-- eine Überschrift des Clients mit ersetztem InitFrame und GetExtent – damit richtete unser Code Rahmen ein,
+-- die sich alle Seiten der Optionen teilen, und der Client blockierte auf fremden Seiten Aktionen („wurde
+-- geblockt“, etwa auf „Kontakte“). Jetzt ersetzt das Addon keine Funktion und fasst keinen Rahmen an: Die
+-- Vorlage erbt Init von der Überschrift des Clients, die Liste hält für sie einen eigenen Pool.
+-- Passt etwas nicht zum Client, bleibt die Seite ohne Logo – lieber kein Logo als eine blockierte Aktion.
+local LOGO_TEMPLATE = "ForeverHunterPetsLogoTemplate"
 local function addLogo(layout)
-  if not (layout and layout.AddInitializer and CreateSettingsListSectionHeaderInitializer) then return end
-  local init = CreateSettingsListSectionHeaderInitializer("")
-  if not (init and init.InitFrame) then return end
-  local base = init.InitFrame
-  init.GetExtent = function() return LOGO_SIZE + 16 end
-  init.InitFrame = function(self, frame)
-    base(self, frame)
-    if not frame.fhpLogo then
-      frame.fhpLogo = frame:CreateTexture(nil, "ARTWORK")
-      frame.fhpLogo:SetSize(LOGO_SIZE, LOGO_SIZE)
-      frame.fhpLogo:SetPoint("TOPLEFT", LOGO_LEFT, -8)
-    end
-    frame.fhpLogo:SetTexture(LOGO)
-    frame.fhpLogo:Show()
-  end
-  layout:AddInitializer(init)
+  if not (layout and layout.AddInitializer and Settings.CreateElementInitializer
+    and CreateSettingsListSectionHeaderInitializer) then return end
+  -- Die Vorlage erbt von „SettingsListSectionHeaderTemplate“; nur wenn die Überschrift des Clients so heißt
+  local header = CreateSettingsListSectionHeaderInitializer("")
+  if not (header and header.GetTemplate and header:GetTemplate() == "SettingsListSectionHeaderTemplate") then return end
+  if not (C_XMLUtil and C_XMLUtil.GetTemplateInfo and C_XMLUtil.GetTemplateInfo(LOGO_TEMPLATE)) then return end
+  layout:AddInitializer(Settings.CreateElementInitializer(LOGO_TEMPLATE, { name = "" }))
 end
 
 local function registerSettings()
@@ -178,7 +169,7 @@ local function registerSettings()
     Settings.CreateCheckbox(category, s, text)
   end
   conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain beasts"],
-    L["Also lists beasts that fewer than 10 other players have reported so far. In all views and in the tooltip they are marked with “?”."])
+    L["Also lists beasts that fewer than 3 other players have reported so far. In all views and in the tooltip they are marked with “?”."])
   -- unbelegt heißt geschätzt; solange die Daten keine Schätzung enthalten, fehlt der Schalter
   if ns.HasUnproven() then
     conf("ForeverHunterPets_ShowUnproven", "showUnproven", L["Show unproven beasts"],
@@ -194,7 +185,7 @@ local function registerSettings()
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
   Settings.CreateCheckbox(category, share,
-    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 10 different players saw the same. Switched off, nothing is sent or received."])
+    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Switched off, nothing is sent or received."])
   Settings.RegisterAddOnCategory(category)
   ns.settingsCategory = category
 end

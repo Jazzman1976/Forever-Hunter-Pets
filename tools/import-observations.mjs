@@ -1,6 +1,7 @@
 // Führt die Beobachtungen beim Zähmen aus den SavedVariables des Addons in tools/eigene/beobachtungen.json
 // zusammen und merkt sich die Kürzel der eigenen Charaktere (myReps) in tools/eigene/eigene-melder.json.
-// Dazu die Sichtungen beim Anvisieren (Core/Sightings.lua) nach tools/eigene/sichtungen.json und die
+// Dazu die Sichtungen beim Anvisieren (Core/Sightings.lua) nach tools/eigene/sichtungen.json, die
+// Fundort-Zellen nach tools/eigene/zellen.json (eigene) und zellen-fremd.json (fremde, mit Melder) und die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
 // nach tools/eigene/erhebung.json.
 // In der Datei eines Spielers steht, was er selbst gesehen hat, und alles, was andere im Spiel geteilt haben.
@@ -21,6 +22,7 @@ const SURVEY_OUT = path.join(HERE, 'eigene', 'erhebung.json');
 const SURVEY_VERSION = 4; // wie VERSION in Core/Survey.lua
 const SIGHT_OUT = path.join(HERE, 'eigene', 'sichtungen.json');
 const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
+const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
 
 // djb2, wie ns.ReporterHash im Addon
@@ -150,9 +152,8 @@ console.log(`${sightsRead} Sichtungen gelesen, ${sightList.length - sightsOld.le
   + `(${new Set(sightList.map((r) => r.npc)).size} Tiere)`);
 
 // ---- Eigene Fundort-Zellen (Core/Places.lua) → tools/eigene/zellen.json ----
-// { npc: { uiMapID: "xyxy…" } }, zwei Zeichen je Zelle (Spalte, Zeile im Raster 50 × 50). Nur eigene
-// (ForeverHunterPetsDB.loc); fremde (locIn) tragen je Zelle keinen Melder, die Regel „ab 10 Meldern“
-// lässt sich für sie nicht prüfen – sie bleiben im Spiel.
+// { npc: { uiMapID: "xyxy…" } }, zwei Zeichen je Zelle (Spalte, Zeile im Raster 50 × 50), aus
+// ForeverHunterPetsDB.loc. Fremde (locIn) siehe unten.
 const CELL_ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn';
 const cellsOut = fs.existsSync(CELLS_OUT) ? JSON.parse(fs.readFileSync(CELLS_OUT, 'utf8')) : {};
 let cellsNew = 0;
@@ -177,6 +178,39 @@ const sortedCells = Object.fromEntries(Object.entries(cellsOut).sort(([a], [b]) 
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b))]));
 fs.writeFileSync(CELLS_OUT, '{\n' + Object.entries(sortedCells).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
 console.log(`${cellsNew} neue eigene Fundort-Zellen → tools/eigene/zellen.json (${Object.keys(sortedCells).length} Tiere)`);
+
+// ---- Fremde Fundort-Zellen (Core/Places.lua) → tools/eigene/zellen-fremd.json ----
+// { npc: { uiMapID: { melder: "xyxy…" } } }, aus ForeverHunterPetsDB.locIn. Ältere Einträge ohne Melder
+// (String je Karte oder Melder „-“) zählen nicht und werden übergangen. Ob eine Zelle ausgeliefert wird
+// (ab 3 Meldern), entscheidet der Generator.
+const foreignOut = fs.existsSync(FOREIGN_CELLS_OUT) ? JSON.parse(fs.readFileSync(FOREIGN_CELLS_OUT, 'utf8')) : {};
+let foreignNew = 0;
+for (const f of files) {
+  let locIn;
+  try {
+    locIn = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.locIn;
+  } catch { continue; }
+  for (const [npc, maps] of Object.entries(locIn || {})) {
+    for (const [map, byRep] of Object.entries(maps || {})) {
+      if (!byRep || typeof byRep !== 'object') continue;
+      for (const [rep, cells] of Object.entries(byRep)) {
+        if (!/^[0-9a-f]{8}$/.test(rep)) continue;
+        if (typeof cells !== 'string' || cells.length % 2 || [...cells].some((c) => !CELL_ALPHA.includes(c))) continue;
+        const have = (((foreignOut[npc] ??= {})[map] ??= {})[rep] ??= '');
+        const set = new Set(have.match(/../g) || []);
+        let add = '';
+        for (const c of cells.match(/../g)) if (!set.has(c)) { set.add(c); add += c; }
+        foreignOut[npc][map][rep] = have + add;
+        foreignNew += add.length / 2;
+      }
+    }
+  }
+}
+const sortedForeign = Object.fromEntries(Object.entries(foreignOut).sort(([a], [b]) => a - b)
+  .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b)
+    .map(([map, byRep]) => [map, Object.fromEntries(Object.entries(byRep).sort(([a], [b]) => a.localeCompare(b)))]))]));
+fs.writeFileSync(FOREIGN_CELLS_OUT, '{\n' + Object.entries(sortedForeign).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
+console.log(`${foreignNew} neue fremde Fundort-Zellen → tools/eigene/zellen-fremd.json (${Object.keys(sortedForeign).length} Tiere)`);
 
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),

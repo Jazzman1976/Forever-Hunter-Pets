@@ -14,6 +14,8 @@ function ns.Name(o)
   if not o then return "?" end
   return o[LANG] or o.de or o.en or "?"
 end
+-- Name nur in Client-Sprache, sonst nil – damit ein Name vom Client vor der anderen Sprache der Daten gehen kann (#3)
+local function ownName(o) return o and o[LANG] end
 
 -- ---- Fähigkeiten: Name und Icon nennt der Client, die Daten sind nur Reserve ----
 -- Nur echte Zauber: Tempo-Einträge tragen eine negative Ersatz-ID (tools/build-data.mjs)
@@ -100,11 +102,12 @@ function ns.FamilyIcon(id)
   return FAMILY_ICON_FALLBACK, true
 end
 
--- Name einer Familie: aus den Daten, sonst aus der eigenen Erhebung (Name in Client-Sprache)
+-- Name einer Familie in Client-Sprache: aus den Daten, sonst vom eigenen Client (Erhebung, Pet, Anvisieren),
+-- erst dann aus den Daten in der anderen Sprache (#3)
 function ns.FamilyName(id)
-  if id and D.families[id] then return ns.Name(D.families[id]) end
+  local f = id and D.families[id]
   local own = id and ns.db and ns.db.survey and ns.db.survey.families and ns.db.survey.families[id]
-  return own or "?"
+  return ownName(f) or own or (f and ns.Name(f)) or "?"
 end
 
 -- Alle bekannten Familien-IDs: aus den Daten und aus der eigenen Erhebung { [id] = true }
@@ -143,15 +146,17 @@ function ns.PetFamily()
   return nil
 end
 
--- Name aus einer Sichtung in der Client-Sprache (Core/Sightings.lua), sonst aus den Daten, sonst
+-- Name in Client-Sprache, wo es einen gibt (#3): aus einer Sichtung (Core/Sightings.lua), aus den Daten, aus
+-- einer Fährte (nur von weitem gesehen, Core/Discover.lua); dann aus den Daten in der anderen Sprache; sonst
 -- „Unbekanntes Tier (#ID)“ – dann kennt ihn noch niemand, und Anvisieren liefert ihn
 function ns.BeastName(id)
   local seen = ns.SeenName and ns.SeenName(id)
   if seen then return seen end
   local b = D.beasts[id]
-  if b and (b.de or b.en) then return ns.Name(b) end
-  local far = ns.TrackName and ns.TrackName(id)   -- nur von weitem gesehen (Core/Discover.lua)
+  if ownName(b) then return ownName(b) end
+  local far = ns.TrackName and ns.TrackName(id)
   if far then return far end
+  if b and (b.de or b.en) then return ns.Name(b) end
   return (L["Unknown beast (#%d)"]):format(id)
 end
 
@@ -290,8 +295,8 @@ local function enemyZones()
 end
 
 -- ---- Belegung der Lehrtiere: 1 belegt, 2 unsicher, 3 unbelegt (drittes Feld in a.teach) ----
--- belegt: im Spiel gesehen, bei einer eigenen Zähmung oder von mindestens 10 anderen Spielern gemeldet;
--- unsicher: bisher von weniger als 10 anderen Spielern gemeldet; unbelegt: nur geschätzt, noch nicht gesehen
+-- belegt: im Spiel gesehen, bei einer eigenen Zähmung oder von mindestens 3 anderen Spielern gemeldet;
+-- unsicher: bisher von weniger als 3 anderen Spielern gemeldet; unbelegt: nur geschätzt, noch nicht gesehen
 -- (siehe Plan „Lehrtiere schätzen“, bisher gibt es keine).
 -- Was nicht belegt ist, zeigt das Addon nur auf Wunsch (Einstellungen) und dann mit „?“ bzw. „!“.
 -- Widerlegt (4): Eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte. Die Fähigkeiten hängen an

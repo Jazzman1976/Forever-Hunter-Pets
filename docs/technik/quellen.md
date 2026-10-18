@@ -32,8 +32,8 @@ Dazu kommen von Hand `tiere.json`, `familien.json` und `faehigkeiten.json` (für
 - **Zauber aus dem Zauberbuch**, die in keiner Liste stehen, kommen dazu, ohne Pet-Stufe und TP: Das Pet kann sie, der Jäger noch nicht.
 - **TP:** Die Wildtierausbildung zeigt beim aktuellen Rang des Pets 0, bei höheren den Preis abzüglich dessen, bei niedrigeren den vollen Preis. Daraus wird der Preis zurückgerechnet; was sich noch nicht rechnen lässt, bleibt leer.
 - **Je Familie** gilt die zuletzt gelesene vollständige Wildtierausbildung. Sie ersetzt die vorige, damit eine falsche Liste (etwa beim Pet-Wechsel) nicht stehen bleibt.
-- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 10 Meldern, mit dem häufigsten Namen.
-- **Fundorte:** nur eigene Zellen werden ausgeliefert, als Punkt in der Zellmitte. Fremde Zellen tragen keinen Melder je Zelle; die Regel „ab 10 Meldern“ lässt sich für sie nicht prüfen, sie bleiben im Spiel.
+- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 3 Meldern, mit dem häufigsten Namen.
+- **Fundorte:** Zellen werden als Punkt in der Zellmitte ausgeliefert: eigene sofort, fremde ab 3 Meldern (je Melder gespeichert seit #2). Ältere fremde Zellen ohne Melder bleiben im Spiel.
 
 Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit; sie stehen in deren SavedVariables und kommen über den Import in die eigenen Daten, wenn sie die Regeln unten erfüllen.
 
@@ -41,8 +41,8 @@ Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit;
 
 | Stufe | Bedeutung | im Addon |
 | --- | --- | --- |
-| **belegt** | ein eigener Charakter hat es beim Zähmen gesehen, ein Befund „bestätigt“ liegt vor, oder 10 verschiedene andere Spieler haben es gesehen | immer gezeigt |
-| **unsicher** | bisher von weniger als 10 anderen Spielern gemeldet | auf Wunsch, mit „?“ |
+| **belegt** | ein eigener Charakter hat es beim Zähmen gesehen, ein Befund „bestätigt“ liegt vor, oder 3 verschiedene andere Spieler haben es gesehen | immer gezeigt |
+| **unsicher** | bisher von weniger als 3 anderen Spielern gemeldet | auf Wunsch, mit „?“ |
 | **unbelegt** | nur geschätzt, noch nicht gesehen (Idee „Lehrtiere schätzen“, bisher gibt es keine) | auf Wunsch, mit „!“; der Schalter erscheint erst, wenn es Schätzungen gibt |
 | **widerlegt** | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte und kein höherer Rang da war | nie gezeigt, nicht ausgeliefert |
 

@@ -229,7 +229,7 @@ local function receiveCells(body, sender)
   if not ns.ValidCells(cells) then return false, "ungültig" end
   cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
   if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if (ns.AddCells(npc, map, cells, true) or 0) == 0 then return false, "schon bekannt" end
+  if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt" end
   return true
 end
 
@@ -440,7 +440,7 @@ ns.On("PLAYER_LOGIN", function()
 end)
 
 -- Fremde Bestände: Zähmungen, Sichtungen und Zellen anderer Spieler, mit der Zahl der Melder
--- (Zellen tragen kein Kürzel, die Melder zählen nur Zähmungen und Sichtungen)
+-- (ältere Zellen ohne Melder zählen bei den Meldern nicht mit)
 local function foreignStock()
   local tames, sights, reps = 0, 0, {}
   for _, s in ipairs((ns.db and ns.db.obs) or {}) do
@@ -451,12 +451,16 @@ local function foreignStock()
     local o = ns.ParseSighting(s)
     if o and not o.own then sights = sights + 1; reps[o.rep] = true end
   end
+  local cells = ns.ForeignCellCount and ns.ForeignCellCount() or 0
+  for _, maps in pairs((ns.db and ns.db.locIn) or {}) do
+    for _, byRep in pairs(maps) do
+      for rep in pairs(type(byRep) == "table" and byRep or {}) do
+        if #rep == 8 then reps[rep] = true end
+      end
+    end
+  end
   local n = 0
   for _ in pairs(reps) do n = n + 1 end
-  local cells = 0
-  for _, maps in pairs((ns.db and ns.db.locIn) or {}) do
-    for _, c in pairs(maps) do cells = cells + #c / 2 end
-  end
   return tames, sights, cells, n
 end
 
