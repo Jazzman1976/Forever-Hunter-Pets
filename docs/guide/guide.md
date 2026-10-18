@@ -184,7 +184,7 @@ Switch **Share observations** off and nothing is sent or received.
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different players** saw the same. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
+- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
 - **WoW Forever is in beta** and changes weekly. Where nothing is known, the addon says so instead of guessing.

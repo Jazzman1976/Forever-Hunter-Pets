@@ -64,6 +64,61 @@ local function me()
   return selfName, selfRep
 end
 
+-- Kürzel eines Absenders, wie me() es für sich rechnet: „Vorname Nachname“ → „Vorname-Nachname“
+local function senderRep(sender)
+  return hash((sender:gsub(" ", "-")))
+end
+
+-- ---- Herkunft fremder Kürzel (#15) ----
+-- Das Kürzel steht in der Nachricht und ist nicht an den Absender gebunden (Weitergereichtes trägt das des
+-- ursprünglichen Melders). Deshalb merkt sich das Addon je fremdem Kürzel, über welche Absender es kam:
+-- ForeverHunterPetsDB.via[melder] = „abs1abs2…“ (Kürzel der Absender, keine Namen). Kommt eine Meldung direkt,
+-- ist der Absender das Kürzel selbst. Mehr als VIA_MAX Absender braucht die Regel nicht.
+-- Regel: Fremde Melder zählen für „ab 3 Meldern“ nur, wenn sie zusammen über mindestens zwei verschiedene
+-- Absender kamen – ein einzelner Absender genügt nie. Kürzel ohne Angabe (alles vor diesem Stand empfangene)
+-- gelten als „Herkunft unbekannt“ und zählen wie bisher. Dieselbe Regel steht in tools/build-data.mjs.
+local VIA_MAX, VIA_REPS = 4, 5000
+local viaCount, viaOf   -- Zahl der Kürzel in der Tabelle viaOf
+
+local function noteVia(rep, sender)
+  if type(rep) ~= "string" or not rep:find("^%x%x%x%x%x%x%x%x$") then return end
+  local via = ns.db.via
+  if type(via) ~= "table" then via = {}; ns.db.via = via end
+  local have = via[rep]
+  if type(have) ~= "string" then
+    if viaOf ~= via then
+      viaOf, viaCount = via, 0
+      for _ in pairs(via) do viaCount = viaCount + 1 end
+    end
+    if viaCount >= VIA_REPS then return end
+    have = ""
+    viaCount = viaCount + 1
+  end
+  if #have >= VIA_MAX * 8 then return end
+  local from = senderRep(sender)
+  for i = 1, #have - 7, 8 do
+    if have:sub(i, i + 7) == from then return end
+  end
+  via[rep] = have .. from
+end
+
+-- Kamen diese fremden Kürzel ({ [Kürzel] = true }) über mindestens zwei verschiedene Absender – oder ist bei
+-- einem die Herkunft unbekannt? Dann zählen sie für die Schwelle. Im Zweifel (kaputter Speicher) wie bisher.
+function ns.ViaDistinct(reps)
+  local via = ns.db and ns.db.via
+  if type(via) ~= "table" then return true end
+  local first
+  for rep in pairs(reps) do
+    local have = via[rep]
+    if type(have) ~= "string" or #have < 8 then return true end
+    for i = 1, #have - 7, 8 do
+      local from = have:sub(i, i + 7)
+      if not first then first = from elseif from ~= first then return true end
+    end
+  end
+  return false
+end
+
 -- Kürzel des eingeloggten Charakters; eigene Beobachtungen tragen es von Anfang an
 function ns.MyRep()
   local _, rep = me()
@@ -204,17 +259,19 @@ local function valid(s)
   if o.speed and (o.speed < 0.5 or o.speed > 4) then return false, "Tempo" end
   local now = time and time() or 0
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
-  return true
+  return true, nil, o
 end
 
+-- Liefern, ob neu gespeichert, sonst den Grund, und als drittes das Kürzel des Melders, sobald die Meldung
+-- gültig ist (für die Herkunft, #15)
 local function receiveObservation(body, sender)
   local s = body:sub(4)                    -- ohne „O1;“
-  local ok, why = valid(s)
+  local ok, why, o = valid(s)
   if not ok then return false, why end
   perSender[sender] = (perSender[sender] or 0) + 1
   if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
   if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
-  if not ns.AddObservation(s) then return false, "schon bekannt" end
+  if not ns.AddObservation(s) then return false, "schon bekannt", o.rep end
   ns.receivedNew = (ns.receivedNew or 0) + 1
   if not ns.refreshPending then
     ns.refreshPending = true
@@ -223,7 +280,7 @@ local function receiveObservation(body, sender)
       ns.ObservationsChanged()
     end)
   end
-  return true
+  return true, nil, o.rep
 end
 
 -- ---- Fundort-Zellen (Core/Places.lua) ----
@@ -245,8 +302,8 @@ local function receiveCells(body, sender)
   if not ns.ValidCells(cells) then return false, "Zellen" end
   cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
   if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt" end
-  return true
+  if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt", rep end
+  return true, nil, rep
 end
 
 -- ---- Sichtungen (Core/Sightings.lua) ----
@@ -271,8 +328,8 @@ local function receiveSighting(body, sender)
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   sightPerSender[sender] = (sightPerSender[sender] or 0) + 1
   if sightPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if not ns.AddSighting(s) then return false, "schon bekannt" end
-  return true
+  if not ns.AddSighting(s) then return false, "schon bekannt", o.rep end
+  return true, nil, o.rep
 end
 
 -- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
@@ -490,19 +547,22 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if own then return end
   local key = plain(sender)
   local t = text:sub(1, 2)
-  local ok, why
+  local ok, why, rep
   if text:sub(1, 3) == "O1;" then
-    ok, why = receiveObservation(text, key)
+    ok, why, rep = receiveObservation(text, key)
   elseif text:sub(1, 3) == "S1;" then
-    ok, why = receiveSighting(text, key)
+    ok, why, rep = receiveSighting(text, key)
   elseif text:sub(1, 3) == "F1;" then
-    ok, why = receiveCells(text, key)
+    ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
     reply(key, sender)   -- zurückgeflüstert wird an den Namen, den der Client nannte
   else
     return
   end
+  -- Herkunft vermerken, auch bei „schon bekannt“: genau dann bestätigt ein zweiter Absender (#15). Abgesichert –
+  -- das Vermerken darf den Empfang nie stören.
+  if rep and (ok or why == "schon bekannt") and ns.db then pcall(noteVia, rep, sender) end
   count(stats.recv, t)
   if ok then count(stats.new, t) else count(stats.dropped, t .. " " .. tostring(why)) end
   if not ok and not EXPECTED[why] then keepReject(text, why, kind) end
@@ -596,6 +656,9 @@ function ns.ShareStatus()
   local tames, sights, cells, nReps = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, sights, cells, nReps))
+  local via = 0
+  for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
+  ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))
   ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
   ns.Print("Empfangen: " .. perKind(stats.recv))
   ns.Print("Davon neu gespeichert: " .. perKind(stats.new))

@@ -123,7 +123,12 @@ end
 -- Alle Zähmungen eines Tiers zusammen. Eigene gelten als bewiesen, gesehen wie nicht gesehen, und gehen
 -- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten erst ab 3 verschiedenen Meldern
 -- (bis 17.10.2026: 10; wie FOREIGN_NEEDED in tools/build-data.mjs, #1); unter Fremden geht gesehen vor widerlegt. Widersprechen sich Zähmungen, meldet das der Generator.
+-- Die Melder müssen dabei über mindestens zwei verschiedene Absender gekommen sein (#15, ns.ViaDistinct in Core/Comm.lua).
 local FOREIGN_NEEDED = 3
+local function enough(reps, n)
+  if n < FOREIGN_NEEDED then return false end
+  return not ns.ViaDistinct or ns.ViaDistinct(reps)
+end
 function ns.Observed(npcId, a, r)
   local list = index()[npcId]
   if not list then return nil end
@@ -141,8 +146,8 @@ function ns.Observed(npcId, a, r)
   end
   if ownSeen then return "seen" end
   if ownRefuted then return "refuted" end
-  if nSeen >= FOREIGN_NEEDED then return "seen" end
-  if nRefuted >= FOREIGN_NEEDED and nSeen == 0 then return "refuted" end
+  if enough(seen, nSeen) then return "seen" end
+  if nSeen == 0 and enough(refuted, nRefuted) then return "refuted" end
   return nil
 end
 
