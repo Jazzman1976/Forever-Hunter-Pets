@@ -1,7 +1,8 @@
 # Paket bauen und hochladen (BigWigs-Packager): Bei jedem Tag „v*“ geht das ZIP nach CurseForge (Projekt-ID
 # aus dem TOC, Typ aus dem Tag-Namen: „-beta“ = Beta, ohne Zusatz = Release) und als GitHub-Release.
 # Changelog ist CHANGELOG.md (.pkgmeta). Von Hand gestartet nur ein Probelauf ohne Upload; das ZIP hängt dann
-# als Artefakt am Lauf.
+# als Artefakt am Lauf. Das ZIP heißt wie das Tag, etwa v0.10.0-beta.zip (-n, Regel des Nutzers, 18.10.2026);
+# Beta und Spielversion (Forever) hängen nicht am Namen, sondern an Tag und TOC.
 name: Release
 
 on:
@@ -23,6 +24,8 @@ jobs:
       - name: Paket bauen und hochladen
         if: github.ref_type == 'tag'
         uses: BigWigsMods/packager@v2.6.1
+        with:
+          args: -n "{project-version}"
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
@@ -31,7 +34,7 @@ jobs:
         if: github.ref_type != 'tag'
         uses: BigWigsMods/packager@v2.6.1
         with:
-          args: -d
+          args: -d -n "{project-version}"
 
       - name: ZIP des Probelaufs
         if: github.ref_type != 'tag'

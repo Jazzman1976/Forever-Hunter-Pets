@@ -79,12 +79,14 @@ Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüch
 ## Paket bauen
 
 ```
-node tools/package.mjs            # ZIP nach .pkgmeta in .ignore/dist/, Ordner Forever-Hunter-Pets/, Version aus dem TOC
+node tools/package.mjs            # ZIP nach .pkgmeta in .ignore/dist/v<Version>.zip, Ordner Forever-Hunter-Pets/, Version aus dem TOC
 ```
 
 Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausnimmt, und ohne Punkt-Dateien – im Stand der Arbeitskopie. Es geht an Tester; 0.8.0 ging so von Hand zu CurseForge.
 
 **Veröffentlichen** übernimmt seit 0.8.0 die GitHub Action `.github/workflows/release.yml` (BigWigs-Packager): Jedes gepushte Tag `v*` wird gepackt und nach CurseForge hochgeladen (Projekt-ID aus `## X-Curse-Project-ID` im TOC) und als GitHub-Release mit ZIP angelegt. Den Typ bestimmt der Tag-Name: `-beta` → Beta, `-alpha` → Alpha, sonst Release. Changelog ist `CHANGELOG.md` (englisch, `manual-changelog` in `.pkgmeta`), vor jedem Release oben um die neue Version ergänzen. Das CurseForge-API-Token liegt als Secret `CF_API_KEY` im Repo. Von Hand gestartet (Actions → Release → Run workflow) baut die Action nur probeweise, ohne Upload, und hängt das ZIP an den Lauf.
+
+**Name des ZIPs** (Regel des Nutzers, 18.10.2026, gilt für jedes Release): `v<version>.zip`, also wie das Tag, etwa `v0.10.0-beta.zip`; auf CurseForge heißt die Datei ebenso. Die Action setzt das mit `-n "{project-version}"`, `tools/package.mjs` genauso. Wichtig ist nur, dass CurseForge Beta und Spielversion richtig erkennt: Beta kommt aus dem Tag (`-beta`), die Spielversion „Forever“ aus `## Interface` im TOC – nicht aus dem Dateinamen. Im ZIP liegt weiter der Ordner `Forever-Hunter-Pets/`, sonst lädt WoW das Addon nicht. Bis 0.9.0 hieß das ZIP `Forever-Hunter-Pets-v<version>-forever.zip`.
 
 ## Ablauf
 
@@ -98,7 +100,7 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
   - **Release nach GitFlow** (Regel des Nutzers, 18.10.2026; PR erst nach dem Abschlusstest): Ein Release hat ein Issue. `release/<version>` (vor 1.0.0 mit `-beta`, etwa `release/0.9.0-beta`) geht von `develop` ab; erst dort werden die Version im TOC erhöht und die Release Notes in `CHANGELOG.md` (englisch, daraus macht die Action die Notizen für CurseForge und das GitHub-Release) geschrieben. Es folgen der Abschlusstest des Maintainers und gegebenenfalls kleine Korrekturen im Release-Branch. Ist der Test bestanden, kommt der Release-Branch **zuerst per PR nach `main`** (ausführlich, mit Zusammenfassung zur Abnahme und Verweisen auf alle Issues und PRs des Releases), danach per PR zurück nach `develop` (knapp: „Rückführung der Release-Änderungen nach `develop`, siehe PR #X“). Nach dem Merge in `main` bekommt der Merge-Commit das Tag `v<version>` – vor 1.0.0 `v<version>-beta`, etwa `v0.9.0-beta`; das Tag löst den Upload zu CurseForge und das GitHub-Release aus. Danach wird der Release-Branch gelöscht. Bis 0.8.0 lief ein Release ohne Release-Branch direkt von `develop` nach `main`.
     - **Immer ein eigener Branch** (Nutzer, 18.10.2026): Das Release liegt bis zum Abschluss auf `release/<version>-beta`, damit auf `develop` parallel weiterentwickelt werden kann, während das Release gründlich getestet wird. Neue Features gehen in dieser Zeit ganz normal nach `develop`, nicht in den Release-Branch; dort landen nur Korrekturen aus dem Abschlusstest. Da das Spiel über die Junction nur das Arbeitsverzeichnis sieht, liegt der Stand, der gerade getestet wird, im Arbeitsverzeichnis und die parallele Arbeit in einem Git-Worktree daneben (`git worktree add ../Forever-Hunter-Pets-<Nr> <branch>`).
     1. Issue „Release <version>“ mit Plan, Freigabe wie bei jedem Issue.
-    2. `git switch -c release/<version> develop`; Version im TOC, Abschnitt in `CHANGELOG.md`, Stand in `CLAUDE.md` und `konzept.md`.
+    2. `git switch -c release/<version> develop`; Version im TOC, Abschnitt in `CHANGELOG.md`, Stand in `CLAUDE.md` und `konzept.md`. **Datum des Releases** ist der Tag, an dem der Release-Branch angelegt wird, unabhängig von der Veröffentlichung (Regel des Nutzers, 18.10.2026).
     3. Probelauf der Action auf dem Release-Branch (Actions → Release → *Run workflow*, ohne Upload) und das ZIP daraus prüfen.
     4. Status *Testing*: Abschlusstest des Maintainers am lokalen Release-Branch, Schritt für Schritt im Issue – **nur, was im Release neu ist** (Version, Release Notes, Korrekturen im Release-Branch, Paket); die einzelnen Issues sind schon getestet und werden nicht noch einmal geprüft. Korrekturen im Release-Branch.
     5. **Erst nach *Test passed*:** PR `release/<version>` → `main`, Status *In pull request*. Der PR listet alles auf, was im Release steckt, und verweist auf jedes Issue und jeden PR (Zusammenfassung zur Abnahme). Der Maintainer mergt.

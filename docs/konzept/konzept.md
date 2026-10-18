@@ -266,7 +266,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026) |
 
 Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 
