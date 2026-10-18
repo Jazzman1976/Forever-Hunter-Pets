@@ -20,7 +20,7 @@
 -- tools/import-observations.mjs holt das nach tools/eigene/. Nur außerhalb des Kampfs.
 local _, ns = ...
 
-local VERSION = 5
+local VERSION = 9
 
 local function now() return time and time() or 0 end
 
@@ -47,10 +47,23 @@ local function store()
   end
   if s.v == 2 or s.v == 3 then
     for _, e in pairs(s.ranks or {}) do e.tp, e.tpSeen, e.fam, e.used = nil, nil, nil, nil end
-  elseif s.v ~= VERSION and s.v ~= 4 then
+  elseif s.v ~= VERSION and not (type(s.v) == "number" and s.v >= 4 and s.v <= 8) then
     s.ranks, s.lists, s.lastRead = nil, nil, nil
   end
+  -- Bis Version 8 galt die Wildtierausbildung als Tierausbilder, wenn zugleich ein NPC angesprochen war (#32):
+  -- Pet-Stufen standen als Jägerstufe, TP als Preis da. Falsche und echte Angaben lassen sich nicht trennen,
+  -- also fallen alle Tierausbilder-Angaben weg; ein Rang, der nur von dort stammte, ganz. Die Daten kennen den
+  -- Tierausbilder, und der nächste Besuch dort erhebt ihn neu.
+  if type(s.v) == "number" and s.v >= 2 and s.v <= 8 then
+    for key, e in pairs(s.ranks or {}) do
+      if type(e) == "table" and e.npc then
+        e.npc, e.hunterLevel, e.gold = nil, nil, nil
+        if not e.bw and not (s.spells and s.spells[key]) then s.ranks[key] = nil end
+      end
+    end
+  end
   s.v = VERSION
+  ns.db.trainerProbe = nil   -- Probe aus dem Test von #32
   s.locale = GetLocale and GetLocale() or s.locale
   s.ranks, s.lists, s.spells, s.families = s.ranks or {}, s.lists or {}, s.spells or {}, s.families or {}
   s.familyIcons = s.familyIcons or {}
@@ -234,7 +247,8 @@ function ns.SurveyTrainer(atNpc)
   local ok, n = pcall(GetNumTrainerServices)
   n = ok and tonumber(ns.clean(n)) or 0
   -- Protokoll des letzten Lesens, roh: zeigt, ob und was gelesen wurde (wird jedes Mal ersetzt)
-  local raw = { at = now(), npc = atNpc and true or nil, fam = fam, n = n }
+  -- how: wie Core/Known.lua das Fenster beim Öffnen eingeordnet hat (NPC da?, Sekunden seit 5149, Ergebnis, #32)
+  local raw = { at = now(), npc = atNpc and true or nil, fam = fam, n = n, how = ns.trainerDecision }
   s.lastRead = raw
   -- die IDs dieses Lesens je Zeile, für den Lernstand gleich danach (eine Tooltip-Abfrage je Zeile reicht)
   local ids = {}
