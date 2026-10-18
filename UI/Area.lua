@@ -13,8 +13,9 @@ local L = ns.L
 local W = ns.W
 local D = ns.Data
 
-local LEFT_W, GAP, FILTER_H = 400, 12, 32   -- wie die Liste in „Fähigkeiten“
+local LEFT_W, GAP, FILTER_H, COUNT_H = 400, 12, 32, 18   -- wie die Liste in „Fähigkeiten“
 local ROW_H, LABEL_W, BAR_H = 40, 110, 8
+local TILE, TILE_GAP, TILE_LINES = 24, 4, 2   -- Kacheln unter „Lehrtiere“ und „Fähigkeiten“ (#19)
 local MAX_PINS = 150
 local ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
 local STATUS = { known = { order = 1 }, found = { order = 2 }, track = { order = 3 } }   -- Entdeckermodus
@@ -86,8 +87,11 @@ function ns.BuildArea(parent)
   dd:SetValue(zone)
 
   -- ---- links: die Tiere der Zone ----
-  local list = W.Scroll(parent, LEFT_W, H)
+  local list = W.Scroll(parent, LEFT_W, H - COUNT_H)
   list:SetPoint("TOPLEFT", 0, -FILTER_H)
+  -- Fußnote unten links wie in „Fähigkeiten“ und „Ausbildung“: die Fundorte der Zone (#19)
+  local foot = W.Text(parent, "GameFontDisableSmall")
+  foot:SetPoint("BOTTOMLEFT", 2, 0)
   local LW = list.contentWidth
   local rows = W.Pool(function()
     local b = CreateFrame("Button", nil, list.content)
@@ -164,14 +168,11 @@ function ns.BuildArea(parent)
     r.fill:SetWidth(math.max(0.001, barW * share))
     r.fill:SetShown(share > 0)
   end
-  -- „X von Y …“ mit Balken; ist alles bekannt (X = Y), nur die Zahl ohne Balken (Wunsch des Nutzers)
+  -- Immer „X von Y …“, auch wenn alles bekannt ist (#19): eine nackte Zahl wirkte über den Kacheln wie ein
+  -- kaputter Umbruch, und alle drei Zähler sollen gleich aussehen (Wunsch des Nutzers). Der Balken bleibt, dann voll.
   local function showCount(r, x, total, fmt)
-    local done = x >= total
-    r.value:SetText(done and tostring(total) or (L[fmt]):format(x, total))
-    if r.bar then
-      r.bar:SetShown(not done)
-      setBar(r, x, total)
-    end
+    r.value:SetText((L[fmt]):format(x, total))
+    setBar(r, x, total)
   end
   local yBeasts = y
   local beasts = row(L["Beasts"], true)
@@ -197,9 +198,140 @@ function ns.BuildArea(parent)
     GameTooltip:Show()
   end)
   beastsHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  local teachers = row(L["Teaching beasts"], true)
-  local ranks = row(L["Abilities"], true)
-  local cells = row(L["Spawn points"], false)
+  local yTeachers = y
+  local teachers = row(L["Teaching beasts"], false)
+  local ranks = row(L["Abilities"], false)
+
+  -- ---- Kacheln (#19): je Lehrtier und je Rang eine, unentdeckt mit dem Fragezeichen der Liste ----
+  -- „Ich muss diese Kachel noch aufdecken“ (Wunsch des Nutzers). Der Tooltip unterscheidet doppelte Icons.
+  local function tilePool()
+    return W.Pool(function()
+      local b = CreateFrame("Button", nil, right)
+      b:SetSize(TILE, TILE)
+      b.bg = W.Fill(b, 1, 1, 1, 0.1)
+      b.icon = W.Icon(b, TILE)
+      b.icon:SetAllPoints()
+      b.more = W.Text(b, "GameFontHighlightSmall")
+      b.more:SetPoint("CENTER")
+      local hl = b:CreateTexture(nil, "HIGHLIGHT")
+      hl:SetAllPoints()
+      hl:SetColorTexture(1, 1, 1, 0.15)
+      b:SetScript("OnEnter", function(self) if self.tip then self.tip(self) end end)
+      b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+      b:SetScript("OnClick", function(self) if self.click then self.click() end end)
+      return b
+    end)
+  end
+  local teacherTiles, rankTiles = tilePool(), tilePool()
+  local perLine = math.max(1, math.floor((RIGHT_W - LABEL_W + TILE_GAP) / (TILE + TILE_GAP)))
+
+  local function simpleTip(text)
+    return function(self)
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:SetText(text, 1, 1, 1)
+      GameTooltip:Show()
+    end
+  end
+
+  -- Kacheln ab (LABEL_W, top), höchstens TILE_LINES Zeilen; was nicht passt, fasst „+n“ zusammen.
+  -- Liefert die Zahl der belegten Zeilen.
+  local function drawTiles(pool, items, top, fill)
+    pool:Reset()
+    local max = perLine * TILE_LINES
+    local shown = #items > max and max - 1 or #items
+    local function place(b, i)
+      local col, line = (i - 1) % perLine, math.floor((i - 1) / perLine)
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", right, "TOPLEFT", LABEL_W + col * (TILE + TILE_GAP), top - line * (TILE + TILE_GAP))
+    end
+    for i = 1, shown do
+      local b = pool:Get()
+      b.bg:Hide()
+      b.icon:Show()
+      b.more:SetText("")
+      b.click = nil
+      fill(b, items[i])
+      place(b, i)
+    end
+    if shown < #items then
+      local b = pool:Get()
+      b.bg:Show()
+      b.icon:Hide()
+      b.more:SetText("+" .. (#items - shown))
+      b.click = nil
+      b.tip = simpleTip((L["%d more"]):format(#items - shown))
+      place(b, shown + 1)
+    end
+    local n = math.min(#items, max)
+    return n == 0 and 0 or math.ceil(n / perLine)
+  end
+
+  local function fillTeacher(b, item)
+    if item.known then
+      b.icon:SetTexture((ns.FamilyIcon(ns.BeastFamily(item.npc))) or ICON_UNKNOWN)
+      b.tip = function(self) teachTooltip(self, item.npc) end
+      b.click = function()
+        selected = item.npc
+        v:Render()
+      end
+    else
+      b.icon:SetTexture(ICON_UNKNOWN)
+      b.tip = simpleTip(L["? undiscovered teaching beast"])
+    end
+  end
+
+  -- Das leichteste Lehrtier dieser Zone für einen Rang, nach der Bewertung aus „Fähigkeiten“ (ns.Teachers:
+  -- belegte zuerst, dann der geringste Aufwand; im Entdeckermodus nur selbst identifizierte). Blenden die
+  -- Einstellungen alle aus (etwa unsichere Belegung), das erste erkannte Lehrtier der Zone (item.npcs).
+  local function easiestHere(item)
+    local here = ns.BeastsIn(zone)
+    for _, t in ipairs(ns.Teachers(item.a, item.r)) do
+      if here[t.id] then return t.id end
+    end
+    return item.npcs and item.npcs[1]
+  end
+
+  local function fillRank(b, item)
+    if item.found and item.a then
+      b.icon:SetTexture(ns.AbilityIcon(item.a))
+      local rank = ns.RankLabel(item.a, item.r)
+      local npc = easiestHere(item)
+      b.tip = function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(ns.AbilityName(item.a) .. (rank ~= "" and (" · " .. rank) or ""), 1, 1, 1)
+        if npc then
+          GameTooltip:AddLine(ns.BeastName(npc), 0.8, 0.8, 0.8)
+          GameTooltip:AddLine(L["Click: show on the map"], 0.4, 0.8, 1)
+        end
+        GameTooltip:Show()
+      end
+      if npc then
+        b.click = function()
+          selected = npc
+          v:Render()
+        end
+      end
+    else
+      b.icon:SetTexture(ICON_UNKNOWN)
+      b.tip = simpleTip(L["? undiscovered ability"])
+    end
+  end
+
+  -- Die Zähler unter der Karte stehen untereinander; die Kacheln schieben die folgenden nach unten
+  local function anchor(r, top)
+    r.label:ClearAllPoints()
+    r.label:SetPoint("TOPLEFT", 0, top)
+    r.value:ClearAllPoints()
+    r.value:SetPoint("TOPLEFT", LABEL_W, top)
+  end
+  local function layoutTiles(p)
+    local top = yTeachers
+    anchor(teachers, top)
+    local lines = drawTiles(teacherTiles, p.teacherList, top - 22, fillTeacher)
+    top = top - 22 - lines * (TILE + TILE_GAP) - (lines > 0 and 8 or 2)
+    anchor(ranks, top)
+    drawTiles(rankTiles, p.rankList, top - 22, fillRank)
+  end
 
   -- ---- Zeichnen ----
   local function drawList()
@@ -259,7 +391,8 @@ function ns.BuildArea(parent)
         r.npc = false
         r.icon:SetTexture(ICON_UNKNOWN)
         r.name:SetText(L["? undiscovered beast"])
-        r.sub:SetText("")
+        -- sonst wirkt es wie eine Lücke in den Daten (#19): man kennt es, muss es aber selbst finden
+        r.sub:SetText(L["Go on the prowl and find it."])
         r:Disable()
       end
       r.sel:SetShown(r.npc and e.npc == selected or false)
@@ -299,12 +432,15 @@ function ns.BuildArea(parent)
     showCount(beasts, p.beastsKnown, p.beasts, "%d of %d known")
     showCount(teachers, p.teachersKnown, p.teachers, "%d of %d identified")
     showCount(ranks, p.ranksFound, p.ranks, "%d of %d ranks discovered")
-    -- Fundorte: im Entdeckermodus die eigenen Zellen, im Komplettmodus alle Fundorte der Zone
+    layoutTiles(p)
+    -- Fundorte als Fußnote: im Entdeckermodus die eigenen Zellen, im Komplettmodus alle Fundorte der Zone
+    local where
     if ns.Discovering() then
-      cells.value:SetText(p.cells == 1 and L["1 cell"] or (L["%d cells"]):format(p.cells))
+      where = p.cells == 1 and L["1 cell"] or (L["%d cells"]):format(p.cells)
     else
-      cells.value:SetText(p.points == 1 and L["1 spawn point"] or (L["%d spawn points"]):format(p.points))
+      where = p.points == 1 and L["1 spawn point"] or (L["%d spawn points"]):format(p.points)
     end
+    foot:SetText((L["Spawn points: %s"]):format(where))
   end
 
   -- Moduswechsel: neu zeichnen, wenn der Reiter gerade zu sehen ist
