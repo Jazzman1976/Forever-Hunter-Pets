@@ -208,6 +208,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - Mehrfachauswahl heißt **„Anzeigen“**, nicht „Filter“: Ein Haken heißt „wird gezeigt“.
 - Die Quelle (angeboren, Tierausbilder) ist eine eigene Achse neben dem Status.
 - Zone und Familie als harte Filter.
+- Die Gebietsauswahl wächst mit: Sie wird nach jeder neuen Zähmung oder Fähigkeit und beim Gebietswechsel neu gebaut, ein fest gewähltes Gebiet bleibt (#24, vorher fehlte bis /reload ein Gebiet, in dem beim Einloggen noch kein Lehrtier stand, und „Aktuelles Gebiet“ zeigte nichts).
 - Lehrtiere nach Belegung, dann Aufwand; geteilt in „auf deiner Stufe“ und „erst ab höherer Stufe“.
 
 **Gebiet:**

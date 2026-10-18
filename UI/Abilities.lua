@@ -580,9 +580,6 @@ function ns.BuildAbilities(parent)
     if v.selected and detail:IsShown() then v:RenderDetail() end
   end)
 
-  -- Unsichere oder unbelegte Angaben in den Einstellungen ein- oder ausgeschaltet: Liste neu bauen
-  ns.OnShowConfChanged(function() v:ApplyFilter(true) end)
-
   -- Der Client lädt Zaubertexte nach; kommt die Beschreibung der gewählten Zeile, neu zeichnen
   ns.On("SPELL_TEXT_UPDATE", function(spellID)
     if v.selected and v.selected.r.id == ns.clean(spellID) and parent:IsVisible() then v:RenderDetail() end
@@ -660,13 +657,31 @@ function ns.BuildAbilities(parent)
   -- „Aktuelle Zone“ folgt dem Spieler: die Zone wird bei jedem Zonenwechsel neu bestimmt
   local zones = zoneOptions()
   local zoneDD
-  local function followZone()
+  -- true, wenn die Liste dabei neu gebaut wurde
+  local function followZone(keepScroll)
     local option, name = currentZone(zones)
     zoneDD.label:SetText(L["Current zone"] .. (name and (": " .. name) or ""))
     local set = option and option.value or NO_ZONE
-    if v.zone == set then return end
+    if v.zone == set then return false end
     v.zone = set
-    v:ApplyFilter()
+    v:ApplyFilter(keepScroll)
+    return true
+  end
+  -- Die Auswahl neu bauen, wenn Lehrtiere dazukommen (Zähmung, Erhebung) oder man die Zone wechselt (#24): Sonst
+  -- fehlt eine Zone, in der beim Aufbau noch kein Lehrtier stand, und „Aktuelle Zone“ filtert bis /reload ins
+  -- Leere. Eine fest gewählte Zone wird über ihre IDs in der neuen Auswahl wiedergefunden.
+  local function refreshZones()
+    zones = zoneOptions()
+    local fixed = not v.follow and type(v.zone) == "table" and next(v.zone)
+    zoneDD:SetOptions(zones)
+    if not fixed then return end
+    for _, o in ipairs(zones) do
+      if o.ids and o.value[fixed] then
+        v.zone = o.value
+        zoneDD:SetValue(o.value)
+        return
+      end
+    end
   end
   -- gemerkt wird eine der Zonen-IDs der Auswahl: die Menge selbst lässt sich nicht speichern
   local function selectZone(value)
@@ -683,6 +698,7 @@ function ns.BuildAbilities(parent)
   zoneDD = W.Dropdown(parent, DD_W, zones, selectZone)
   local followPet  -- weiter unten bei der Familienauswahl gefüllt
   local function zoneChanged()
+    refreshZones()
     if v.follow then followZone() end
     if v.followPet then followPet() end   -- nach dem Einloggen ist das Pet erst jetzt bekannt
   end
@@ -713,6 +729,13 @@ function ns.BuildAbilities(parent)
   zoneDD:SetPoint("RIGHT", famDD, "LEFT", -DD_GAP, 0)
   ns.On("UNIT_PET", function(unit)
     if v.followPet and ns.clean(unit) == "player" then followPet() end
+  end)
+
+  -- Neue Zähmung, neue Fähigkeit aus der Erhebung oder Angaben in den Einstellungen ein- oder ausgeschaltet:
+  -- Zonenauswahl und Liste neu bauen (#24: vorher nur die Liste, mit veralteter Zone)
+  ns.OnShowConfChanged(function()
+    refreshZones()
+    if not (v.follow and followZone(true)) then v:ApplyFilter(true) end
   end)
 
   -- Stand der letzten Sitzung. Eine Zone oder Familie, die es in den Daten nicht mehr gibt,
