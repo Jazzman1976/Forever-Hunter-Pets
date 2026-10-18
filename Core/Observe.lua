@@ -35,8 +35,9 @@ end
 local byNpc, keys
 local function parse(s)
   if type(s) ~= "string" then return nil end
-  local npc, level, spells, speed, t, rep = s:match("^(%d+);(%d+);([%d,]*);([%d%.]*);(%d*);(%x*)$")
-  if not npc then return nil end
+  -- Felder, die eine neuere Version hinten anhängt, bleiben unbeachtet (Protokollregel in Core/Comm.lua)
+  local npc, level, spells, speed, t, rep, rest = s:match("^(%d+);(%d+);([%d,]*);([%d%.]*);(%d*);(%x*)(.*)$")
+  if not npc or (rest ~= "" and rest:sub(1, 1) ~= ";") then return nil end
   local o = { npc = tonumber(npc), level = tonumber(level), spells = {}, speed = tonumber(speed), time = tonumber(t), rep = rep }
   for id in spells:gmatch("%d+") do o.spells[tonumber(id)] = true end
   o.own = rep == "" or (ns.db and ns.db.myReps and ns.db.myReps[rep]) and true or false
