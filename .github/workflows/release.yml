@@ -39,3 +39,5 @@ jobs:
         with:
           name: package
           path: .release/*.zip
+          # .release ist ein versteckter Ordner; ohne das lässt upload-artifact@v4 ihn aus
+          include-hidden-files: true

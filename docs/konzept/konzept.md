@@ -247,7 +247,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Erst proben, dann bauen:** Unklare API-Fragen klärt eine Probe (`/fhp …`, Protokoll in den SavedVariables), Ergebnisse in [api-befunde.md](../technik/api-befunde.md).
 - **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung.
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
-- **GitFlow:** Arbeit auf `develop`, Größeres in `feature/<thema>`, mit `--no-ff` zurück, Branch löschen; `main` nur Releases. Bis zur ersten Produktivversion (Entscheidung des Nutzers, 17.10.2026) gibt es **keinen Release-Branch**: Ein Release erhöht die Version im TOC direkt auf `develop` und wird von dort mit `--no-ff` nach `main` gemergt, Tag `v<version>` auf `main`. Getestet wird ohnehin laufend; Release-Branches kommen, sobald es eine richtige Produktivversion gibt. Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
+- **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>-beta` (vor 1.0.0); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>-beta`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
 - **Bekanntes, das nicht zum Auftrag gehört,** wird genannt, nicht ungefragt angefasst.
 - **Forever ändert sich wöchentlich**, solange die Beta läuft; erhobene Daten können veralten.
 - Doku, Kommentare, Commits deutsch; README, NOTICE, CONTRIBUTING und die Anleitung `docs/guide/guide.md` englisch.
@@ -260,7 +260,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026), Issues #1–#4 |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026) |
 
 Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 
