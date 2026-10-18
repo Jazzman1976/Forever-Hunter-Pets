@@ -1,11 +1,11 @@
 -- Forever Hunter Pets · Reiter „Gebiet“: Fortschrittsbuch je Zone (Meilenstein M2, Inkremente E4 und E5).
--- Aufbau (Wunsch des Nutzers): oben die Zonenauswahl. Links die Tiere der Zone, anklickbar, je mit dem Kästchen
+-- Aufbau (Wunsch des Nutzers): oben die Zonenauswahl, vorn „Aktuelle Zone“ (#22). Links die Tiere der Zone, anklickbar, je mit dem Kästchen
 -- aus „Fähigkeiten“ (Haken = Fähigkeiten bekannt) und dem Icon der Familie. Rechts oben die Karte, darunter die
 -- Zähler „X von Y“. Punkte zeigt die Karte nur für das gewählte Tier (ns.Coords), ohne Auswahl nie.
 -- Die Modi (Nutzer, 17.10.2026): Im Komplettmodus steht alles, was bekannt ist, vollständig da – jedes Tier mit
 -- Namen, ohne Status. Im Entdeckermodus zählt nur, was man selbst gefunden hat: Tiere bleiben anonym
 -- („? unentdecktes Tier“), bis man eine Fährte hat, ab da mit Namen und Status-Tag.
--- Zähler aus Core/Discover.lua (ns.ZoneProgress), X je Modus. Ist X = Y, steht nur die Zahl, ohne Balken.
+-- Zähler aus Core/Discover.lua (ns.ZoneProgress), X je Modus, immer „X von Y“ (#19).
 -- Gleiches sieht im ganzen Addon gleich aus. Gezählt und gezeichnet wird beim Öffnen, beim Zonenwechsel und bei
 -- einer Auswahl, nichts im Hintergrund. Zahl und Wort sind maßgeblich, Balken und Symbole nur zusätzlich.
 local _, ns = ...
@@ -20,13 +20,13 @@ local MAX_PINS = 150
 local ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
 local STATUS = { known = { order = 1 }, found = { order = 2 }, track = { order = 3 } }   -- Entdeckermodus
 
--- Zone, in der der Spieler steht, wenn sie in der Auswahl vorkommt
-local function currentZone(zones)
-  local here = ns.CellHere and ns.CellHere()
-  for _, z in ipairs(zones) do
-    if z == here then return z end
-  end
-  return zones[1]
+local CURRENT = "current"   -- Wert der Auswahl „Aktuelle Zone“ (#22), wie in „Fähigkeiten“
+
+-- uiMapID der Zone, in der der Spieler steht, sonst nil
+local function hereZone()
+  if not (C_Map and C_Map.GetBestMapForUnit) then return nil end
+  local ok, map = pcall(C_Map.GetBestMapForUnit, "player")
+  return ok and tonumber(ns.clean(map)) or nil
 end
 
 -- Familie und Stufe eines Tiers: aus den Daten, sonst aus der eigenen Sichtung
@@ -76,15 +76,33 @@ function ns.BuildArea(parent)
     return v
   end
 
-  local zone, selected = currentZone(zones), nil
-  local options = {}
-  for _, z in ipairs(zones) do options[#options + 1] = { value = z, label = ns.ZoneName(z) } end
-  local dd = W.Dropdown(parent, LEFT_W, options, function(value)
-    zone, selected = value, nil
+  -- „Aktuelle Zone“ steht vorn und ist vorgewählt (Wunsch des Nutzers, #22): sie folgt dem Spieler, auch in eine
+  -- Zone ohne bekannte Tiere – dort steht ein Hinweis, statt still in eine andere Zone zu springen. Eine feste
+  -- Zone bleibt, bis man wieder „Aktuelle Zone“ wählt. Gemerkt wird nichts über die Sitzung hinaus.
+  local zone, selected, follow = nil, nil, true
+  local dd
+  local function zoneOptions()
+    local options = { { value = CURRENT, label = L["Current zone"] } }
+    for _, z in ipairs(zones) do options[#options + 1] = { value = z, label = ns.ZoneName(z) } end
+    return options
+  end
+  -- Zonenliste neu lesen (eine frisch entdeckte Zone erscheint ohne /reload) und der aktuellen Zone folgen
+  local function followZone()
+    zones = ns.DiscoverZones()
+    dd:SetOptions(zoneOptions())
+    if not follow then return end
+    local here = hereZone()
+    if here ~= zone then selected = nil end
+    zone = here or zone or zones[1]   -- ohne Karte (etwa in mancher Instanz) bleibt die letzte Zone
+    dd.label:SetText(L["Current zone"] .. (zone and (": " .. ns.ZoneName(zone)) or ""))
+  end
+  dd = W.Dropdown(parent, LEFT_W, zoneOptions(), function(value)
+    follow = value == CURRENT
+    if not follow then zone, selected = value, nil end
     v:Render()
   end)
   dd:SetPoint("TOPLEFT", 0, 0)
-  dd:SetValue(zone)
+  dd:SetValue(CURRENT)
 
   -- ---- links: die Tiere der Zone ----
   local list = W.Scroll(parent, LEFT_W, H - COUNT_H)
@@ -92,6 +110,11 @@ function ns.BuildArea(parent)
   -- Fußnote unten links wie in „Fähigkeiten“ und „Ausbildung“: die Fundorte der Zone (#19)
   local foot = W.Text(parent, "GameFontDisableSmall")
   foot:SetPoint("BOTTOMLEFT", 2, 0)
+  -- „Aktuelle Zone“ kann eine Zone ohne bekannte Tiere sein, etwa eine Hauptstadt (#22)
+  local none = W.Text(list.content, "GameFontDisable", true)
+  none:SetPoint("TOPLEFT", 4, -8)
+  none:SetWidth(list.contentWidth - 8)
+  none:SetText(L["No beasts known in this zone yet."])
   local LW = list.contentWidth
   local rows = W.Pool(function()
     local b = CreateFrame("Button", nil, list.content)
@@ -365,6 +388,7 @@ function ns.BuildArea(parent)
       if e.pick and e.npc == selected then keep = true break end
     end
     if not keep then selected = entries[1] and entries[1].pick and entries[1].npc or nil end
+    none:SetShown(#entries == 0)
     local ry = 0
     for _, e in ipairs(entries) do
       local r = rows:Get()
@@ -425,6 +449,7 @@ function ns.BuildArea(parent)
   end
 
   function v:Render()
+    followZone()
     if not zone then return end
     drawList()
     drawMap()
@@ -443,7 +468,10 @@ function ns.BuildArea(parent)
     foot:SetText((L["Spawn points: %s"]):format(where))
   end
 
-  -- Moduswechsel: neu zeichnen, wenn der Reiter gerade zu sehen ist
-  ns.OnModeChanged(function() if parent:IsVisible() then v:Render() end end)
+  -- Moduswechsel und Zonenwechsel: neu zeichnen, wenn der Reiter gerade zu sehen ist (sonst beim Öffnen)
+  local function refresh() if parent:IsVisible() then v:Render() end end
+  ns.OnModeChanged(refresh)
+  ns.On("ZONE_CHANGED_NEW_AREA", refresh)
+  ns.On("PLAYER_ENTERING_WORLD", refresh)
   return v
 end
