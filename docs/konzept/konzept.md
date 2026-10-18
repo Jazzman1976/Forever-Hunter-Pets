@@ -198,6 +198,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Sparsam:** gedrosselt (eine Nachricht je 2 s, Bündel alle 5 Minuten), nur was die Daten noch nicht kennen, Obergrenzen für Gespeichertes. Einzelheiten und Zahlen in [addon-technik.md](../technik/addon-technik.md).
 - **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026).
 - **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen, Kanal verlassen.
+- **Leise:** Geht ein Grüßender offline, bevor die Antwort fertig ist, bricht sie ab, und die Meldungen „kein Spieler mit dem Namen …“ des Clients bleiben aus dem Chat (#28).
 - **Ungeprüft** mit mehreren Spielern – das gehört zu M5.
 
 ## 13 Oberfläche

@@ -120,6 +120,13 @@ local function sendNow(msg, kind, target)
   return true, "Ergebnis " .. tostring(res)
 end
 
+-- Ziel → GetTime() des letzten Flüsterns, für den Chat-Filter unten (#28). Abgesichert: Wirft etwas in pump, plant
+-- es sich nicht neu ein, und die Warteschlange stünde für die ganze Sitzung – das Teilen darf daran nie hängen.
+local whispered = {}
+local function noteWhisper(target)
+  whispered[target] = GetTime()
+end
+
 local pump
 pump = function()
   if #queue == 0 then busy = false; return end
@@ -127,6 +134,7 @@ pump = function()
   if enabled() and not quiet() then
     local item = queue[1]
     local done, what = sendNow(item.msg, item.kind, item.target)
+    if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
     if item.onSent then item.onSent(what) end
     if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
     if done then table.remove(queue, 1) end
@@ -376,6 +384,84 @@ end
 local function isSelf(sender, name)
   return name ~= nil and plain(sender) == plain(name)
 end
+
+-- ---- Flüstern an Spieler, die offline gegangen sind (#28) ----
+-- Die Antwort auf einen Gruß braucht wegen der Drosselung bis zu einer Minute. Geht der Grüßende vorher offline,
+-- quittiert der Client jede weitere Nachricht mit „Momentan ist kein Spieler mit dem Namen '…' online.“ Deshalb:
+-- Meldet der Client das oder „… ist jetzt offline“, fallen die wartenden Flüster-Nachrichten an ihn weg, und die
+-- Meldung „kein Spieler …“ wird verschluckt – nur für Namen, an die das Addon in der letzten Minute geflüstert hat
+-- oder für die noch etwas wartet. Die Muster kommen aus den Textvorlagen des Clients, damit jede Sprache greift.
+-- Alles hier ist Beiwerk: Was beim Laden fehlschlägt (Textvorlage oder Filter-API fehlt oder sieht anders aus),
+-- schaltet nur diesen Schutz ab, nie das Teilen. Deshalb läuft jeder Schritt beim Laden in pcall.
+local WHISPER_MEMORY = 60   -- Sekunden
+local function pattern(fmt)
+  if type(fmt) ~= "string" or not fmt:find("%s", 1, true) then return nil end
+  local p = fmt:gsub("([%^%$%(%)%.%[%]%*%+%-%?%%])", "%%%1"):gsub("%%%%s", "(.+)")
+  return "^" .. p .. "$"
+end
+local okNF, NOT_FOUND = pcall(pattern, ERR_CHAT_PLAYER_NOT_FOUND_S)
+local okWO, WENT_OFFLINE = pcall(pattern, ERR_FRIEND_OFFLINE_S)
+if not okNF then NOT_FOUND = nil end
+if not okWO then WENT_OFFLINE = nil end
+
+-- Name aus einer Systemmeldung, ohne Spieler-Link und Farbe
+local function nameIn(msg, pat)
+  if not pat then return nil end
+  local name = msg:match(pat)
+  if not name then return nil end
+  return (name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h%[?(.-)%]?|h", "%1"))
+end
+
+-- Hat das Addon gerade etwas an diesen Namen geflüstert oder wartet noch etwas?
+local function addonWhispers(name)
+  local key, now = plain(name), GetTime()
+  for target, at in pairs(whispered) do
+    if now - at > WHISPER_MEMORY then
+      whispered[target] = nil
+    elseif plain(target) == key then
+      return true
+    end
+  end
+  for _, item in ipairs(queue) do
+    if item.kind == "WHISPER" and item.target and plain(item.target) == key then return true end
+  end
+  return false
+end
+
+local function dropWhispers(name)
+  local key, n = plain(name), 0
+  for i = #queue, 1, -1 do
+    local item = queue[i]
+    if item.kind == "WHISPER" and item.target and plain(item.target) == key then
+      table.remove(queue, i)
+      n = n + 1
+    end
+  end
+  if n > 0 then count(stats.dropped, "Flüstern an Offline-Spieler", n) end
+end
+
+ns.On("CHAT_MSG_SYSTEM", function(raw)
+  local msg = ns.clean(raw)
+  if type(msg) ~= "string" then return end   -- geheimer Wert (Kampf, Instanz): nichts tun
+  local name = nameIn(msg, NOT_FOUND) or nameIn(msg, WENT_OFFLINE)
+  if name then dropWhispers(name) end
+end)
+
+-- Der Filter läuft für jedes Chatfenster einzeln; er räumt deshalb nichts ab, er entscheidet nur.
+local function hideNotFound(_, _, raw, ...)
+  local ok, hide = pcall(function()
+    local msg = ns.clean(raw)
+    if type(msg) ~= "string" then return false end
+    local name = nameIn(msg, NOT_FOUND)
+    return name ~= nil and addonWhispers(name)
+  end)
+  if ok and hide then return true end
+  return false, raw, ...
+end
+pcall(function()
+  local addFilter = ChatFrame_AddMessageEventFilter or (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter)
+  if addFilter and NOT_FOUND then addFilter("CHAT_MSG_SYSTEM", hideNotFound) end
+end)
 
 -- Verworfene Nachrichten mit einem echten Fehlergrund roh aufheben, die letzten MAX_REJECTS über alle
 -- Sitzungen (#12): nach /reload aus den SavedVariables lesbar. Ohne Absendernamen, wie überall nur Kürzel.
