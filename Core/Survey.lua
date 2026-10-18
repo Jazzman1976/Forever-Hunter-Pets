@@ -12,6 +12,7 @@
 --   families[ID]        Familienname in Client-Sprache
 --   familyIcons[ID]     Icon der Familie (GetPetIcon des aktiven Pets), Datei-ID oder Pfad
 --   lastRead            die zuletzt gelesene Liste roh, zur Fehlersuche
+--   petRead             das Zauberbuch gleich nach dem letzten Zähmen roh: ID, Name, Rangtext, Subtext, geladen (#17)
 -- Die Trainer-Liste selbst nennt keine Zauber-ID, der Tooltip der Zeile schon: Es ist die des Pet-Rangs,
 -- in beiden Fenstern gleich und wie im Zauberbuch (im Spiel geprüft am 16.10.2026, Beißen 3 = 17256).
 -- Damit ist die ID der Schlüssel, auch für Zeilen, denen kurz nach dem Öffnen noch der Rangtext fehlt.
@@ -125,8 +126,56 @@ function ns.SurveyFamily(id, name)
   if s and type(id) == "number" and type(name) == "string" and name ~= "" then s.families[id] = name end
 end
 
+-- ---- Daten eines Zaubers nachladen (#17) ----
+-- Einen Zauber, den der Client in dieser Sitzung noch nicht gezeigt hat, kennt er direkt nach dem Zähmen nur
+-- mit ID und Name: Rangtext und Subtext fehlen, und ohne Rang nimmt MergeSurveyAbilities die Fähigkeit nicht
+-- auf. Dann die Daten anfordern; sobald der Client sie meldet, das Zauberbuch noch einmal lesen.
+-- loaded[id]: der Client hat die Daten (gemeldet oder laut IsSpellDataCached) – fehlt der Rang dann noch,
+-- hat der Zauber keinen (etwa das Angriffstempo).
+local requested, loaded = {}, {}
+local function cached(id)
+  if loaded[id] then return true end
+  if C_Spell and C_Spell.IsSpellDataCached then
+    local ok, v = pcall(C_Spell.IsSpellDataCached, id)
+    if ok and ns.clean(v) then loaded[id] = true; return true end
+  end
+  return false
+end
+
+local function requestLoad(id)
+  if requested[id] or cached(id) or not (C_Spell and C_Spell.RequestLoadSpellData) then return end
+  requested[id] = true
+  pcall(C_Spell.RequestLoadSpellData, id)
+end
+
+-- Wartet für diese Zauber-IDs noch ein Rang auf die Daten des Clients? (Chatzeile beim Zähmen, Core/Observe.lua)
+function ns.SurveyRankPending(ids)
+  local s = ns.db and ns.db.survey
+  for _, id in ipairs(ids or {}) do
+    local e = s and s.spells and s.spells[id]
+    if not (e and e.rank) and not cached(id) then return true end
+  end
+  return false
+end
+
+local rereadSoon = false
+local function onLoaded(id)
+  id = ns.clean(id)
+  if not requested[id] then return end
+  requested[id], loaded[id] = nil, true
+  if rereadSoon then return end
+  rereadSoon = true
+  ns.After(0.2, function()
+    rereadSoon = false
+    ns.SafeCall("survey", ns.SurveyPetSpells)
+  end)
+end
+ns.On("SPELL_DATA_LOAD_RESULT", onLoaded)
+ns.On("SPELL_TEXT_UPDATE", onLoaded)
+
 -- ---- Zauberbuch des aktiven Pets ----
-function ns.SurveyPetSpells()
+-- tame: gleich nach dem Zähmen; dann bleibt das Lesen roh in survey.petRead (Messpunkt zu #17)
+function ns.SurveyPetSpells(tame)
   if inCombat() then return end
   local s = store()
   local SB = C_SpellBook
@@ -143,6 +192,7 @@ function ns.SurveyPetSpells()
   local bank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
   local ok, n = pcall(SB.HasPetSpells)
   n = ok and tonumber(ns.clean(n)) or 0
+  local raw = tame and { at = now() } or nil
   for i = 1, math.min(n, 60) do
     local ok2, info = pcall(SB.GetSpellBookItemInfo, i, bank)
     info = ok2 and ns.clean(info)
@@ -150,13 +200,21 @@ function ns.SurveyPetSpells()
     if type(id) == "number" then
       local e = s.spells[id] or {}
       e.name = ns.clean(info.name) or e.name
-      e.rank = rankOf(ns.clean(info.subName)) or subtextRank(id) or e.rank
+      local sub = ns.clean(info.subName)
+      local fromSub = subtextRank(id)
+      e.rank = rankOf(sub) or fromSub or e.rank
       e.passive = ns.clean(info.isPassive) and true or nil
       e.fam = mark(e.fam, fam)
       e.t = now()
       s.spells[id] = e
+      if not e.rank then requestLoad(id) end
+      if raw and #raw < 20 then
+        raw[#raw + 1] = ("%d | %s | %s | %s | geladen %s"):format(id, tostring(e.name), tostring(sub),
+          tostring(fromSub), tostring(cached(id)))
+      end
     end
   end
+  if raw then s.petRead = raw end
   -- ein neuer Rang gilt sofort (Core/Index.lua)
   if ns.MergeSurveyAbilities then ns.MergeSurveyAbilities() end
 end
