@@ -30,7 +30,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
 6. **Gleiches sieht gleich aus und ist gleich** (Regel für immer, 16.10.2026). Derselbe Zustand bekommt überall dasselbe Element, Wort und Symbol; neue Ansichten nehmen vorhandene Bausteine (Kästchen aus „Fähigkeiten“, `ns.FamilyIcon`, `ns.StatusWord`, `ns.TeachText`).
-7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahme: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es).
+7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahmen: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es) und die Zeile für Tiere, deren Lehre noch niemand kennt (#23, sonst wirkt das Tier, als könne es nichts).
 8. **Nicht raten.** Was niemand weiß, sagt das Addon („? unbekannt“, „? unklar“, „Fundort unbekannt“). Keine Wahrscheinlichkeiten, keine Hochrechnung aus Familie und Stufe.
 
 ## 3 Begriffe
@@ -222,7 +222,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.
-- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau).
+- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
 - Nur für wilde Tiere (Familie, nicht vom Spieler kontrolliert) – sonst bekämen Wachen Fährten.
 - Neue Fährten melden sich nicht im Chat (liefe voll), sondern über den Status im Tooltip.
 
