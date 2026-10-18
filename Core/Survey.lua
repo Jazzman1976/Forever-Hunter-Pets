@@ -19,7 +19,7 @@
 -- tools/import-observations.mjs holt das nach tools/eigene/. Nur außerhalb des Kampfs.
 local _, ns = ...
 
-local VERSION = 4
+local VERSION = 5
 
 local function now() return time and time() or 0 end
 
@@ -33,9 +33,20 @@ local function store()
   -- Version 1 stand unter „Name|Rang“ und mischte Pet- und Jägerstufe: Ränge neu erheben
   -- Version 2 und 3 sammelten Familien und TP je Rang auf, auch aus falschen Listen: das fällt weg, der
   -- Rest bleibt; die Listen je Familie kommen beim nächsten Öffnen
+  -- Bis Version 4 galt auch der Jägerlehrer als Tierausbilder (#16): Ränge, die nur von dort stammen und die
+  -- die Daten nicht als Tierausbilder-Rang kennen, sind Jägerzauber und fallen weg. Ein echter neuer Rang des
+  -- Tierausbilders käme beim nächsten Besuch zurück.
+  if s.v == 2 or s.v == 3 or s.v == 4 then
+    for key, e in pairs(s.ranks or {}) do
+      if type(e) == "table" and e.npc and not e.bw and not (s.spells and s.spells[key])
+        and not (type(key) == "number" and ns.IsDataTrainerRank and ns.IsDataTrainerRank(key)) then
+        s.ranks[key] = nil
+      end
+    end
+  end
   if s.v == 2 or s.v == 3 then
     for _, e in pairs(s.ranks or {}) do e.tp, e.tpSeen, e.fam, e.used = nil, nil, nil, nil end
-  elseif s.v ~= VERSION then
+  elseif s.v ~= VERSION and s.v ~= 4 then
     s.ranks, s.lists, s.lastRead = nil, nil, nil
   end
   s.v = VERSION
@@ -44,6 +55,7 @@ local function store()
   s.familyIcons = s.familyIcons or {}
   return s
 end
+ns.SurveyStore = store
 
 local function inCombat() return InCombatLockdown and InCombatLockdown() end
 

@@ -144,6 +144,23 @@ local function atNpc()
   return ok and ns.clean(npc) and true or false
 end
 
+-- Auch der Jägerlehrer ist ein Trainer mit NPC (#16). Tierausbilder ist eine Liste nur, wenn eine Zeile einen
+-- Rang trägt, den die mitgelieferten Daten vom Tierausbilder kennen – unabhängig von Sprache und NPC.
+-- Gemerkt je Zeilenzahl: TRAINER_UPDATE kommt oft, die Tooltip-Abfragen nur, wenn sich die Liste ändert.
+local petTrainer = { n = -1 }
+local function isPetTrainer()
+  local ok, n = pcall(GetNumTrainerServices)
+  n = ok and tonumber(ns.clean(n)) or 0
+  if n ~= petTrainer.n then
+    petTrainer.n, petTrainer.yes = n, false
+    for i = 1, math.min(n, 200) do
+      local id = ns.TrainerServiceId and ns.TrainerServiceId(i)
+      if id and ns.IsDataTrainerRank(id) then petTrainer.yes = true; break end
+    end
+  end
+  return petTrainer.yes
+end
+
 -- Rang einer Zeile über Name und Rangtext; kurz nach dem Öffnen fehlt der Rangtext noch, dann entscheidet
 -- die Pet-Stufe des Rangs. Nur noch Rückfall, wenn der Tooltip keine Zauber-ID nennt.
 local function rankByText(name, level, rankText)
@@ -171,6 +188,7 @@ local function readTrainer()
   -- Erhebung (Core/Survey.lua) liest beide Listen, der Lernstand nur die Wildtierausbildung
   local npc = atNpc()
   ns.trainerIds = nil
+  if npc and not isPetTrainer() then return end   -- Jägerlehrer: nichts erheben
   if ns.SurveyTrainer then ns.SafeCall("survey", ns.SurveyTrainer, npc) end
   if npc then return end
   local ids = ns.trainerIds
@@ -267,6 +285,7 @@ local function applySelection()
 end
 
 ns.On("TRAINER_SHOW", function()
+  petTrainer.n = -1   -- ein anderer Trainer, neu prüfen
   ns.After(0.4, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
   ns.After(1.0, function() ns.SafeCall("select", applySelection) end)
