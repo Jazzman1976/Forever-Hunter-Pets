@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0-beta – 2026-10-18
+
+- **Explorer mode wants to be explored:** the *Zone* tab shows every teaching beast and every ability rank of a zone as a tile – a red question mark until you found it, then its icon. Click a tile to see the beast on the map. Undiscovered beasts invite you to go stalking.
+- **The Zone tab follows you:** it opens on your current zone (*Current zone*) and follows you as you travel. The tab is now called *Zone* (was *Area*).
+- **New finds show up right away:** with *Current zone* selected in *Abilities*, abilities you just found appear without `/reload`.
+- **Help wanted:** in complete mode the beast tooltip tells you when nobody knows yet what a beast teaches – tame it and help out.
+- **More trustworthy sharing:** reports from other players only count once they reached you through at least two different players. Received tames are no longer dropped as "invalid", and `/fhp share` names the reason when something is rejected.
+- **Fixed:** hunter spells no longer show up in the *Abilities* list; a new ability is recognized on the very first tame; opening *Beast Training* while a vendor, trainer or stable master window is open no longer mixes it up with the pet trainer; no more "No player named … is currently playing" messages when sharing.
+- **More data from the game:** 134 beasts (was 69), 85 teaching beasts (was 46), 385 spawn points (was 221), 4 new abilities and 4 new pet families.
+
+No game restart needed – `/reload` is enough.
+
 ## 0.9.0-beta – 2026-10-18
 
 - **Shared observations count sooner:** what other players report counts as confirmed once 3 different players saw it (was 10).

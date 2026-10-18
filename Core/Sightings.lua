@@ -28,9 +28,10 @@ ns.LOCALES = { deDE = true, enUS = true, enGB = true, frFR = true, esES = true, 
 -- ---- Ablage ----
 function ns.ParseSighting(s)
   if type(s) ~= "string" then return nil end
-  local npc, level, cls, fam, lang, name, t, rep, speed =
-    s:match("^(%d+);(%d+);(%d);(%d+);(%a%a%u%u);([^;|]+);(%d+);(%x*);?([%d%.]*)$")
-  if not npc then return nil end
+  -- Felder, die eine neuere Version hinten anhängt, bleiben unbeachtet (Protokollregel in Core/Comm.lua)
+  local npc, level, cls, fam, lang, name, t, rep, speed, rest =
+    s:match("^(%d+);(%d+);(%d);(%d+);(%a%a%u%u);([^;|]+);(%d+);(%x*);?([%d%.]*)(.*)$")
+  if not npc or (rest ~= "" and rest:sub(1, 1) ~= ";") then return nil end
   local o = { npc = tonumber(npc), level = tonumber(level), cls = tonumber(cls), fam = tonumber(fam), lang = lang,
     name = name, time = tonumber(t), rep = rep, speed = tonumber(speed) }
   o.own = rep == "" or (ns.db and ns.db.myReps and ns.db.myReps[rep]) and true or false

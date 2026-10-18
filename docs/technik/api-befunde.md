@@ -52,6 +52,10 @@ Großer Fleischreißer“). Lesbar, kein geheimer Wert. Der Client tauscht den T
 - **Lehren ist gesperrt:** `BuyTrainerService(index)` löst `ADDON_ACTION_FORBIDDEN` aus, beim eigenen Klick wie im Ein-Klick-Ablauf. Es wurden keine Trainingspunkte verbraucht.
 - **Schließen wirkt nicht:** `CloseTrainer()` wirft nichts, das Fenster bleibt offen.
 - **Vormarkieren geht nicht:** `SelectTrainerService(Zeile)` ändert die Auswahl der API (`GetTrainerSelectionIndex`), das Fenster zeigt aber weiter sein eigenes Feld `ClassTrainerFrame.selectedService`. Setzt das Addon dieses Feld, markiert das Fenster zwar richtig, sein Knopf „Ausbilden“ ist danach aber gesperrt (`ADDON_ACTION_FORBIDDEN: BuyTrainerService()`).
+- **Wildtierausbildung neben einem NPC** (#32, Proben im Spiel, 18.10.2026):
+  - `UNIT_SPELLCAST_SUCCEEDED` (player, 5149) kommt **nach** `TRAINER_SHOW`, nicht davor. `UNIT_SPELLCAST_SENT` und `_START` kommen für 5149 nicht.
+  - Die Wildtierausbildung schließt das Fenster von Händler, Jägerlehrer oder Tierausbilder; nur das Fenster des Stallmeisters bleibt daneben offen. Das `TRAINER_CLOSED` des alten Trainer-Fensters kommt erst nach dem `TRAINER_SHOW` der Wildtierausbildung.
+  - Bis dahin ist `UnitExists("npc")` wahr. Ein NPC beim Öffnen sagt also nicht sicher, dass es der Tierausbilder ist.
 - **Tierausbilder-NPC:** Das Öffnen seines Fensters liefert dem Addon nichts. Was man dort lernt, kommt über die Systemnachricht mit Zauber-Link in den Lernstand.
 
 ## Zähmen (Zähm-Probe `/fhp zaehmen`, 14.10.2026, Build 70374)
@@ -66,6 +70,7 @@ Gezähmt wurde ein Großer Fleischreißer (NPC 154) auf Stufe 17.
 - **Zauberbuch:**
   - Beim ersten `UNIT_PET` ist es noch leer: `C_SpellBook.HasPetSpells()` liefert `nil`, und `UnitAttackSpeed("pet")` ist geheim.
   - Beim zweiten `UNIT_PET` ist es vollständig. Fähigkeiten tragen `spellID` und `subName` („Rang 1“); Begleiterbefehle und -haltungen haben `spellID = nil`.
+  - **Ausnahme: ein Zauber, den der Client in dieser Sitzung noch nicht gezeigt hat** (18.10.2026, #17, Blitzschlagatem 25008): `subName` ist leer, `C_Spell.GetSpellSubtext` liefert `nil`, `C_Spell.IsSpellDataCached` `false`. Nur ID und Name sind da. Nach `C_Spell.RequestLoadSpellData` kommen die Daten nach; nach `/reload` oder einem Tooltip sind sie im Cache.
   - `IsSpellKnown(id, true)` ist für den mitgebrachten Rang `true`. `ns.PetRanks()` stimmt damit überein.
   - Danach ändert sich nichts mehr (geprüft nach 1, 3 und 6 s).
 - **Stufe und Tempo:** `UnitLevel("pet")` ist die Stufe des Tiers (17), `UnitAttackSpeed("pet")` liefert 2 (normal). `GetPetTrainingPoints` gibt es nicht.

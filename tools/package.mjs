@@ -78,7 +78,7 @@ end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeU
 end.writeUInt32LE(centralSize, 12); end.writeUInt32LE(offset, 16);
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const out = path.join(OUT_DIR, `${folder}-${version}.zip`);
+const out = path.join(OUT_DIR, `v${version}.zip`);   // wie die Action: v<Version>.zip
 fs.writeFileSync(out, Buffer.concat([...parts, ...central, end]));
 console.log(`${out}: ${files.length} Dateien, ${(fs.statSync(out).size / 1024).toFixed(0)} KB`);
 for (const f of files) console.log('  ' + f);

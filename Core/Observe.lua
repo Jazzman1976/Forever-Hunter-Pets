@@ -13,6 +13,8 @@ local D = ns.Data
 
 local TAME_BEAST = 1515
 local WAIT = 45          -- Sekunden ab Zauberbeginn, in denen ein neues Pet als gezähmt gilt (Kanal 20 s)
+local WAIT_RANK = 5      -- Sekunden, die die Chatzeile höchstens auf nachgeladene Ränge wartet (#17)
+local RETRY = 0.5
 
 -- ---- Zauber-ID → Fähigkeit und Rang ----
 -- Nur, was man von Tieren lernt: Knurren und Co. hat jedes Pet vom Tierausbilder, das sagt nichts über das Tier.
@@ -30,13 +32,24 @@ local function spellIndex()
   return bySpell
 end
 
+-- Steht der Zauber als Rang irgendeiner Fähigkeit in der Liste (auch Knurren und Co.)?
+local function knownSpell(id)
+  for _, a in ipairs(D.abilities) do
+    for _, r in ipairs(a.ranks) do
+      if r.id == id then return true end
+    end
+  end
+  return false
+end
+
 -- ---- Gespeicherte Beobachtungen, ausgepackt je NPC ----
 -- byNpc[npc] = { { npc, level, spells = { [id] = true }, speed, time, rep, own }, … }
 local byNpc, keys
 local function parse(s)
   if type(s) ~= "string" then return nil end
-  local npc, level, spells, speed, t, rep = s:match("^(%d+);(%d+);([%d,]*);([%d%.]*);(%d*);(%x*)$")
-  if not npc then return nil end
+  -- Felder, die eine neuere Version hinten anhängt, bleiben unbeachtet (Protokollregel in Core/Comm.lua)
+  local npc, level, spells, speed, t, rep, rest = s:match("^(%d+);(%d+);([%d,]*);([%d%.]*);(%d*);(%x*)(.*)$")
+  if not npc or (rest ~= "" and rest:sub(1, 1) ~= ";") then return nil end
   local o = { npc = tonumber(npc), level = tonumber(level), spells = {}, speed = tonumber(speed), time = tonumber(t), rep = rep }
   for id in spells:gmatch("%d+") do o.spells[tonumber(id)] = true end
   o.own = rep == "" or (ns.db and ns.db.myReps and ns.db.myReps[rep]) and true or false
@@ -110,7 +123,12 @@ end
 -- Alle Zähmungen eines Tiers zusammen. Eigene gelten als bewiesen, gesehen wie nicht gesehen, und gehen
 -- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten erst ab 3 verschiedenen Meldern
 -- (bis 17.10.2026: 10; wie FOREIGN_NEEDED in tools/build-data.mjs, #1); unter Fremden geht gesehen vor widerlegt. Widersprechen sich Zähmungen, meldet das der Generator.
+-- Die Melder müssen dabei über mindestens zwei verschiedene Absender gekommen sein (#15, ns.ViaDistinct in Core/Comm.lua).
 local FOREIGN_NEEDED = 3
+local function enough(reps, n)
+  if n < FOREIGN_NEEDED then return false end
+  return not ns.ViaDistinct or ns.ViaDistinct(reps)
+end
 function ns.Observed(npcId, a, r)
   local list = index()[npcId]
   if not list then return nil end
@@ -128,8 +146,8 @@ function ns.Observed(npcId, a, r)
   end
   if ownSeen then return "seen" end
   if ownRefuted then return "refuted" end
-  if nSeen >= FOREIGN_NEEDED then return "seen" end
-  if nRefuted >= FOREIGN_NEEDED and nSeen == 0 then return "refuted" end
+  if enough(seen, nSeen) then return "seen" end
+  if nSeen == 0 and enough(refuted, nRefuted) then return "refuted" end
   return nil
 end
 
@@ -262,21 +280,37 @@ local function record()
   end
 
   -- Chatzeile: was das Tier mitbrachte. Erst das Zauberbuch erheben: Ein Rang, den noch kein Pet hatte, ist
-  -- sonst unbekannt (Junger Fleischreißer mit Demoralisierendem Kreischen, 16.10.2026).
-  if ns.SurveyPetSpells then ns.SafeCall("survey", ns.SurveyPetSpells) end
-  ns.MergeSurveyAbilities()
-  local idx, parts = spellIndex(), {}
-  for _, id in ipairs(ids) do
-    local x = idx[id]
-    if x then
-      local rank = ns.RankLabel(x.a, x.r)
-      parts[#parts + 1] = ns.AbilityName(x.a) .. (rank ~= "" and (" " .. rank) or "")
+  -- sonst unbekannt (Junger Fleischreißer mit Demoralisierendem Kreischen, 16.10.2026). Fehlt einem Zauber
+  -- der Rang, weil der Client seine Daten erst nachlädt (#17), wartet die Zeile, höchstens WAIT_RANK Sekunden;
+  -- jeder Versuch liest das Zauberbuch neu. Danach steht ein noch unbekannter Zauber mit Namen, ohne Rang da.
+  local tries = 0
+  local function announce()
+    tries = tries + 1
+    if ns.SurveyPetSpells then ns.SafeCall("survey", ns.SurveyPetSpells, tries == 1) end
+    ns.MergeSurveyAbilities()
+    local late = tries * RETRY >= WAIT_RANK
+    if not late and ns.SurveyRankPending and ns.SurveyRankPending(ids) then
+      ns.After(RETRY, function() ns.SafeCall("observe", announce) end)
+      return
     end
+    local idx, parts = spellIndex(), {}
+    for _, id in ipairs(ids) do
+      local x = idx[id]
+      if x then
+        local rank = ns.RankLabel(x.a, x.r)
+        parts[#parts + 1] = ns.AbilityName(x.a) .. (rank ~= "" and (" " .. rank) or "")
+      elseif late and not knownSpell(id) then
+        local e = ns.db.survey and ns.db.survey.spells and ns.db.survey.spells[id]
+        if e and e.name and not e.passive then parts[#parts + 1] = e.name end
+      end
+    end
+    table.sort(parts)
+    ns.Print((L["Observed: %s (level %d) brought %s"]):format(ns.BeastName(p.npc),
+      level, #parts > 0 and table.concat(parts, ", ") or L["no ability"]))
+    ns.ObservationsChanged()
   end
-  table.sort(parts)
-  ns.Print((L["Observed: %s (level %d) brought %s"]):format(ns.BeastName(p.npc),
-    level, #parts > 0 and table.concat(parts, ", ") or L["no ability"]))
   ns.ObservationsChanged()
+  announce()
   -- teilen, wenn das Tempo nachgetragen sein kann (Core/Comm.lua)
   local slot = #ns.db.obs
   ns.After(4, function()

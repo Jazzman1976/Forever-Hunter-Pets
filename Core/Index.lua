@@ -508,8 +508,22 @@ end
 -- Pets, die den Rang hatten. Ohne Rangnummer (Angriffstempo) bleibt ein Zauber draußen; Tempo kennt die Daten.
 -- Wer etwas über die Fähigkeiten zwischenspeichert, hängt sich an ns.OnAbilitiesChanged (oben).
 
+-- Ränge vom Tierausbilder, wie sie die mitgelieferten Daten kennen – festgehalten beim Laden, bevor die
+-- Erhebung etwas dazutut. Daran erkennt das Addon den Tierausbilder (Core/Known.lua, #16): Ein Jägerlehrer
+-- bietet nie einen dieser Ränge an. Umgekehrt steht ein Rang einer Fähigkeit, die der Tierausbilder gar nicht
+-- lehrt (Beißen, Klaue …), nur in der Wildtierausbildung (#32).
+local dataTrainerRank, dataBeastRank = {}, {}
+for _, a in ipairs(D.abilities) do
+  for _, r in ipairs(a.ranks) do
+    if a.source == "trainer" then dataTrainerRank[r.id] = true else dataBeastRank[r.id] = true end
+  end
+end
+function ns.IsDataTrainerRank(id) return dataTrainerRank[id] == true end
+function ns.IsDataBeastRank(id) return dataBeastRank[id] == true end
+
 function ns.MergeSurveyAbilities()
-  local s = ns.db and ns.db.survey
+  -- erst die Erhebung auf den neuesten Stand bringen (Core/Survey.lua: räumt Jägerzauber weg, #16)
+  local s = ns.SurveyStore and ns.SurveyStore() or (ns.db and ns.db.survey)
   if type(s) ~= "table" then return false end
   local knownId, byName = {}, {}
   for _, a in ipairs(D.abilities) do

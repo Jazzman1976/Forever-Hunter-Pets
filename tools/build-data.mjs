@@ -46,6 +46,24 @@ const places = read('fundorte.json');
 const cells = fs.existsSync(path.join(OWN, 'zellen.json')) ? read('zellen.json') : {};
 // zellen-fremd.json: { npc: { uiMapID: { melder: "xyxy…" } } }, Zellen anderer Spieler (tools/import-observations.mjs)
 const foreignCells = fs.existsSync(path.join(OWN, 'zellen-fremd.json')) ? read('zellen-fremd.json') : {};
+// melder-wege.json: { melder: [absender, …] }, über welche Absender ein Kürzel ankam (tools/import-observations.mjs, #15)
+const ways = fs.existsSync(path.join(OWN, 'melder-wege.json')) ? read('melder-wege.json') : {};
+
+// Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei verschiedene Absender kamen – ein einzelner
+// Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe (vor diesem Stand
+// empfangen) gilt als „Herkunft unbekannt“ und zählt wie bisher; ohne melder-wege.json bleibt alles wie bisher.
+const enough = (reps) => {
+  if (reps.size < FOREIGN_NEEDED) return false;
+  let first = null;
+  for (const rep of reps) {
+    const l = ways[rep];
+    if (!Array.isArray(l) || !l.length) return true;
+    for (const from of l) {
+      if (first == null) first = from; else if (from !== first) return true;
+    }
+  }
+  return false;
+};
 
 const problems = [];
 const need = (cond, msg) => { if (!cond) problems.push(msg); };
@@ -79,9 +97,12 @@ function abilitiesFromSurvey() {
   // Zauber aus dem Zauberbuch eines Pets, die in keiner Liste stehen: Das Pet kann sie, der Jäger noch
   // nicht (etwa Tanz des Täuschers, 16.10.2026). Sie kommen dazu, ohne Pet-Stufe und TP; die Familien
   // sind die der Pets, die sie hatten.
+  // Die Familien aus dem Zauberbuch gelten auch für Ränge aus den Listen: Eine Liste zählt nur vollständig, ein
+  // Rang kann also in einer Wildtierausbildung gestanden haben, deren Liste fehlt (Wildes Verwunden, #30).
   const fromBook = new Map(); // Zauber-ID → Familien
   for (const [id, z] of Object.entries(survey.zauberbuch || {})) {
-    if (survey.raenge[id] || z.rang == null) continue;
+    if (z.rang == null) continue;
+    if (survey.raenge[id]) { fromBook.set(+id, z.familien || []); continue; }
     const name = nameOf(z.name);
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name).push({ id: +id, name: z.name, rang: z.rang, datum: z.datum });
@@ -340,7 +361,7 @@ for (const [npc, maps] of Object.entries(foreignCells)) {
     const set = shipCells.get(`${npc}:${map}`) ?? new Set();
     for (const [c, who] of reps) {
       if (set.has(c)) continue;
-      if (who.size >= FOREIGN_NEEDED || [...who].some((r) => ownReps.has(r))) { set.add(c); foreignShipped++; }
+      if (enough(who) || [...who].some((r) => ownReps.has(r))) { set.add(c); foreignShipped++; }
     }
     if (set.size) shipCells.set(`${npc}:${map}`, set);
   }
@@ -365,7 +386,7 @@ if (problems.length) {
 const abilities = abilitiesIn.map((a) => {
   const teach = [...seen.get(a).values()]
     .filter((e) => !refuted.has(`${label(a)}:${e.npc}:${e.rank}`))
-    .map((e) => ({ id: e.npc, rank: e.rank, conf: e.own || e.reps.size >= FOREIGN_NEEDED ? CONF_SURE : CONF_UNSURE }))
+    .map((e) => ({ id: e.npc, rank: e.rank, conf: e.own || enough(e.reps) ? CONF_SURE : CONF_UNSURE }))
     .sort((x, y) => x.rank - y.rank || x.conf - y.conf || x.id - y.id);
   return {
     en: a.en || null, de: a.de || null, icon: a.icon || null, kind: a.kind, source: a.source || 'unknown',
@@ -404,7 +425,7 @@ const sightedNames = new Map(); // NPC-ID → { de, en }
     });
     const own = list.filter((s) => ownReps.has(s.melder));
     const foreignReps = new Set(list.filter((s) => !ownReps.has(s.melder)).map((s) => s.melder));
-    const use = own.length ? own : foreignReps.size >= FOREIGN_NEEDED ? list : null;
+    const use = own.length ? own : enough(foreignReps) ? list : null;
     if (!use) continue;
     const levels = use.map((s) => s.stufe);
     sighted.set(npc, {

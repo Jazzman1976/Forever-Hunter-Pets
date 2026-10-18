@@ -2,7 +2,7 @@
 
 Everything the addon does, how it works and why it behaves the way it does. Short version in the [README](../../README.md).
 
-**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Area](#area) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
+**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
 
 ## The idea
 
@@ -54,15 +54,15 @@ Until you choose, the addon shows nothing that could spoil the search; it alread
 | Meant for | players who want the answer | players who want to search |
 | Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself |
 | Beasts you have not found | shown with their name, like all others | shown anonymously as *? undiscovered beast*, or as a count (*2 undiscovered*) |
-| Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Area tab |
-| Progress in the Area tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
+| Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
+| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
 | Collecting and sharing | on | on – explorers help everybody |
 
 Your finds count for your whole account: a beast one of your characters found counts as found for your other characters as well. The mode is chosen per character.
 
 ## The window
 
-Three tabs: **Abilities**, **Area** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
+Three tabs: **Abilities**, **Zone** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
 
 ## Abilities
 
@@ -81,11 +81,11 @@ Every pet ability, rank by rank, and the beasts that teach it.
 
 **Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points. The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
 
-## Area
+## Zone
 
-A progress book for one zone at a time. Pick the zone at the top; it starts with the zone you are in.
+A progress book for one zone at a time. At the top, *Current zone* is selected: it shows the zone you are in and follows you when you move to another zone. Pick a zone from the list to stay on it, and *Current zone* to follow again. In a zone without known beasts (a capital city, for example) the list says so. A zone you discover appears in the list right away.
 
-![Area tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
+![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
 **The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet.
 
@@ -93,7 +93,7 @@ A progress book for one zone at a time. Pick the zone at the top; it starts with
 
   | Status | Meaning | Checkbox |
   | --- | --- | --- |
-  | *? undiscovered beast* | you haven't come across it in this zone yet – name hidden | none |
+  | *? undiscovered beast* | you haven't come across it in this zone yet – name hidden. The beast is known, you just have to find it: *Go on the prowl and find it.* | none |
   | **tracked** | you have seen it in this zone, but were never close to it | none |
   | **beast found** | you were close to it in this zone, so its spawn point is on your map | empty |
   | **abilities known** | found, and you have tamed it – you know what it teaches | ticked |
@@ -105,11 +105,12 @@ A progress book for one zone at a time. Pick the zone at the top; it starts with
 
 **The counters (below the map).**
 - **Beasts** – *X of Y known*. Only *abilities known* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.
-- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something.
-- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them.
-- **Spawn points** – explorer mode: your own spots (cells); complete mode: all known spawn points of the zone.
+- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Undiscovered tiles only say *? undiscovered teaching beast*.
+- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
+- Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
+- **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
 
-When everything is known (X = Y), only the number is shown, without a bar. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the bars show how far data collection has come, and in complete mode *Teaching beasts* and *Abilities* are usually just numbers.
+All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come.
 
 ## Training
 
@@ -129,6 +130,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 2. **Attack speed** if it differs from normal (for example *Faster Attack III (1.5 s)*) – your pet takes it over.
 3. **Every rank it teaches**, with the ability icon: *– learned* (grey) if you already know the rank, *– new* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
+5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already know (*Show known abilities* – this also hides *teaches nothing*).
 
@@ -182,7 +184,7 @@ Switch **Share observations** off and nothing is sent or received.
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different players** saw the same. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
+- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
 - **WoW Forever is in beta** and changes weekly. Where nothing is known, the addon says so instead of guessing.

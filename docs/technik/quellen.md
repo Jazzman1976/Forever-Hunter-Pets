@@ -46,7 +46,7 @@ Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit;
 | **unbelegt** | nur geschätzt, noch nicht gesehen (Idee „Lehrtiere schätzen“, bisher gibt es keine) | auf Wunsch, mit „!“; der Schalter erscheint erst, wenn es Schätzungen gibt |
 | **widerlegt** | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte und kein höherer Rang da war | nie gezeigt, nicht ausgeliefert |
 
-Eigene Zähmungen gelten als bewiesen, gesehen wie nicht gesehen, und gehen allem Fremden vor. Unter Fremden geht gesehen vor widerlegt. Die Regel stützt sich darauf, dass die Fähigkeiten eines Tiers an seiner NPC-ID hängen und nur der Rang an der Stufe. Widersprechen sich Zähmungen derselben NPC-ID, meldet der Generator das – dann wackelt diese Annahme.
+Eigene Zähmungen gelten als bewiesen, gesehen wie nicht gesehen, und gehen allem Fremden vor. Unter Fremden geht gesehen vor widerlegt. „3 verschiedene andere Spieler“ heißt seit #15: 3 verschiedene Melder, die zusammen über mindestens zwei verschiedene Absender kamen (`tools/eigene/melder-wege.json`); ein einzelner Absender genügt nie. Das gilt ebenso für Tiere aus Sichtungen und für fremde Fundort-Zellen. Melder ohne vermerkte Herkunft zählen wie bisher. Die Regel stützt sich darauf, dass die Fähigkeiten eines Tiers an seiner NPC-ID hängen und nur der Rang an der Stufe. Widersprechen sich Zähmungen derselben NPC-ID, meldet der Generator das – dann wackelt diese Annahme.
 
 ## Grenzen der Daten
 

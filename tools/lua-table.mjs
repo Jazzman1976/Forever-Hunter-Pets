@@ -65,7 +65,10 @@ export function parseSavedVariables(text) {
         const m = text.slice(i).match(/^([A-Za-z_]\w*)\s*=(?!=)/);
         if (m) { key = m[1]; i += m[0].length; } else key = String(++n);
       }
-      out[key] = value();
+      // nil legt wie in Lua keinen Schlüssel an, die Position zählt aber mit: Der Client schreibt eine Lücke im
+      // Listenteil als „nil,“ (#30: Wildtierausbildung der Familien 1–5, 7, 8 ohne 6)
+      const v = value();
+      if (v !== null) out[key] = v;
       skip();
       if (text[i] === ',' || text[i] === ';') i++;
     }

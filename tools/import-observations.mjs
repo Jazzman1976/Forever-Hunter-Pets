@@ -1,7 +1,8 @@
 // Führt die Beobachtungen beim Zähmen aus den SavedVariables des Addons in tools/eigene/beobachtungen.json
 // zusammen und merkt sich die Kürzel der eigenen Charaktere (myReps) in tools/eigene/eigene-melder.json.
 // Dazu die Sichtungen beim Anvisieren (Core/Sightings.lua) nach tools/eigene/sichtungen.json, die
-// Fundort-Zellen nach tools/eigene/zellen.json (eigene) und zellen-fremd.json (fremde, mit Melder) und die
+// Fundort-Zellen nach tools/eigene/zellen.json (eigene) und zellen-fremd.json (fremde, mit Melder), die Herkunft
+// fremder Melder nach tools/eigene/melder-wege.json und die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
 // nach tools/eigene/erhebung.json.
 // In der Datei eines Spielers steht, was er selbst gesehen hat, und alles, was andere im Spiel geteilt haben.
@@ -19,10 +20,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, 'eigene', 'beobachtungen.json');
 const OWN_OUT = path.join(HERE, 'eigene', 'eigene-melder.json');
 const SURVEY_OUT = path.join(HERE, 'eigene', 'erhebung.json');
-const SURVEY_VERSION = 4; // wie VERSION in Core/Survey.lua
+const SURVEY_VERSION = 10; // wie VERSION in Core/Survey.lua; Version 4 und 9 können Jägerzauber enthalten (#16, #34), 5 bis 8 falsche Tierausbilder-Angaben (#32)
 const SIGHT_OUT = path.join(HERE, 'eigene', 'sichtungen.json');
 const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
 const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
+const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
 
 // djb2, wie ns.ReporterHash im Addon
@@ -84,9 +86,13 @@ function record(s, ownRep) {
   return r;
 }
 
-const args = process.argv.slice(2);
+// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
+// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
+// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
+const NO_TRAINER = process.argv.includes('--ohne-tierausbilder');
+const args = process.argv.slice(2).filter((a) => a !== '--ohne-tierausbilder');
 if (!args.length) {
-  console.error('Aufruf: node tools/import-observations.mjs <SavedVariables-Datei oder WoW-Ordner> […]');
+  console.error('Aufruf: node tools/import-observations.mjs [--ohne-tierausbilder] <SavedVariables-Datei oder WoW-Ordner> […]');
   process.exit(1);
 }
 const files = [...new Set(args.flatMap((a) => findFiles(path.resolve(a))))]
@@ -212,6 +218,32 @@ const sortedForeign = Object.fromEntries(Object.entries(foreignOut).sort(([a], [
 fs.writeFileSync(FOREIGN_CELLS_OUT, '{\n' + Object.entries(sortedForeign).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
 console.log(`${foreignNew} neue fremde Fundort-Zellen → tools/eigene/zellen-fremd.json (${Object.keys(sortedForeign).length} Tiere)`);
 
+// ---- Herkunft fremder Kürzel (Core/Comm.lua, #15) → tools/eigene/melder-wege.json ----
+// { melder: [absender, …] }, aus ForeverHunterPetsDB.via (je Melder „abs1abs2…“), nur Kürzel. Über alle Dateien
+// vereinigt: Kam ein Melder bei zwei Spielern über verschiedene Absender, sind das zwei Wege. Die Datei entsteht
+// erst, wenn es etwas zu vermerken gibt; ohne sie zählt der Generator wie bisher.
+const wegeOld = fs.existsSync(WAYS_OUT) ? JSON.parse(fs.readFileSync(WAYS_OUT, 'utf8')) : null;
+const wege = new Map(Object.entries(wegeOld || {}).map(([rep, l]) => [rep, new Set(l)]));
+let wegeNew = 0;
+for (const f of files) {
+  let via;
+  try {
+    via = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.via;
+  } catch { continue; }
+  for (const [rep, s] of Object.entries(via || {})) {
+    if (!/^[0-9a-f]{8}$/.test(rep) || typeof s !== 'string' || !/^([0-9a-f]{8})+$/.test(s)) continue;
+    const set = wege.get(rep) ?? wege.set(rep, new Set()).get(rep);
+    for (const from of s.match(/.{8}/g)) if (!set.has(from)) { set.add(from); wegeNew++; }
+  }
+}
+if (wegeOld || wege.size) {
+  const sortedWege = [...wege].sort(([a], [b]) => a.localeCompare(b)).map(([rep, set]) => `  ${JSON.stringify(rep)}: ${JSON.stringify([...set].sort())}`);
+  fs.writeFileSync(WAYS_OUT, '{\n' + sortedWege.join(',\n') + '\n}\n');
+  console.log(`${wegeNew} neue Absender → tools/eigene/melder-wege.json (Herkunft bekannt für ${wege.size} Melder)`);
+} else {
+  console.log('Noch keine Herkunft fremder Melder vermerkt (tools/eigene/melder-wege.json bleibt aus)');
+}
+
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),
 // je Familie gilt die jüngste vollständige Liste der Wildtierausbildung. Namen stehen je Client-Sprache.
@@ -235,11 +267,13 @@ for (const f of files) {
     if (!/^\d+$/.test(id)) continue; // ohne Zauber-ID nicht verwertbar
     const r = (survey.raenge[id] ??= { name: {} });
     r.name[lang] = e.name;
-    for (const [to, from] of [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel'], ['jaegerStufe', 'hunterLevel'], ['preis', 'gold']]) {
+    const fields = [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel']];
+    if (!NO_TRAINER) fields.push(['jaegerStufe', 'hunterLevel'], ['preis', 'gold']);
+    for (const [to, from] of fields) {
       if (e[from] != null) r[to] = e[from];
     }
     if (e.bw) r.wildtierausbildung = true;
-    if (e.npc) r.tierausbilder = true;
+    if (e.npc && !NO_TRAINER) r.tierausbilder = true;
     if (e.t) r.datum = r.datum && r.datum < day(e.t) ? r.datum : day(e.t);
   }
   for (const [fam, l] of Object.entries(s.lists || {})) {

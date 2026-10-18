@@ -13,6 +13,10 @@
 --                                              per Flüstern an den, der gegrüßt hat
 -- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
 -- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Spieler etwas gesehen haben.
+--
+-- Protokollregel (#12): Im Spiel laufen viele Versionen nebeneinander. Neue Felder kommen deshalb nur hinten
+-- an eine Nachricht, und wer ein Feld am Ende nicht kennt, liest die Nachricht trotzdem und übergeht es.
+-- Ein neues Kürzel (O2 …) nur, wenn sich ein vorhandenes Feld ändert; ältere Versionen lesen das dann nicht.
 local _, ns = ...
 local D = ns.Data
 
@@ -25,6 +29,7 @@ local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
+local MAX_REJECTS = 10        -- verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
@@ -57,6 +62,61 @@ local function me()
   selfName = name .. "-" .. realm
   selfRep = hash(selfName)
   return selfName, selfRep
+end
+
+-- Kürzel eines Absenders, wie me() es für sich rechnet: „Vorname Nachname“ → „Vorname-Nachname“
+local function senderRep(sender)
+  return hash((sender:gsub(" ", "-")))
+end
+
+-- ---- Herkunft fremder Kürzel (#15) ----
+-- Das Kürzel steht in der Nachricht und ist nicht an den Absender gebunden (Weitergereichtes trägt das des
+-- ursprünglichen Melders). Deshalb merkt sich das Addon je fremdem Kürzel, über welche Absender es kam:
+-- ForeverHunterPetsDB.via[melder] = „abs1abs2…“ (Kürzel der Absender, keine Namen). Kommt eine Meldung direkt,
+-- ist der Absender das Kürzel selbst. Mehr als VIA_MAX Absender braucht die Regel nicht.
+-- Regel: Fremde Melder zählen für „ab 3 Meldern“ nur, wenn sie zusammen über mindestens zwei verschiedene
+-- Absender kamen – ein einzelner Absender genügt nie. Kürzel ohne Angabe (alles vor diesem Stand empfangene)
+-- gelten als „Herkunft unbekannt“ und zählen wie bisher. Dieselbe Regel steht in tools/build-data.mjs.
+local VIA_MAX, VIA_REPS = 4, 5000
+local viaCount, viaOf   -- Zahl der Kürzel in der Tabelle viaOf
+
+local function noteVia(rep, sender)
+  if type(rep) ~= "string" or not rep:find("^%x%x%x%x%x%x%x%x$") then return end
+  local via = ns.db.via
+  if type(via) ~= "table" then via = {}; ns.db.via = via end
+  local have = via[rep]
+  if type(have) ~= "string" then
+    if viaOf ~= via then
+      viaOf, viaCount = via, 0
+      for _ in pairs(via) do viaCount = viaCount + 1 end
+    end
+    if viaCount >= VIA_REPS then return end
+    have = ""
+    viaCount = viaCount + 1
+  end
+  if #have >= VIA_MAX * 8 then return end
+  local from = senderRep(sender)
+  for i = 1, #have - 7, 8 do
+    if have:sub(i, i + 7) == from then return end
+  end
+  via[rep] = have .. from
+end
+
+-- Kamen diese fremden Kürzel ({ [Kürzel] = true }) über mindestens zwei verschiedene Absender – oder ist bei
+-- einem die Herkunft unbekannt? Dann zählen sie für die Schwelle. Im Zweifel (kaputter Speicher) wie bisher.
+function ns.ViaDistinct(reps)
+  local via = ns.db and ns.db.via
+  if type(via) ~= "table" then return true end
+  local first
+  for rep in pairs(reps) do
+    local have = via[rep]
+    if type(have) ~= "string" or #have < 8 then return true end
+    for i = 1, #have - 7, 8 do
+      local from = have:sub(i, i + 7)
+      if not first then first = from elseif from ~= first then return true end
+    end
+  end
+  return false
 end
 
 -- Kürzel des eingeloggten Charakters; eigene Beobachtungen tragen es von Anfang an
@@ -115,6 +175,13 @@ local function sendNow(msg, kind, target)
   return true, "Ergebnis " .. tostring(res)
 end
 
+-- Ziel → GetTime() des letzten Flüsterns, für den Chat-Filter unten (#28). Abgesichert: Wirft etwas in pump, plant
+-- es sich nicht neu ein, und die Warteschlange stünde für die ganze Sitzung – das Teilen darf daran nie hängen.
+local whispered = {}
+local function noteWhisper(target)
+  whispered[target] = GetTime()
+end
+
 local pump
 pump = function()
   if #queue == 0 then busy = false; return end
@@ -122,6 +189,7 @@ pump = function()
   if enabled() and not quiet() then
     local item = queue[1]
     local done, what = sendNow(item.msg, item.kind, item.target)
+    if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
     if item.onSent then item.onSent(what) end
     if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
     if done then table.remove(queue, 1) end
@@ -175,31 +243,35 @@ local function spellOk(id)
 end
 
 -- Nur, was eine echte Zähmung ergeben kann: Stufe 1–63, bekannte Pet-Zauber, plausibles Tempo und
--- eine Zeit zwischen September 2026 und morgen. Alles andere wird still verworfen.
+-- eine Zeit zwischen September 2026 und morgen. Liefert sonst false und den Grund – je Prüfung ein eigener,
+-- damit /fhp teilen zeigt, was zuschlägt (#12: eigene Zähmungen, die andere zurückschicken, liefen als „ungültig“).
 local function valid(s)
   local o = ns.ParseObservation(s)
-  if not o or o.own or #o.rep ~= 8 then return false end
-  if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false end
+  if not o then return false, "unlesbar" end
+  local _, rep = me()
+  if o.own or o.rep == rep then return false, "eigene" end   -- eigene, auch von Twinks, zurückgeschickt
+  if #o.rep ~= 8 then return false, "Melder" end
+  if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false, "Stufe oder NPC" end
   for id in pairs(o.spells) do
     -- ein Zauber, den hier noch niemand kennt: zählen, damit man es im Test sieht
     if not spellOk(id) then return false, "unbekannter Zauber" end
   end
-  if o.speed and (o.speed < 0.5 or o.speed > 4) then return false end
+  if o.speed and (o.speed < 0.5 or o.speed > 4) then return false, "Tempo" end
   local now = time and time() or 0
-  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false end
-  return true
+  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
+  return true, nil, o
 end
 
+-- Liefern, ob neu gespeichert, sonst den Grund, und als drittes das Kürzel des Melders, sobald die Meldung
+-- gültig ist (für die Herkunft, #15)
 local function receiveObservation(body, sender)
-  local _, rep = me()
   local s = body:sub(4)                    -- ohne „O1;“
-  local ok, why = valid(s)
-  if not ok then return false, why or "ungültig" end
-  if rep and s:sub(-8) == rep then return false, "eigene" end   -- die eigene, zurückgeschickt
+  local ok, why, o = valid(s)
+  if not ok then return false, why end
   perSender[sender] = (perSender[sender] or 0) + 1
   if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
   if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
-  if not ns.AddObservation(s) then return false, "schon bekannt" end
+  if not ns.AddObservation(s) then return false, "schon bekannt", o.rep end
   ns.receivedNew = (ns.receivedNew or 0) + 1
   if not ns.refreshPending then
     ns.refreshPending = true
@@ -208,7 +280,7 @@ local function receiveObservation(body, sender)
       ns.ObservationsChanged()
     end)
   end
-  return true
+  return true, nil, o.rep
 end
 
 -- ---- Fundort-Zellen (Core/Places.lua) ----
@@ -221,16 +293,17 @@ end
 local cellsPerSender = {}
 local function receiveCells(body, sender)
   local _, myRep = me()
-  local npc, map, cells, rep = body:match("^F1;(%d+);(%d+);([%w]+);(%x+)$")
+  local npc, map, cells, rep, rest = body:match("^F1;(%d+);(%d+);([%w]+);(%x+)(.*)$")
   npc, map = tonumber(npc), tonumber(map)
-  if not (npc and map and rep) or #rep ~= 8 or rep == myRep then return false, "ungültig" end
-  if ns.db and ns.db.myReps and ns.db.myReps[rep] then return false, "eigene" end
-  if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "ungültig" end
-  if not ns.ValidCells(cells) then return false, "ungültig" end
+  if not (npc and map and rep) or (rest ~= "" and rest:sub(1, 1) ~= ";") then return false, "unlesbar" end
+  if rep == myRep or (ns.db and ns.db.myReps and ns.db.myReps[rep]) then return false, "eigene" end
+  if #rep ~= 8 then return false, "Melder" end
+  if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "Karte oder Größe" end
+  if not ns.ValidCells(cells) then return false, "Zellen" end
   cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
   if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt" end
-  return true
+  if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt", rep end
+  return true, nil, rep
 end
 
 -- ---- Sichtungen (Core/Sightings.lua) ----
@@ -245,24 +318,29 @@ local function receiveSighting(body, sender)
   local _, rep = me()
   local s = body:sub(4)                    -- ohne „S1;“
   local o = ns.ParseSighting(s)
-  if not o or o.own or #o.rep ~= 8 or (rep and o.rep == rep) then return false, "eigene oder ungültig" end
-  if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "ungültig" end
-  if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "ungültig" end
-  if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "ungültig" end
+  if not o then return false, "unlesbar" end
+  if o.own or (rep and o.rep == rep) then return false, "eigene" end
+  if #o.rep ~= 8 then return false, "Melder" end
+  if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "Stufe oder Werte" end
+  if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "Sprache oder Name" end
+  if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "Tempo" end
   local now = time and time() or 0
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   sightPerSender[sender] = (sightPerSender[sender] or 0) + 1
   if sightPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if not ns.AddSighting(s) then return false, "schon bekannt" end
-  return true
+  if not ns.AddSighting(s) then return false, "schon bekannt", o.rep end
+  return true, nil, o.rep
 end
 
 -- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
--- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen.
+-- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen, und nichts, was
+-- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
+-- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
 local function reply(sender, target)
   if greeted[sender] then return end
   greeted[sender] = true
   target = target or sender
+  local theirs = hash((target:gsub(" ", "-")))
   local _, rep = me()
   if rep and ns.OwnCellBundles then
     for _, b in ipairs(ns.OwnCellBundles(CELL_REPLY)) do
@@ -273,7 +351,7 @@ local function reply(sender, target)
   for _, s in ipairs(ns.db.obs or {}) do
     if type(s) == "string" then
       local o = ns.ParseObservation(s)
-      if o and o.own then own[#own + 1] = s elseif o then other[#other + 1] = s end
+      if o and o.own then own[#own + 1] = s elseif o and o.rep ~= theirs then other[#other + 1] = s end
     end
   end
   local n = 0
@@ -364,6 +442,95 @@ local function isSelf(sender, name)
   return name ~= nil and plain(sender) == plain(name)
 end
 
+-- ---- Flüstern an Spieler, die offline gegangen sind (#28) ----
+-- Die Antwort auf einen Gruß braucht wegen der Drosselung bis zu einer Minute. Geht der Grüßende vorher offline,
+-- quittiert der Client jede weitere Nachricht mit „Momentan ist kein Spieler mit dem Namen '…' online.“ Deshalb:
+-- Meldet der Client das oder „… ist jetzt offline“, fallen die wartenden Flüster-Nachrichten an ihn weg, und die
+-- Meldung „kein Spieler …“ wird verschluckt – nur für Namen, an die das Addon in der letzten Minute geflüstert hat
+-- oder für die noch etwas wartet. Die Muster kommen aus den Textvorlagen des Clients, damit jede Sprache greift.
+-- Alles hier ist Beiwerk: Was beim Laden fehlschlägt (Textvorlage oder Filter-API fehlt oder sieht anders aus),
+-- schaltet nur diesen Schutz ab, nie das Teilen. Deshalb läuft jeder Schritt beim Laden in pcall.
+local WHISPER_MEMORY = 60   -- Sekunden
+local function pattern(fmt)
+  if type(fmt) ~= "string" or not fmt:find("%s", 1, true) then return nil end
+  local p = fmt:gsub("([%^%$%(%)%.%[%]%*%+%-%?%%])", "%%%1"):gsub("%%%%s", "(.+)")
+  return "^" .. p .. "$"
+end
+local okNF, NOT_FOUND = pcall(pattern, ERR_CHAT_PLAYER_NOT_FOUND_S)
+local okWO, WENT_OFFLINE = pcall(pattern, ERR_FRIEND_OFFLINE_S)
+if not okNF then NOT_FOUND = nil end
+if not okWO then WENT_OFFLINE = nil end
+
+-- Name aus einer Systemmeldung, ohne Spieler-Link und Farbe
+local function nameIn(msg, pat)
+  if not pat then return nil end
+  local name = msg:match(pat)
+  if not name then return nil end
+  return (name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|H.-|h%[?(.-)%]?|h", "%1"))
+end
+
+-- Hat das Addon gerade etwas an diesen Namen geflüstert oder wartet noch etwas?
+local function addonWhispers(name)
+  local key, now = plain(name), GetTime()
+  for target, at in pairs(whispered) do
+    if now - at > WHISPER_MEMORY then
+      whispered[target] = nil
+    elseif plain(target) == key then
+      return true
+    end
+  end
+  for _, item in ipairs(queue) do
+    if item.kind == "WHISPER" and item.target and plain(item.target) == key then return true end
+  end
+  return false
+end
+
+local function dropWhispers(name)
+  local key, n = plain(name), 0
+  for i = #queue, 1, -1 do
+    local item = queue[i]
+    if item.kind == "WHISPER" and item.target and plain(item.target) == key then
+      table.remove(queue, i)
+      n = n + 1
+    end
+  end
+  if n > 0 then count(stats.dropped, "Flüstern an Offline-Spieler", n) end
+end
+
+ns.On("CHAT_MSG_SYSTEM", function(raw)
+  local msg = ns.clean(raw)
+  if type(msg) ~= "string" then return end   -- geheimer Wert (Kampf, Instanz): nichts tun
+  local name = nameIn(msg, NOT_FOUND) or nameIn(msg, WENT_OFFLINE)
+  if name then dropWhispers(name) end
+end)
+
+-- Der Filter läuft für jedes Chatfenster einzeln; er räumt deshalb nichts ab, er entscheidet nur.
+local function hideNotFound(_, _, raw, ...)
+  local ok, hide = pcall(function()
+    local msg = ns.clean(raw)
+    if type(msg) ~= "string" then return false end
+    local name = nameIn(msg, NOT_FOUND)
+    return name ~= nil and addonWhispers(name)
+  end)
+  if ok and hide then return true end
+  return false, raw, ...
+end
+pcall(function()
+  local addFilter = ChatFrame_AddMessageEventFilter or (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter)
+  if addFilter and NOT_FOUND then addFilter("CHAT_MSG_SYSTEM", hideNotFound) end
+end)
+
+-- Verworfene Nachrichten mit einem echten Fehlergrund roh aufheben, die letzten MAX_REJECTS über alle
+-- Sitzungen (#12): nach /reload aus den SavedVariables lesbar. Ohne Absendernamen, wie überall nur Kürzel.
+local EXPECTED = { ["eigene"] = true, ["schon bekannt"] = true, ["Obergrenze je Absender"] = true, ["Speicher voll"] = true }
+local function keepReject(text, why, kind)
+  if not ns.db then return end
+  local list = ns.db.shareRejects or {}
+  ns.db.shareRejects = list
+  list[#list + 1] = { at = time and time() or 0, why = tostring(why), way = tostring(ns.clean(kind)), msg = text:sub(1, 255) }
+  while #list > MAX_REJECTS do table.remove(list, 1) end
+end
+
 ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if not enabled() then return end
   prefix, text, sender = ns.clean(prefix), ns.clean(text), ns.clean(sender)
@@ -380,21 +547,25 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if own then return end
   local key = plain(sender)
   local t = text:sub(1, 2)
-  local ok, why
+  local ok, why, rep
   if text:sub(1, 3) == "O1;" then
-    ok, why = receiveObservation(text, key)
+    ok, why, rep = receiveObservation(text, key)
   elseif text:sub(1, 3) == "S1;" then
-    ok, why = receiveSighting(text, key)
+    ok, why, rep = receiveSighting(text, key)
   elseif text:sub(1, 3) == "F1;" then
-    ok, why = receiveCells(text, key)
+    ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
     reply(key, sender)   -- zurückgeflüstert wird an den Namen, den der Client nannte
   else
     return
   end
+  -- Herkunft vermerken, auch bei „schon bekannt“: genau dann bestätigt ein zweiter Absender (#15). Abgesichert –
+  -- das Vermerken darf den Empfang nie stören.
+  if rep and (ok or why == "schon bekannt") and ns.db then pcall(noteVia, rep, sender) end
   count(stats.recv, t)
   if ok then count(stats.new, t) else count(stats.dropped, t .. " " .. tostring(why)) end
+  if not ok and not EXPECTED[why] then keepReject(text, why, kind) end
   stats.last = { at = time and time() or 0, t = t, way = tostring(ns.clean(kind)) }
   if ns.db then ns.db.shareStats = stats end
 end)
@@ -485,6 +656,9 @@ function ns.ShareStatus()
   local tames, sights, cells, nReps = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, sights, cells, nReps))
+  local via = 0
+  for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
+  ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))
   ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
   ns.Print("Empfangen: " .. perKind(stats.recv))
   ns.Print("Davon neu gespeichert: " .. perKind(stats.new))
@@ -492,6 +666,10 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
+  local rejects = ns.db and ns.db.shareRejects
+  if rejects and #rejects > 0 then
+    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d (ForeverHunterPetsDB.shareRejects)"):format(#rejects))
+  end
   if stats.last then
     local ago = (time and time() or 0) - stats.last.at
     ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.last.t] or stats.last.t, stats.last.way, ago))

@@ -138,11 +138,78 @@ local function trainerOpen()
   return not (IsTradeskillTrainer and ns.clean(IsTradeskillTrainer()))
 end
 
--- Steht ein NPC dahinter, ist es der Tierausbilder in der Stadt, sonst die eigene Wildtierausbildung
-local function atNpc()
+-- Steht ein NPC dahinter, ist es der Tierausbilder in der Stadt, sonst die eigene Wildtierausbildung (#32). Ist
+-- zugleich ein Händler, Stallmeister oder Lehrer angesprochen, gibt es aber auch bei der Wildtierausbildung einen
+-- NPC. Im Spiel beobachtet (18.10.2026): Forever meldet das Wirken von „Wildtierausbildung“ (5149) erst nach
+-- TRAINER_SHOW; die Wildtierausbildung schließt das Fenster von Händler, Lehrer oder Tierausbilder, und dessen
+-- TRAINER_CLOSED kommt erst danach. Deshalb:
+--   - bei TRAINER_SHOW entscheidet der NPC (oder ein Wirken von 5149 in den CAST_WINDOW Sekunden davor);
+--   - jedes Wirken von 5149 stellt danach auf Wildtierausbildung;
+--   - eine Liste mit einem Rang, den der Tierausbilder nie lehrt (Beißen, Klaue …), ist die Wildtierausbildung;
+--   - TRAINER_CLOSED setzt nichts zurück, erst das nächste TRAINER_SHOW entscheidet neu.
+-- Gelesen wird frühestens READ_AFTER nach dem Öffnen (readTrainerAll nach 0,4 s, TRAINER_UPDATE ab READ_AFTER).
+local BEAST_TRAINING, CAST_WINDOW, READ_AFTER = 5149, 3, 0.4
+local castAt          -- GetTime() des letzten Wirkens von 5149
+local shownAt         -- GetTime() des letzten TRAINER_SHOW
+local openedAs        -- "npc" oder "beast", entschieden bei TRAINER_SHOW, nachgeführt durch Wirken und Liste
+local function npcThere()
   local ok, npc = pcall(UnitExists, "npc")
   return ok and ns.clean(npc) and true or false
 end
+local function decide()
+  local ago = castAt and GetTime and (GetTime() - castAt)
+  local npc = npcThere()
+  shownAt = GetTime and GetTime()
+  openedAs = (ago and ago >= 0 and ago <= CAST_WINDOW) and "beast" or (npc and "npc" or "beast")
+  -- zum Nachsehen in den SavedVariables (Core/Survey.lua schreibt es in lastRead)
+  ns.trainerDecision = { npc = npc, castAgo = ago and math.floor(ago * 10 + 0.5) / 10 or nil, as = openedAs }
+end
+-- Die Liste selbst: Steht ein Rang darin, den nur die Wildtierausbildung kennt? Und einer, den die Daten vom
+-- Tierausbilder kennen (#16)? Gemerkt je Liste (Zeilenzahl, erste und letzte Zeile): TRAINER_UPDATE kommt oft,
+-- die Tooltip-Abfragen nur, wenn sich die Liste ändert.
+local list = {}
+local function rowName(i)
+  local ok, name = pcall(GetTrainerServiceInfo, i)
+  return ok and tostring(ns.clean(name)) or ""
+end
+local function scanList()
+  local ok, n = pcall(GetNumTrainerServices)
+  n = ok and tonumber(ns.clean(n)) or 0
+  local sig = n > 0 and (n .. "|" .. rowName(1) .. "|" .. rowName(n)) or "0"
+  if sig ~= list.sig then
+    list.sig, list.trainer, list.beast = sig, false, false
+    for i = 1, math.min(n, 200) do
+      local id = ns.TrainerServiceId and ns.TrainerServiceId(i)
+      if id and ns.IsDataTrainerRank(id) then list.trainer = true end
+      if id and ns.IsDataBeastRank and ns.IsDataBeastRank(id) then list.beast = true end
+    end
+  end
+  return list
+end
+local function atNpc()
+  if openedAs == "beast" then return false end
+  if scanList().beast then
+    openedAs = "beast"
+    if ns.trainerDecision then ns.trainerDecision.as, ns.trainerDecision.byList = "beast", true end
+    return false
+  end
+  if openedAs then return true end
+  return npcThere()
+end
+
+ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
+  if ns.clean(unit) ~= "player" or ns.clean(spellID) ~= BEAST_TRAINING or not GetTime then return end
+  castAt = GetTime()
+  local d = ns.trainerDecision
+  if openedAs == "npc" and d then
+    d.as, d.lateCast = "beast", shownAt and math.floor((castAt - shownAt) * 100 + 0.5) / 100 or nil
+  end
+  openedAs = "beast"
+end)
+
+-- Auch der Jägerlehrer ist ein Trainer mit NPC (#16). Tierausbilder ist eine Liste nur, wenn eine Zeile einen
+-- Rang trägt, den die mitgelieferten Daten vom Tierausbilder kennen – unabhängig von Sprache und NPC.
+local function isPetTrainer() return scanList().trainer end
 
 -- Rang einer Zeile über Name und Rangtext; kurz nach dem Öffnen fehlt der Rangtext noch, dann entscheidet
 -- die Pet-Stufe des Rangs. Nur noch Rückfall, wenn der Tooltip keine Zauber-ID nennt.
@@ -171,6 +238,11 @@ local function readTrainer()
   -- Erhebung (Core/Survey.lua) liest beide Listen, der Lernstand nur die Wildtierausbildung
   local npc = atNpc()
   ns.trainerIds = nil
+  -- Ohne einen einzigen Pet-Rang aus den Daten ist es weder Wildtierausbildung noch Tierausbilder: der
+  -- Jägerlehrer, oder seine Liste kurz nach dem Wirken von 5149, bevor die Wildtierausbildung sie ersetzt (#34)
+  local l = scanList()
+  if not (l.trainer or l.beast) then return end
+  if npc and not isPetTrainer() then return end   -- Jägerlehrer: nichts erheben
   if ns.SurveyTrainer then ns.SafeCall("survey", ns.SurveyTrainer, npc) end
   if npc then return end
   local ids = ns.trainerIds
@@ -190,7 +262,7 @@ end
 
 -- Ist die eigene Wildtierausbildung gerade offen?
 function ns.BeastTrainingOpen()
-  if not trainerOpen() or atNpc() then return false end
+  if not trainerOpen() or atNpc() or not scanList().beast and not scanList().trainer then return false end
   local ok, n = pcall(GetNumTrainerServices)
   return ok and (tonumber(ns.clean(n)) or 0) > 0
 end
@@ -267,13 +339,18 @@ local function applySelection()
 end
 
 ns.On("TRAINER_SHOW", function()
+  openedAs = nil
+  pcall(decide)
+  list.sig = nil   -- ein anderer Trainer, neu prüfen
   ns.After(0.4, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
   ns.After(1.0, function() ns.SafeCall("select", applySelection) end)
 end)
 
 ns.On("TRAINER_UPDATE", function()
-  if not busy then readTrainer() end
+  -- bis READ_AFTER nach dem Öffnen kann die Einordnung noch kippen (s. o.); readTrainerAll liest danach
+  if busy or (shownAt and GetTime and GetTime() - shownAt < READ_AFTER) then return end
+  readTrainer()
 end)
 
 -- ---- Quelle 2: die Systemnachricht „Ihr habt einen neuen Zauber erlernt: [Große Ausdauer].“ ----
