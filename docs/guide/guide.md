@@ -93,7 +93,7 @@ A progress book for one zone at a time. Pick the zone at the top; it starts with
 
   | Status | Meaning | Checkbox |
   | --- | --- | --- |
-  | *? undiscovered beast* | you haven't come across it in this zone yet – name hidden | none |
+  | *? undiscovered beast* | you haven't come across it in this zone yet – name hidden. The beast is known, you just have to find it: *Go on the prowl and find it.* | none |
   | **tracked** | you have seen it in this zone, but were never close to it | none |
   | **beast found** | you were close to it in this zone, so its spawn point is on your map | empty |
   | **abilities known** | found, and you have tamed it – you know what it teaches | ticked |
@@ -105,11 +105,12 @@ A progress book for one zone at a time. Pick the zone at the top; it starts with
 
 **The counters (below the map).**
 - **Beasts** – *X of Y known*. Only *abilities known* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.
-- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something.
-- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them.
-- **Spawn points** – explorer mode: your own spots (cells); complete mode: all known spawn points of the zone.
+- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Undiscovered tiles only say *? undiscovered teaching beast*.
+- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
+- Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
+- **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
 
-When everything is known (X = Y), only the number is shown, without a bar. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the bars show how far data collection has come, and in complete mode *Teaching beasts* and *Abilities* are usually just numbers.
+All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come.
 
 ## Training
 

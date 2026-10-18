@@ -212,6 +212,12 @@ ns.Locales.deDE = {
   ["1 cell"] = "1 Zelle",
   ["1 spawn point on the map"] = "1 Fundort auf der Karte",
   ["%d spawn points on the map"] = "%d Fundorte auf der Karte",
+  -- Entdecken: Kacheln, Hinweis und Fußnote im Reiter „Gebiet“ (#19)
+  ["Go on the prowl and find it."] = "Gehe auf die Pirsch und finde es.",
+  ["? undiscovered teaching beast"] = "? unentdecktes Lehrtier",
+  ["? undiscovered ability"] = "? unentdeckte Fähigkeit",
+  ["%d more"] = "%d weitere",
+  ["Spawn points: %s"] = "Fundorte: %s",
   -- Entdecken: Tierliste im Reiter „Gebiet“ (E5)
   ["? unclear"] = "? unklar",
   ["teaches nothing"] = "lehrt nichts",

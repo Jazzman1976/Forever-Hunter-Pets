@@ -291,7 +291,9 @@ function ns.ZoneProgress(map)
   local p = { beasts = 0, beastsKnown = 0, track = 0, found = 0, known = 0, teachers = 0, teachersKnown = 0,
     ranks = 0, ranksFound = 0, cells = 0, points = 0 }
   local teaches = {}   -- npc → { r = true } aus den Daten, dazu aus Zähmungen (unten)
-  for _, a in ipairs(D.abilities) do
+  local abilityOf, order = {}, {}   -- Rang → Fähigkeit und Platz in den Daten, für die Kacheln (#19)
+  for i, a in ipairs(D.abilities) do
+    for _, x in ipairs(a.ranks) do abilityOf[x], order[x] = a, i end
     if a.source == "tame" then
       for _, t in ipairs(a.teach) do
         local r
@@ -317,6 +319,10 @@ function ns.ZoneProgress(map)
       end
     end
   end
+  -- Kacheln im Reiter „Gebiet“ (#19): je Lehrtier und je Rang, ob man es kennt. Feste Reihenfolge (NPC-ID,
+  -- Fähigkeit und Rang), damit eine Kachel beim Entdecken an ihrem Platz bleibt und sich nur umdreht.
+  p.teacherList, p.rankList = {}, {}
+  local teachersOf = {}
   for npc in pairs(ns.BeastsIn(map)) do
     p.beasts = p.beasts + 1
     local st = ns.BeastStatus(npc, map)
@@ -330,9 +336,16 @@ function ns.ZoneProgress(map)
     p.points = p.points + (ns.ZoneCounts(npc, true)[map] or 0)
     if teaches[npc] then
       p.teachers = p.teachers + 1
-      if not discover or st == "known" then p.teachersKnown = p.teachersKnown + 1 end
+      local known = not discover or st == "known"
+      if known then p.teachersKnown = p.teachersKnown + 1 end
+      p.teacherList[#p.teacherList + 1] = { npc = npc, known = known }
       for r in pairs(teaches[npc]) do
         ranksAll[r] = true
+        -- erkannte Lehrtiere je Rang: Ziel für den Klick auf eine Rang-Kachel, wenn ns.Teachers keins nennt
+        if known then
+          teachersOf[r] = teachersOf[r] or {}
+          table.insert(teachersOf[r], npc)
+        end
         if not discover then
           ranksFound[r] = true
         elseif st == "known" then
@@ -346,6 +359,17 @@ function ns.ZoneProgress(map)
   end
   for _ in pairs(ranksAll) do p.ranks = p.ranks + 1 end
   for _ in pairs(ranksFound) do p.ranksFound = p.ranksFound + 1 end
+  for r in pairs(ranksAll) do
+    local npcs = teachersOf[r] or {}
+    table.sort(npcs)
+    p.rankList[#p.rankList + 1] = { a = abilityOf[r], r = r, found = ranksFound[r] == true, npcs = npcs }
+  end
+  table.sort(p.teacherList, function(x, y) return x.npc < y.npc end)
+  table.sort(p.rankList, function(x, y)
+    local ox, oy = order[x.r] or 0, order[y.r] or 0
+    if ox ~= oy then return ox < oy end
+    return (x.r.rank or 0) < (y.r.rank or 0)
+  end)
   return p
 end
 
