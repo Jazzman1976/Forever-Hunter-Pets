@@ -13,6 +13,10 @@
 --                                              per Flüstern an den, der gegrüßt hat
 -- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
 -- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Spieler etwas gesehen haben.
+--
+-- Protokollregel (#12): Im Spiel laufen viele Versionen nebeneinander. Neue Felder kommen deshalb nur hinten
+-- an eine Nachricht, und wer ein Feld am Ende nicht kennt, liest die Nachricht trotzdem und übergeht es.
+-- Ein neues Kürzel (O2 …) nur, wenn sich ein vorhandenes Feld ändert; ältere Versionen lesen das dann nicht.
 local _, ns = ...
 local D = ns.Data
 
@@ -25,6 +29,7 @@ local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
+local MAX_REJECTS = 10        -- verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
@@ -175,27 +180,29 @@ local function spellOk(id)
 end
 
 -- Nur, was eine echte Zähmung ergeben kann: Stufe 1–63, bekannte Pet-Zauber, plausibles Tempo und
--- eine Zeit zwischen September 2026 und morgen. Alles andere wird still verworfen.
+-- eine Zeit zwischen September 2026 und morgen. Liefert sonst false und den Grund – je Prüfung ein eigener,
+-- damit /fhp teilen zeigt, was zuschlägt (#12: eigene Zähmungen, die andere zurückschicken, liefen als „ungültig“).
 local function valid(s)
   local o = ns.ParseObservation(s)
-  if not o or o.own or #o.rep ~= 8 then return false end
-  if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false end
+  if not o then return false, "unlesbar" end
+  local _, rep = me()
+  if o.own or o.rep == rep then return false, "eigene" end   -- eigene, auch von Twinks, zurückgeschickt
+  if #o.rep ~= 8 then return false, "Melder" end
+  if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false, "Stufe oder NPC" end
   for id in pairs(o.spells) do
     -- ein Zauber, den hier noch niemand kennt: zählen, damit man es im Test sieht
     if not spellOk(id) then return false, "unbekannter Zauber" end
   end
-  if o.speed and (o.speed < 0.5 or o.speed > 4) then return false end
+  if o.speed and (o.speed < 0.5 or o.speed > 4) then return false, "Tempo" end
   local now = time and time() or 0
-  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false end
+  if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   return true
 end
 
 local function receiveObservation(body, sender)
-  local _, rep = me()
   local s = body:sub(4)                    -- ohne „O1;“
   local ok, why = valid(s)
-  if not ok then return false, why or "ungültig" end
-  if rep and s:sub(-8) == rep then return false, "eigene" end   -- die eigene, zurückgeschickt
+  if not ok then return false, why end
   perSender[sender] = (perSender[sender] or 0) + 1
   if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
   if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
@@ -221,12 +228,13 @@ end
 local cellsPerSender = {}
 local function receiveCells(body, sender)
   local _, myRep = me()
-  local npc, map, cells, rep = body:match("^F1;(%d+);(%d+);([%w]+);(%x+)$")
+  local npc, map, cells, rep, rest = body:match("^F1;(%d+);(%d+);([%w]+);(%x+)(.*)$")
   npc, map = tonumber(npc), tonumber(map)
-  if not (npc and map and rep) or #rep ~= 8 or rep == myRep then return false, "ungültig" end
-  if ns.db and ns.db.myReps and ns.db.myReps[rep] then return false, "eigene" end
-  if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "ungültig" end
-  if not ns.ValidCells(cells) then return false, "ungültig" end
+  if not (npc and map and rep) or (rest ~= "" and rest:sub(1, 1) ~= ";") then return false, "unlesbar" end
+  if rep == myRep or (ns.db and ns.db.myReps and ns.db.myReps[rep]) then return false, "eigene" end
+  if #rep ~= 8 then return false, "Melder" end
+  if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "Karte oder Größe" end
+  if not ns.ValidCells(cells) then return false, "Zellen" end
   cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
   if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
   if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt" end
@@ -245,10 +253,12 @@ local function receiveSighting(body, sender)
   local _, rep = me()
   local s = body:sub(4)                    -- ohne „S1;“
   local o = ns.ParseSighting(s)
-  if not o or o.own or #o.rep ~= 8 or (rep and o.rep == rep) then return false, "eigene oder ungültig" end
-  if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "ungültig" end
-  if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "ungültig" end
-  if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "ungültig" end
+  if not o then return false, "unlesbar" end
+  if o.own or (rep and o.rep == rep) then return false, "eigene" end
+  if #o.rep ~= 8 then return false, "Melder" end
+  if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "Stufe oder Werte" end
+  if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "Sprache oder Name" end
+  if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "Tempo" end
   local now = time and time() or 0
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   sightPerSender[sender] = (sightPerSender[sender] or 0) + 1
@@ -258,11 +268,14 @@ local function receiveSighting(body, sender)
 end
 
 -- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
--- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen.
+-- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen, und nichts, was
+-- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
+-- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
 local function reply(sender, target)
   if greeted[sender] then return end
   greeted[sender] = true
   target = target or sender
+  local theirs = hash((target:gsub(" ", "-")))
   local _, rep = me()
   if rep and ns.OwnCellBundles then
     for _, b in ipairs(ns.OwnCellBundles(CELL_REPLY)) do
@@ -273,7 +286,7 @@ local function reply(sender, target)
   for _, s in ipairs(ns.db.obs or {}) do
     if type(s) == "string" then
       local o = ns.ParseObservation(s)
-      if o and o.own then own[#own + 1] = s elseif o then other[#other + 1] = s end
+      if o and o.own then own[#own + 1] = s elseif o and o.rep ~= theirs then other[#other + 1] = s end
     end
   end
   local n = 0
@@ -364,6 +377,17 @@ local function isSelf(sender, name)
   return name ~= nil and plain(sender) == plain(name)
 end
 
+-- Verworfene Nachrichten mit einem echten Fehlergrund roh aufheben, die letzten MAX_REJECTS über alle
+-- Sitzungen (#12): nach /reload aus den SavedVariables lesbar. Ohne Absendernamen, wie überall nur Kürzel.
+local EXPECTED = { ["eigene"] = true, ["schon bekannt"] = true, ["Obergrenze je Absender"] = true, ["Speicher voll"] = true }
+local function keepReject(text, why, kind)
+  if not ns.db then return end
+  local list = ns.db.shareRejects or {}
+  ns.db.shareRejects = list
+  list[#list + 1] = { at = time and time() or 0, why = tostring(why), way = tostring(ns.clean(kind)), msg = text:sub(1, 255) }
+  while #list > MAX_REJECTS do table.remove(list, 1) end
+end
+
 ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if not enabled() then return end
   prefix, text, sender = ns.clean(prefix), ns.clean(text), ns.clean(sender)
@@ -395,6 +419,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   end
   count(stats.recv, t)
   if ok then count(stats.new, t) else count(stats.dropped, t .. " " .. tostring(why)) end
+  if not ok and not EXPECTED[why] then keepReject(text, why, kind) end
   stats.last = { at = time and time() or 0, t = t, way = tostring(ns.clean(kind)) }
   if ns.db then ns.db.shareStats = stats end
 end)
@@ -492,6 +517,10 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
+  local rejects = ns.db and ns.db.shareRejects
+  if rejects and #rejects > 0 then
+    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d (ForeverHunterPetsDB.shareRejects)"):format(#rejects))
+  end
   if stats.last then
     local ago = (time and time() or 0) - stats.last.at
     ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.last.t] or stats.last.t, stats.last.way, ago))
