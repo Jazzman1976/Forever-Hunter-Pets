@@ -32,6 +32,8 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 { generatedAt, families, beasts, coords, abilities }
 ```
 
+`build-data.mjs` vergleicht jeden neuen Stand mit dem in Git und bricht bei neuen, weggefallenen oder umgezogenen Fähigkeiten ab, bis man sie mit `--neue-faehigkeiten` bestätigt (#37, [entwicklung.md](entwicklung.md#daten-bauen)).
+
 | Feld | Inhalt |
 | --- | --- |
 | `families` | `{ ID: { de, en, icon } }` |

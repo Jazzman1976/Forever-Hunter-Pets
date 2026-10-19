@@ -27,7 +27,7 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 ## Befehle
 
 ```
-node tools/build-data.mjs            # tools/data.json aus tools/eigene/ (bricht ab, wenn ein Beleg fehlt)
+node tools/build-data.mjs            # tools/data.json aus tools/eigene/ (bricht ab, wenn ein Beleg fehlt oder sich Fähigkeiten gegenüber Git ändern; bestätigen mit --neue-faehigkeiten)
 node tools/build-addon.mjs           # Data/Data.lua aus tools/data.json
 node tools/import-observations.mjs [--ohne-tierausbilder] <WoW-Ordner>   # Erhebung, Sichtungen, Zähmungen, Zellen, Herkunft und eigene Kürzel aus den SavedVariables nach tools/eigene/ (Schalter: docs/technik/entwicklung.md)
 node tools/package.mjs               # Addon-Paket (ZIP) nach .ignore/dist/  (Veröffentlichen macht die Action beim Tag)

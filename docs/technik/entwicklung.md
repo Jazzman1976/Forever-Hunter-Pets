@@ -68,9 +68,11 @@ Zwei npm-Pakete, in einem Ordner außerhalb des Repos installiert:
 
 ```
 node tools/import-observations.mjs <WoW-Ordner>   # Erhebung, Sichtungen, Zähmungen, Fundort-Zellen und eigene Kürzel nach tools/eigene/
-node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe der Beleg fehlt
+node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe der Beleg fehlt oder sich Fähigkeiten ändern
 node tools/build-addon.mjs     # erzeugt Data/Data.lua
 ```
+
+**Vergleich mit dem Stand in Git (#37):** `build-data.mjs` vergleicht das Ergebnis mit `tools/data.json` in `HEAD` (nicht mit der Datei auf der Platte, sonst meldete ein zweiter Lauf nichts mehr) und gibt eine Übersicht alt → neu aus: Fähigkeiten, Ränge, Lehrtier-Paare, Tiere, Fundorte, dazu neue Ränge bekannter Fähigkeiten. Kommt eine Fähigkeit dazu, fällt eine weg oder wechselt eine die Herkunft (von Tieren ↔ beim Tierausbilder), bricht es ab, ohne `tools/data.json` zu schreiben, und listet sie mit Rängen, Familien und Zahl der Lehrtiere auf. Erst prüfen – so sahen die Jägerzauber aus #34 aus: von Tieren, mit Familien, aber ohne ein einziges Lehrtier –, dann mit `node tools/build-data.mjs --neue-faehigkeiten` bestätigen. Fähigkeiten gelten als dieselben, wenn sie einen Rang (Zauber-ID) teilen. Der Vergleich von Hand nach jedem Import entfällt damit; vor einem Release bleibt der Probe-Import, dessen Übersicht man liest.
 
 `--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig war das für Erhebungen bis Version 8, in denen das Addon die Wildtierausbildung manchmal als Tierausbilder erhob (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Seit #32 ordnet das Addon das Fenster richtig ein, bereinigt die SavedVariables beim Wechsel auf Version 9, und der Import liest ältere Erhebungen nicht mehr (seit #34 erst ab Version 10, weil Version 9 Jägerzauber enthalten kann); der Schalter bleibt als Vorsicht.
 
