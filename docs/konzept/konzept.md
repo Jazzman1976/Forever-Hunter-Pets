@@ -66,7 +66,7 @@ Wildtierkunde zeigt in Forever keine Fähigkeiten (an Blizzard gemeldet) und tau
 
 ### Ablage
 
-Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `filters`). Funde gelten kontoweit („Erkundung je Konto“), der Modus je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
+Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `shareFinds`, `filters`, dazu die eigenen Funde `seenIn` und `loc`). Gesammelt und geteilt wird kontoweit; im Entdeckermodus zählen die Funde des Charakters, auf Wunsch die des Kontos (#43). Der Modus gilt je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
 
 ### Vom Spiel ins Repo
 
@@ -110,7 +110,7 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | Ausbildung | unverändert | unverändert |
 | Sammeln und Teilen | an | an |
 
-- **Modus je Charakter, Funde je Konto.** Ein zweiter Charakter wählt neu, sieht aber die Funde des ersten als eigene.
+- **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde meiner anderen Charaktere zeigen“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
 - **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad.
 - **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „? unentdeckt“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus).
 - **Tipp Namensplaketten:** ein Satz am Ende der Moduswahl in den Einstellungen, bewusst unauffällig (nicht jeder mag Plaketten).

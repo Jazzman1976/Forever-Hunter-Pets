@@ -151,10 +151,10 @@ function ns.Observed(npcId, a, r)
   return nil
 end
 
--- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus)
+-- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
 function ns.OwnSeen(npcId, a, r)
   for _, o in ipairs(index()[npcId] or {}) do
-    if o.own and verdict(o, a, r) == "seen" then return true end
+    if ns.OwnTame(o) and verdict(o, a, r) == "seen" then return true end
   end
   return false
 end

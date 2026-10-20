@@ -8,33 +8,60 @@
 --   „known“    bekannt: in dieser Zone gefunden und alle Fähigkeiten bekannt (eigene Zähmung)
 -- Was ein Tier lehrt, ist Wissen über die NPC-ID und gilt in allen Zonen. Ein Tier gehört nur zu Zonen, in
 -- denen es einen echten Fundort hat (Daten oder Zelle) – eine Sichtung über eine Zonengrenze hinweg zählt dort
--- nicht. Alle Funde sind kontoweit („Erkundung je Konto“). Gezählt wird bei Bedarf, nichts im Hintergrund.
+-- nicht. Gezählt wird bei Bedarf, nichts im Hintergrund.
 --
--- Neu gespeichert wird nur seenIn: je eigener Sichtung und Zähmung die Karte, auf der der Spieler stand,
--- ForeverHunterPetsDB.seenIn[npc] = "1431,1429" – lokal, nicht geteilt.
+-- Funde zählen je Charakter, auf Wunsch die des ganzen Kontos (#43); gesammelt und geteilt wird weiter
+-- kontoweit. Neu gespeichert wird nur seenIn: je eigener Sichtung und Zähmung die Karte, auf der der Spieler
+-- stand, ForeverHunterPetsDB.seenIn[npc] = "1431,1429" – lokal, nicht geteilt – und dasselbe je Charakter in
+-- ForeverHunterPetsCharDB.seenIn.
 local _, ns = ...
 local D = ns.Data
 
+-- ---- Wessen Funde zählen (#43) ----
+-- Im Entdeckermodus die des Charakters (ForeverHunterPetsCharDB: seenIn, loc), mit der Unteroption „Funde meiner
+-- anderen Charaktere zeigen“ (ns.char.shareFinds) die des Kontos; im Komplettmodus immer die des Kontos. Alle
+-- Lesestellen für Fährten, eigene Zellen (Core/Places.lua) und eigene Zähmungen gehen über diese Weiche.
+local function accountFinds()
+  return not ns.Discovering() or (ns.char ~= nil and ns.char.shareFinds == true)
+end
+function ns.Finds()
+  if accountFinds() then return ns.db end
+  return ns.char
+end
+
+-- Zählt die Zähmung als eigener Fund? Je Charakter nur die mit dessen Kürzel (Kürzel leer: noch nicht
+-- zugeordnet, Core/Comm.lua ordnet sie beim Einloggen zu).
+function ns.OwnTame(o)
+  if not o.own then return false end
+  return accountFinds() or o.rep == "" or o.rep == ns.MyRep()
+end
+
 -- ---- seenIn ----
--- true, wenn die Zone neu dazukam
-function ns.NoteSeenIn(npc, map)
-  if not (ns.db and npc and map) then return false end
-  ns.db.seenIn = ns.db.seenIn or {}
-  local list = ns.db.seenIn[npc]
-  local m = tostring(map)
+local function noteIn(store, npc, m)
+  store.seenIn = store.seenIn or {}
+  local list = store.seenIn[npc]
   if not list then
-    ns.db.seenIn[npc] = m
+    store.seenIn[npc] = m
     return true
   end
   for x in list:gmatch("%d+") do
     if x == m then return false end
   end
-  ns.db.seenIn[npc] = list .. "," .. m
+  store.seenIn[npc] = list .. "," .. m
   return true
 end
 
+-- Für das Konto und für den Charakter; true, wenn die Zone für das Konto neu dazukam
+function ns.NoteSeenIn(npc, map)
+  if not (ns.db and npc and map) then return false end
+  local m = tostring(map)
+  if ns.char then noteIn(ns.char, npc, m) end
+  return noteIn(ns.db, npc, m)
+end
+
 local function seenIn(npc, map)
-  local list = ns.db and ns.db.seenIn and ns.db.seenIn[npc]
+  local finds = ns.Finds()
+  local list = finds and finds.seenIn and finds.seenIn[npc]
   if not list then return false end
   local m = tostring(map)
   for x in list:gmatch("%d+") do
@@ -49,7 +76,7 @@ end
 local function tamedIn(npc, map)
   if not seenIn(npc, map) then return false end
   for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own then return true end
+    if ns.OwnTame(o) then return true end
   end
   return false
 end
@@ -57,7 +84,8 @@ end
 -- Zonen, in denen man das Tier selbst gezähmt hat { [map] = true }
 function ns.TamedZones(npc)
   local out = {}
-  local list = ns.db and ns.db.seenIn and ns.db.seenIn[npc]
+  local finds = ns.Finds()
+  local list = finds and finds.seenIn and finds.seenIn[npc]
   for x in (list or ""):gmatch("%d+") do
     local map = tonumber(x)
     if tamedIn(npc, map) then out[map] = true end
@@ -93,7 +121,7 @@ function ns.BeastsIn(map)
       if maps[map] and maps[map] ~= "" then out[npc] = true end
     end
   end
-  for npc in pairs((ns.db and ns.db.seenIn) or {}) do
+  for npc in pairs((ns.Finds() or {}).seenIn or {}) do
     if not out[npc] and (tamedIn(npc, map) or trackOnly(npc, map)) then out[npc] = true end
   end
   return out
@@ -110,7 +138,7 @@ function ns.DiscoverZones()
       for map, cells in pairs(maps) do if cells ~= "" then set[map] = true end end
     end
   end
-  for npc, list in pairs((ns.db and ns.db.seenIn) or {}) do
+  for npc, list in pairs((ns.Finds() or {}).seenIn or {}) do
     for map in pairs(ns.TamedZones(npc)) do set[map] = true end
     if nowhere(npc) then
       for x in list:gmatch("%d+") do set[tonumber(x)] = true end
@@ -124,13 +152,14 @@ end
 
 -- ---- Eigene Funde ----
 local function ownCells(npc, map)
-  local cells = ns.db and ns.db.loc and ns.db.loc[npc] and ns.db.loc[npc][map]
+  local finds = ns.Finds()
+  local cells = finds and finds.loc and finds.loc[npc] and finds.loc[npc][map]
   return cells and #cells / 2 or 0
 end
 
 local function ownTamed(npc)
   for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own then return true end
+    if ns.OwnTame(o) then return true end
   end
   return false
 end
@@ -253,7 +282,7 @@ end
 function ns.TeachInfo(npc, discover)
   local out, have, clear = {}, {}, false
   for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own or not discover then
+    if not discover or ns.OwnTame(o) then
       clear = true
       fromObservation(o, out, have)
     end
@@ -381,7 +410,70 @@ function ns.DiscoverStatus()
   ns.Print(("%s (%s): Tiere %d von %d bekannt (%d Fährten, %d gefunden, %d bekannt) · Lehrtiere %d von %d · "
     .. "Ränge %d von %d · %d eigene Zellen"):format(ns.ZoneName(map), ns.Discovering() and "Entdecker" or "Komplett",
     p.beastsKnown, p.beasts, p.track, p.found, p.known, p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
+  local owner = ns.db and ns.db.discoverOwner
+  ns.Print(("Funde: %s · dieser Charakter %s · bisherige Funde %s"):format(
+    ns.Finds() == ns.db and "Konto" or "Charakter", ns.MyRep() or "?",
+    owner == nil and "noch nicht übernommen" or owner == "" and "gab es keine"
+      or ("übernommen von %s%s"):format(owner, owner == ns.MyRep() and " (dieser Charakter)" or "")))
 end
+
+-- ---- Bisherige Funde übernehmen (#43) ----
+-- Fährten und Zellen bis 0.10.0 liegen nur im Konto, ohne Charakter. Sie gehen einmal an den Hauptcharakter:
+-- den mit den meisten eigenen Sichtungen und Zähmungen (die tragen das Kürzel), bei Gleichstand das kleinere
+-- Kürzel. Jeder Charakter prüft das beim Einloggen; wer nicht der Hauptcharakter ist, fängt bei null an, bis
+-- sich der Hauptcharakter einloggt. Danach steht in ForeverHunterPetsDB.discoverOwner sein Kürzel („“: es gab
+-- nichts zu übernehmen). Nicht ganz genau: Was ein anderer Charakter nach dem Update und vor diesem Einloggen
+-- fand, steht auch im Konto und geht mit.
+local function mergeList(a, b)   -- „1431,1429“ + „1429,1411“
+  if not a then return b end
+  for x in b:gmatch("%d+") do
+    local have = false
+    for y in a:gmatch("%d+") do if x == y then have = true; break end end
+    if not have then a = a .. "," .. x end
+  end
+  return a
+end
+
+local function mergeCells(a, b)   -- „xyxy…“, jede Zelle einmal
+  a = a or ""
+  for i = 1, #b - 1, 2 do
+    local cell, have = b:sub(i, i + 1), false
+    for j = 1, #a - 1, 2 do if a:sub(j, j + 1) == cell then have = true; break end end
+    if not have then a = a .. cell end
+  end
+  return a
+end
+
+local function takeOver()
+  local db, char, me = ns.db, ns.char, ns.MyRep()
+  if not (db and char and me) or db.discoverOwner ~= nil then return end
+  if not (next(db.seenIn or {}) or next(db.loc or {})) then
+    db.discoverOwner = ""
+    return
+  end
+  local score = { [me] = 0 }
+  for rep in pairs(db.myReps or {}) do score[rep] = 0 end
+  for _, kind in ipairs({ { db.sights, ns.ParseSighting }, { db.obs, ns.ParseObservation } }) do
+    for _, s in ipairs(kind[1] or {}) do
+      local o = kind[2](s)
+      if o and score[o.rep] then score[o.rep] = score[o.rep] + 1 end
+    end
+  end
+  local best
+  for rep, n in pairs(score) do
+    if not best or n > score[best] or (n == score[best] and rep < best) then best = rep end
+  end
+  if best ~= me then return end
+  char.seenIn = char.seenIn or {}
+  for npc, list in pairs(db.seenIn or {}) do char.seenIn[npc] = mergeList(char.seenIn[npc], list) end
+  char.loc = char.loc or {}
+  for npc, maps in pairs(db.loc or {}) do
+    char.loc[npc] = char.loc[npc] or {}
+    for map, cells in pairs(maps) do char.loc[npc][map] = mergeCells(char.loc[npc][map], cells) end
+  end
+  db.discoverOwner = me
+end
+ns.On("PLAYER_LOGIN", function() ns.SafeCall("discover", takeOver) end)
 
 -- Die Probe „Kampf“ (E1) ist ausgewertet: Ein Kampf bringt nichts Zusätzliches, siehe
 -- docs/technik/api-befunde.md. Ihre Reste in den SavedVariables werden gelöscht.

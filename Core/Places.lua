@@ -9,6 +9,8 @@
 -- kann (#2): locIn[npc][uiMapID][melder] = „xyxy…“; ältere Einträge ohne Melder (bis 0.8.0 ein String je
 -- Karte) liegen unter OLD – sichtbar, sie zählen aber nicht. Nur neue Zellen zählen, höchstens MAX_CELLS je
 -- Tier, Karte und Melder. Neue eigene Zellen werden gesammelt und höchstens alle 5 Minuten geteilt (Core/Comm.lua).
+-- Eigene Zellen stehen zusätzlich je Charakter in ForeverHunterPetsCharDB.loc, gleiches Format (#43): Im
+-- Entdeckermodus zählen sie (ns.Finds, Core/Discover.lua), geteilt wird nur aus dem Konto.
 local _, ns = ...
 
 local GRID = 50
@@ -169,10 +171,28 @@ end
 -- Eigene Zellen werden immer gespeichert – auch was die Daten schon kennen, gehört zu den eigenen Funden –,
 -- geteilt aber nur, was die Daten nicht haben. Fremde Zellen werden nicht gespeichert, wenn die Daten oder die
 -- eigenen Zellen sie haben oder schon FOREIGN_ENOUGH andere Melder sie gemeldet haben.
+-- Eigene Zellen auch je Charakter; true, wenn eine neu war
+local function addOwnChar(npc, map, cells)
+  if not ns.char then return false end
+  ns.char.loc = ns.char.loc or {}
+  ns.char.loc[npc] = ns.char.loc[npc] or {}
+  local have = ns.char.loc[npc][map] or ""
+  local before = #have
+  for i = 1, #cells - 1, 2 do
+    local cell = cells:sub(i, i + 1)
+    if #have / 2 >= MAX_CELLS then break end
+    if not hasCell(have, cell) then have = have .. cell end
+  end
+  if #have == before then return false end
+  ns.char.loc[npc][map] = have
+  return true
+end
+
 -- foreign: Kürzel des Melders bei fremden Zellen, sonst nil.
 function ns.AddCells(npc, map, cells, foreign)
   local s = store(foreign)
   if not (s and npc and map and ns.ValidCells(cells)) then return 0 end
+  local charNew = not foreign and addOwnChar(npc, map, cells)
   s[npc] = s[npc] or {}
   local byRep = foreign and (s[npc][map] or {})
   local have = (foreign and byRep[foreign]) or (not foreign and s[npc][map]) or ""
@@ -189,7 +209,10 @@ function ns.AddCells(npc, map, cells, foreign)
       if foreign then foreignCount = countForeign() + 1 elseif not inData(npc, map, cell) then toShare = toShare .. cell end
     end
   end
-  if added == "" then return 0 end
+  if added == "" then
+    if charNew then changed() end
+    return 0
+  end
   if foreign then
     byRep[foreign] = have
     s[npc][map] = byRep
@@ -230,7 +253,12 @@ end
 
 -- ---- Für die Anzeige ----
 -- Mittelpunkte der Zellen eines Tiers auf einer Karte, in Prozent: { {x, y}, … }
--- ownOnly: nur eigene Zellen (Entdeckermodus)
+-- ownOnly: nur eigene Zellen (Entdeckermodus), und zwar die, die nach ns.Finds zählen
+local function ownStore(ownOnly)
+  if ownOnly and ns.Finds then return (ns.Finds() or {}).loc end
+  return store(false)
+end
+
 function ns.CellPoints(npc, map, ownOnly)
   local pts = {}
   local function add(cells)
@@ -240,7 +268,7 @@ function ns.CellPoints(npc, map, ownOnly)
       pts[#pts + 1] = { (cx + 0.5) * 100 / GRID, (cy + 0.5) * 100 / GRID }
     end
   end
-  add(((store(false) or {})[npc] or {})[map])
+  add(((ownStore(ownOnly) or {})[npc] or {})[map])
   if not ownOnly then add(foreignCells(npc, map)) end
   return pts
 end
@@ -248,7 +276,7 @@ end
 -- Karten, auf denen Zellen eines Tiers liegen: { [uiMapID] = Zahl }
 function ns.CellMaps(npc, ownOnly)
   local out = {}
-  for map, cells in pairs(((store(false) or {})[npc]) or {}) do out[map] = #cells / 2 end
+  for map, cells in pairs(((ownStore(ownOnly) or {})[npc]) or {}) do out[map] = #cells / 2 end
   if not ownOnly then
     for map in pairs(((store(true) or {})[npc]) or {}) do out[map] = (out[map] or 0) + #foreignCells(npc, map) / 2 end
   end
