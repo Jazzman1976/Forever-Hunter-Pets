@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-10-20T07:34:22.840Z",
+  generatedAt = "2026-10-20T12:54:56.424Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -15,7 +15,6 @@ ns.Data = {
     [8] = { de = "Krebs", icon = 132186 },
     [11] = { de = "Raptor", icon = 132193 },
     [12] = { de = "Weitschreiter", icon = 132198 },
-    [15] = { de = "Teufelsjäger" },
     [20] = { de = "Skorpid", icon = 132195 },
     [25] = { de = "Hyäne", icon = 132190 },
     [26] = { de = "Raubvogel", icon = 132192 },
@@ -148,7 +147,6 @@ ns.Data = {
     [3256] = { de = "Bluthornsensenklaue", fam = 11, min = 16, max = 18, cls = 0, zones = { 1413 } },
     [3424] = { de = "Donnerfalkenwolkenkitzler", fam = 27, min = 20, max = 20, cls = 0, zones = { 1413 } },
     [3566] = { de = "Flachlandstreuner", fam = 2, min = 9, max = 9, cls = 0, zones = { 1412 } },
-    [3774] = { de = "Teufelstöter", fam = 15, min = 22, max = 22, cls = 0, zones = {  } },
     [3809] = { de = "Ashenvalebär", fam = 4, min = 21, max = 22, cls = 0, zones = { 1440 } },
     [3810] = { de = "Alter Ashenvalebär", fam = 4, min = 25, max = 26, cls = 0, zones = { 1440 } },
     [3812] = { de = "Rasselnder Kriecher", fam = 8, min = 19, max = 19, cls = 0, zones = { 1440 } },

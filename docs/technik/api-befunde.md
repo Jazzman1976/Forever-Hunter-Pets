@@ -9,6 +9,8 @@ Der Client meldet `## Interface: 16001` und `WOW_PROJECT_ID == WOW_PROJECT_CAMEL
 - **Die Craft-API fehlt in Forever** (`GetNumCrafts`, `GetCraftInfo`, `CraftFrame`, Ereignisse `CRAFT_*`), ebenso `GetPetTrainingPoints`. Das alte Fenster „Wildtierausbildung“ ist so nicht auslesbar.
 - **Pet-Zauberbuch geht:** `C_SpellBook.GetSpellBookItemInfo(i, 1)` liefert `spellID` und Rang; die IDs sind die Zauber-IDs der Pet-Ränge (Beißen Rang 3 = 17256). `IsSpellKnown(id, true)` sagt je Rang, ob das aktive Pet ihn kann. Ohne `true` und für nicht aktive Ränge kommt `false`.
 - **Familie mit ID:** `UnitCreatureFamily("pet")` liefert Name und ID („Eber“, 5), die ID ist die Familien-ID, die auch die Daten nutzen.
+- **Auch Dämonen haben eine Familie** (20.10.2026, #80): Teufelspirscher und Teufelstöter liefern 15 „Teufelsjäger“, der Leerwandlerdiener (Diener eines NPC) 16 „Leerwandler“. Zähmen bricht bei ihnen mit „Ungültiges Ziel“ ab, bevor der Zauber beginnt.
+- **Kreaturtyp mit ID** (20.10.2026, #80): `UnitCreatureType(unit)` liefert Name und eine sprachunabhängige ID („Wildtier“, 1; „Dämon“, 3). `C_CreatureInfo.GetCreatureTypeInfo(1)` gibt `{ id = 1, name = "Wildtier" }`.
 - **Karten gehen:** `C_Map.GetMapArtLayers` (1002 × 668, Kacheln 256) und `GetMapArtLayerTextures`; `C_Map.GetAreaInfo(12)` = „Wald von Elwynn“; uiMapID 1429 stimmt.
 - `C_Spell.GetSpellDescription(id)` gab beim ersten Aufruf nichts zurück. Die Beschreibung aus den Daten bleibt Reserve.
 - Registrierbar: `UNIT_PET`, `UNIT_PET_TRAINING_POINTS`, `PET_BAR_UPDATE`, `SPELLS_CHANGED`, `LEARNED_SPELL_IN_SKILL_LINE`, `TRAINER_SHOW`, `PET_STABLE_SHOW`.

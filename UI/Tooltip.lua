@@ -34,16 +34,13 @@ local function quiet()
   return ns.Possessing()
 end
 
--- Nur ein wildes Tier unter der Maus, wie bei der Sichtung: mit Familie, keinem Spieler gehörend. Sonst bekämen
--- Wachen und Händler Fährten und Fundorte.
+-- Nur ein wildes Tier unter der Maus, wie bei der Sichtung (ns.WildBeast): mit Familie, Wildtier, keinem Spieler
+-- gehörend. Sonst bekämen Wachen, Händler und Dämonen (#80) Fährten und Fundorte.
 local function wildBeastUnderMouse(guid)
   local okG, g = pcall(UnitGUID, "mouseover")
   if not (okG and guid and ns.clean(g) == ns.clean(guid)) then return false end
-  local okF, _, fam = pcall(UnitCreatureFamily, "mouseover")
-  fam = okF and tonumber(ns.clean(fam))
-  if not fam then return false end
-  local okC, controlled = pcall(UnitPlayerControlled, "mouseover")
-  return okC and ns.clean(controlled) == false, fam
+  local fam = ns.WildBeast("mouseover")
+  return fam ~= nil, fam
 end
 
 local function statusLine(id, guid)
