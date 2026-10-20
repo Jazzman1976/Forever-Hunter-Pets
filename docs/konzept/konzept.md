@@ -30,7 +30,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
 6. **Gleiches sieht gleich aus und ist gleich** (Regel für immer, 16.10.2026). Derselbe Zustand bekommt überall dasselbe Element, Wort und Symbol; neue Ansichten nehmen vorhandene Bausteine (Kästchen aus „Fähigkeiten“, `ns.FamilyIcon`, `ns.StatusWord`, `ns.TeachText`).
-7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahmen: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es) und die Zeile für Tiere, deren Lehre noch niemand kennt (#23, sonst wirkt das Tier, als könne es nichts).
+7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahmen: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es), der Tooltip an der Modusanzeige (#42, ausdrücklich gewünscht) und die Zeile für Tiere, deren Lehre noch niemand kennt (#23, sonst wirkt das Tier, als könne es nichts).
 8. **Nicht raten.** Was niemand weiß, sagt das Addon („? unbekannt“, „? unklar“, „Fundort unbekannt“). Keine Wahrscheinlichkeiten, keine Hochrechnung aus Familie und Stufe.
 
 ## 3 Begriffe
@@ -111,7 +111,8 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | Sammeln und Teilen | an | an |
 
 - **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde meiner anderen Charaktere zeigen“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
-- **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad.
+- **Der Entdeckermodus ist der empfohlene und der Standard** (Nutzer, 20.10.2026, #42: „Ich möchte niemandem etwas verbieten. Ich möchte überzeugen.“). Der Startdialog zeigt ihn zuerst, mit „Empfohlen.“ als Wort; der Komplettmodus folgt darunter, ehrlich als Weg für alle, die nicht suchen wollen. Wer den Dialog ohne Wahl schließt, spielt im Entdeckermodus; auch „Standard wiederherstellen“ in den Einstellungen ergibt ihn.
+- **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Bis 1.0.0 mit einem Absatz zur Beta (ermutigend: Lücken warten darauf, entdeckt zu werden). Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad; Hover erklärt ihn und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen.
 - **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „? unentdeckt“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus).
 - **Tipp Namensplaketten:** ein Satz am Ende der Moduswahl in den Einstellungen, bewusst unauffällig (nicht jeder mag Plaketten).
 
@@ -267,6 +268,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
 | M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026) |
+
+Zum Release 1.0.0: **Beta-Hinweis im Startdialog entfernen** (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42).
 
 Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 

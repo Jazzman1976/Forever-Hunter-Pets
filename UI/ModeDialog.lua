@@ -1,11 +1,13 @@
 -- Forever Hunter Pets · Startdialog: Komplett- oder Entdeckermodus (Meilenstein M2, Inkrement E2).
 -- Erscheint, wenn ein Charakter das Addon öffnet, der noch keinen Modus gewählt hat – jeder Charakter wird
--- einmal gefragt. Bis zur Wahl zeigt das Addon nichts, was spoilern könnte. ESC schließt ohne Wahl.
+-- einmal gefragt. Bis zur Wahl zeigt das Addon nichts, was spoilern könnte. Der Entdeckermodus steht oben und
+-- ist empfohlen; wer den Dialog ohne Wahl schließt (ESC), hat ihn gewählt (#42). Zeigt /fhp start den Dialog
+-- bei schon gewähltem Modus, ändert Schließen nichts.
 local _, ns = ...
 local L = ns.L
 local W = ns.W
 
-local DW, DH = 520, 330
+local DW = 520
 local LOGO = "Interface\\AddOns\\Forever-Hunter-Pets\\media\\logo"
 local dialog, after
 
@@ -27,14 +29,24 @@ end
 
 local function choose(discover)
   ns.SetMode(discover)
-  local fn = after   -- vor dem Ausblenden: OnHide löscht die Folgeaktion (für ESC ohne Wahl)
+  local fn = after   -- vor dem Ausblenden: OnHide löscht die Folgeaktion
   dialog:Hide()
+  if fn then ns.SafeCall("window", fn) end
+end
+
+-- Geschlossen ohne Wahl: Entdeckermodus, danach wie nach einem Klick die Folgeaktion. War schon ein Modus
+-- gewählt (nach einem Klick oder bei /fhp start), bleibt alles, wie es ist.
+local function closed()
+  local fn = after
+  after = nil
+  if ns.ModeChosen() then return end
+  ns.SetMode(true)
   if fn then ns.SafeCall("window", fn) end
 end
 
 local function create()
   local f = CreateFrame("Frame", "ForeverHunterPetsModeDialog", UIParent)
-  f:SetSize(DW, DH)
+  f:SetWidth(DW)
   f:SetPoint("CENTER", 0, 60)
   f:SetFrameStrata("DIALOG")
   f:SetToplevel(true)
@@ -56,13 +68,24 @@ local function create()
   local intro = W.Text(f, "GameFontHighlight", true)
   intro:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
   intro:SetWidth(DW - 96 - 16 * 3)
-  intro:SetText(L["Forever Hunter Pets can show you everything that is known – or only what you find yourself."])
+  intro:SetText(L["Forever Hunter Pets turns finding pets into a hunt of your own – or simply shows you everything that is known."])
 
-  -- zwei Wahlmöglichkeiten untereinander: Knopf, darunter ein Satz Erklärung
-  local y = -16 - 96 - 20
+  -- Die Höhe folgt den Texten (je nach Sprache verschieden lang): y läuft von oben nach unten mit
+  local y = -16 - math.max(96, 4 + title:GetStringHeight() + 10 + intro:GetStringHeight()) - 14
+
+  -- Hinweis zur Beta, „Beta“ als Wort in Gold. Bis 1.0.0 – zum Release 1.0.0 entfernen
+  -- (docs/konzept/konzept.md, Meilensteine und Stand)
+  local beta = W.Text(f, "GameFontHighlightSmall", true)
+  beta:SetPoint("TOPLEFT", 16, y)
+  beta:SetWidth(DW - 32)
+  beta:SetText("|cffffd100" .. L["Beta"] .. "|r – "
+    .. L["Forever Hunter Pets is still young, and hunters are gathering its knowledge right now. Some beasts, ranks or spawn points may still be missing or incomplete. That isn't broken – it's just waiting to be discovered. Every time you play with the addon, you help fill the gaps for everyone. Thank you, and happy hunting!"])
+  y = y - beta:GetStringHeight() - 16
+
+  -- zwei Wahlmöglichkeiten untereinander, der Entdeckermodus zuerst: Knopf, daneben die Erklärung
   for _, c in ipairs({
-    { false, L["Complete mode"], L["Shows the complete data – you don't have to search for anything."] },
-    { true, L["Explorer mode"], L["Shows only what you have found yourself, and how much there is still to discover."] },
+    { true, L["Explorer mode"], L["Recommended. Track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for."] },
+    { false, L["Complete mode"], L["If you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost."] },
   }) do
     local b = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     b:SetSize(180, 26)
@@ -70,18 +93,25 @@ local function create()
     b:SetText(c[2])
     b:SetScript("OnClick", function() ns.SafeCall("mode", choose, c[1]) end)
     local text = W.Text(f, "GameFontHighlightSmall", true)
-    text:SetPoint("LEFT", b, "RIGHT", 12, 0)
+    text:SetPoint("TOPLEFT", b, "TOPRIGHT", 12, 0)
     text:SetWidth(DW - 180 - 16 * 2 - 12)
     text:SetText(c[3])
-    y = y - 44
+    y = y - math.max(26, text:GetStringHeight()) - 14
   end
 
+  local chars = W.Text(f, "GameFontHighlightSmall", true)
+  chars:SetPoint("TOPLEFT", 16, y)
+  chars:SetWidth(DW - 32)
+  chars:SetText(L["Each character discovers on its own. In the settings you can show what your other characters have found."])
+  y = y - chars:GetStringHeight() - 10
+
   local note = W.Text(f, "GameFontDisableSmall", true)
-  note:SetPoint("BOTTOMLEFT", 16, 16)
+  note:SetPoint("TOPLEFT", 16, y)
   note:SetWidth(DW - 32)
   note:SetText(L["You can change this for this character at any time in the settings."])
+  f:SetHeight(-y + note:GetStringHeight() + 16)
 
-  f:SetScript("OnHide", function() after = nil end)
+  f:SetScript("OnHide", function() ns.SafeCall("mode", closed) end)
   return f
 end
 
