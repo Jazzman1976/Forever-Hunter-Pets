@@ -24,6 +24,8 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 | `faehigkeiten.json` | `[{ en?, de?, icon?, kind, source, speed?, families, ranks: [{ id, rank, level?, tp? }], beleg }]` für Angaben, die keine Erhebung liefert (etwa das Angriffstempo); geht vor der Erhebung | von Hand |
 | `tiere.json`, `familien.json` | `{ ID: { de?, en?, …, beleg } }`; gehen vor Sichtung und Erhebung | von Hand |
 
+**Fremde Einträge sind entschärft (#48):** In `sichtungen.json`, `beobachtungen.json`, `zellen-fremd.json` und `melder-wege.json` ist jedes Kürzel, das nicht in `eigene-melder.json` steht, nicht das Kürzel aus dem Spiel, sondern dessen HMAC-SHA256 mit dem geheimen Salz aus `.ignore/melder-salz.txt` (die ersten 8 Hex-Zeichen, Format wie bisher). In `melder-wege.json` gilt das für Melder und Absender gleich. `zeit` ist bei fremden Sichtungen und Zähmungen der Beginn des Tages (UTC). Fremde Zähmungen gelten beim Import nur als dieselbe, wenn der ganze Eintrag gleich ist; eigene wie bisher bei gleichem Tier und gleicher Sekunde.
+
 Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakternamens; Namen werden nirgends gespeichert.
 
 ## `tools/data.json`

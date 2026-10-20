@@ -184,7 +184,7 @@ What your pet knows does not count – you only have the rank once the game says
 
 Addons can't reach the internet, so players share in the game: over your guild, your group and a hidden channel (`FHPetsNet`). Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. Messages are throttled, so the channel stays quiet.
 
-What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity.
+What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
 
 Switch **Share observations** off and nothing is sent or received.
 
@@ -236,4 +236,4 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 **A beast shows no status in the tooltip.** Status is shown in explorer mode only, and only for beasts that live in this zone or that you tracked here.
 
-**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds).
+**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds the short codes of players who shared with you – please don't post it publicly.
