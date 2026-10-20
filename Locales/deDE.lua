@@ -158,6 +158,8 @@ ns.Locales.deDE = {
   -- Beobachtungen beim Zähmen
   ["Observed: %s (level %d) brought %s"] = "Beobachtet: %s (Stufe %d) brachte %s mit",
   ["no ability"] = "keine Fähigkeit",
+  ["Discovered: %s – %s: %d of %d ranks"] = "Entdeckt: %s – %s: %d von %d Rängen",
+  ["Discovered: abilities of %s known – %s: %d of %d beasts"] = "Entdeckt: Fähigkeiten von %s bekannt – %s: %d von %d Tieren",
   ["seen when you tamed it"] = "beim Zähmen von dir gesehen",
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel

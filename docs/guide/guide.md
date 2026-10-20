@@ -165,7 +165,7 @@ The game only tells the addon where **you** are, not where the beast is. So a sp
 
 ### Taming
 
-When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *abilities known* in its zone.
+When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *abilities known* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: abilities of … known – Duskwood: 4 of 9 beasts* when the beast becomes *abilities known* there. Taming a beast you already knew stays quiet.
 
 ### Beast Training and the pet trainer
 
