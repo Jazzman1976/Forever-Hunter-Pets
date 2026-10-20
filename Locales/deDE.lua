@@ -239,4 +239,5 @@ ns.Locales.deDE = {
   ["No beast found yet"] = "Noch kein Tier gefunden",
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
+  ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",
 }

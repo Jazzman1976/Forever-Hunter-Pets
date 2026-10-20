@@ -93,7 +93,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
 ![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
-**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet.
+**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain beasts on).
 
 - **Explorer mode:** each beast carries its status, and the checkbox follows it:
 
@@ -116,7 +116,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 - Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
 - **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
 
-All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come.
+All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come. In complete mode the counters and tiles count what the list shows: with uncertain beasts switched off, uncertain ranks count nowhere; switched on, they count, and the rank tile's tooltip carries a **?** unless another beast of the zone teaches that rank for sure.
 
 ## Training
 
@@ -137,6 +137,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 3. **Every rank it teaches**, with the ability icon: *– learned* (grey) if you already know the rank, *– new* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
 5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
+6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 players – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already know (*Show known abilities* – this also hides *teaches nothing*).
 
@@ -190,7 +191,7 @@ Switch **Share observations** off and nothing is sent or received.
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
+- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. That also goes for *teaches nothing*. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
 - **WoW Forever is in beta** and changes weekly. Where nothing is known, the addon says so instead of guessing.

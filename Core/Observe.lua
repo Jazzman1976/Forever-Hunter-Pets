@@ -151,6 +151,12 @@ function ns.Observed(npcId, a, r)
   return nil
 end
 
+-- Reichen diese fremden Melder { [rep] = true } (n verschiedene)? Dieselbe Schwelle wie oben, etwa für fremde
+-- Zähmungen, die gar keinen Rang zeigten („lehrt nichts“, #40)
+function ns.ForeignEnough(reps, n)
+  return enough(reps, n)
+end
+
 -- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
 function ns.OwnSeen(npcId, a, r)
   for _, o in ipairs(index()[npcId] or {}) do

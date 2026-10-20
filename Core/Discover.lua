@@ -224,7 +224,8 @@ function ns.StatusText(npc, map)
 end
 
 -- „? unklar“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
--- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter)
+-- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter).
+-- Nicht Belegtes trägt hinter dem Icon dasselbe „?“ bzw. „!“ wie im Tooltip (#40).
 function ns.TeachText(npc)
   local L = ns.L
   local info = ns.TeachInfo(npc, ns.Discovering())
@@ -232,7 +233,7 @@ function ns.TeachText(npc)
   if #info == 0 then return L["teaches nothing"] end
   local parts = {}
   for _, e in ipairs(info) do
-    parts[#parts + 1] = ("|T%s:14:14|t"):format(ns.AbilityIcon(e.a))
+    parts[#parts + 1] = ("|T%s:14:14|t"):format(ns.AbilityIcon(e.a)) .. ns.ConfMark(e.conf)
   end
   return (L["teaches %s"]):format(table.concat(parts, " "))
 end
@@ -277,32 +278,68 @@ local function fromObservation(o, out, have)
   end
 end
 
--- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r }, … }, leer = lehrt nichts.
--- discover = true: nur eigene Zähmungen (Entdeckermodus). Sonst auch Daten und fremde Zähmungen.
+-- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts.
+-- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
+-- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab 3 Meldern (ns.Observed), auch „lehrt nichts“
+-- (#40, vorher reichte eine einzige fremde Zähmung).
+-- Zweiter Wert (nur Komplettmodus): Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch
+-- Belege (Hinweiszeile im Tooltip, #40).
 function ns.TeachInfo(npc, discover)
-  local out, have, clear = {}, {}, false
-  for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if not discover or ns.OwnTame(o) then
-      clear = true
-      fromObservation(o, out, have)
+  local out, have, clear, unsure = {}, {}, false, false
+  local function add(a, r, conf)
+    local e = have[r]
+    if not e then
+      e = { a = a, r = r, conf = conf }
+      have[r] = e
+      out[#out + 1] = e
+    elseif conf < e.conf then
+      e.conf = conf
     end
   end
-  if not discover then
-    -- nur, was die Einstellungen zeigen; Widerlegtes nie
-    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
-      if ns.ShowConf(e.conf) then
-        clear = true
-        addSeen(out, have, e.a, e.r)
+  local empty, nEmpty = {}, 0   -- fremde Melder, deren Zähmung keinen Rang zeigte
+  for _, o in ipairs(ns.ObservationsOf(npc)) do
+    local seen = {}
+    fromObservation(o, seen, {})
+    if ns.OwnTame(o) then
+      clear = true
+      for _, e in ipairs(seen) do add(e.a, e.r, ns.CONF_SURE) end
+    elseif not discover then
+      if #seen == 0 and not empty[o.rep] then
+        empty[o.rep] = true
+        nEmpty = nEmpty + 1
+      end
+      for _, e in ipairs(seen) do
+        local v = ns.Observed(npc, e.a, e.r)
+        if v == "seen" then
+          clear = true
+          add(e.a, e.r, ns.CONF_SURE)
+        elseif v == nil then
+          unsure = true   -- wie im Tooltip nicht gezeigt, bis 3 Melder ihn sahen
+        end
       end
     end
   end
-  if not clear then return nil end
+  if not discover then
+    -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
+    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
+      if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
+      if ns.ShowConf(e.conf) then
+        clear = true
+        add(e.a, e.r, e.conf)
+      end
+    end
+    if nEmpty > 0 then
+      if ns.ForeignEnough(empty, nEmpty) then clear = true
+      elseif not clear then unsure = true end
+    end
+  end
+  if not clear then return nil, unsure end
   table.sort(out, function(x, y)
     local nx, ny = ns.AbilityName(x.a), ns.AbilityName(y.a)
     if nx ~= ny then return nx < ny end
     return (x.r.rank or 0) < (y.r.rank or 0)
   end)
-  return out
+  return out, unsure
 end
 
 -- ---- Fortschritt einer Zone ----
@@ -312,42 +349,60 @@ end
 -- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
 --   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown und ranksFound selbst
 --                   identifiziert.
---   Komplettmodus:  X aus allen Daten – beastsKnown = irgendwer weiß, was es lehrt (Daten oder Zähmung);
---                   Lehrtiere und Ränge sind damit alle bekannt (X = Y).
+--   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
+--                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
+--                   Einstellungen ausblenden, zählt weder in X noch in Y.
 -- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone.
 function ns.ZoneProgress(map)
   local discover = ns.Discovering()
   local p = { beasts = 0, beastsKnown = 0, track = 0, found = 0, known = 0, teachers = 0, teachersKnown = 0,
     ranks = 0, ranksFound = 0, cells = 0, points = 0 }
-  local teaches = {}   -- npc → { r = true } aus den Daten, dazu aus Zähmungen (unten)
+  local teaches = {}   -- npc → { [r] = Belegung }
+  local info = {}      -- npc → ns.TeachInfo(npc, false) (Komplettmodus)
   local abilityOf, order = {}, {}   -- Rang → Fähigkeit und Platz in den Daten, für die Kacheln (#19)
   for i, a in ipairs(D.abilities) do
     for _, x in ipairs(a.ranks) do abilityOf[x], order[x] = a, i end
-    if a.source == "tame" then
-      for _, t in ipairs(a.teach) do
-        local r
-        for _, x in ipairs(a.ranks) do if x.rank == t[2] then r = x end end
-        if r and (t[3] or 1) < ns.CONF_REFUTED then
-          teaches[t[1]] = teaches[t[1]] or {}
-          teaches[t[1]][r] = true
+  end
+  if discover then
+    -- Grundgerüst aus den Daten, egal wie belegt (Widerlegtes nie)
+    for _, a in ipairs(D.abilities) do
+      if a.source == "tame" then
+        for _, t in ipairs(a.teach) do
+          local r
+          for _, x in ipairs(a.ranks) do if x.rank == t[2] then r = x end end
+          if r and (t[3] or 1) < ns.CONF_REFUTED then
+            teaches[t[1]] = teaches[t[1]] or {}
+            teaches[t[1]][r] = ns.CONF_SURE
+          end
         end
       end
     end
-  end
-  local ranksAll, ranksFound = {}, {}
-  -- Zähmungen (eigene und geteilte) zeigen Lehrtiere auch bei Tieren, die (noch) nicht in den Daten stehen
-  for npc in pairs(ns.BeastsIn(map)) do
-    for _, o in ipairs(ns.ObservationsOf(npc)) do
-      local out = {}
-      fromObservation(o, out, {})
-      for _, e in ipairs(out) do
+    -- Zähmungen (eigene und geteilte) zeigen Lehrtiere auch bei Tieren, die (noch) nicht in den Daten stehen
+    for npc in pairs(ns.BeastsIn(map)) do
+      for _, o in ipairs(ns.ObservationsOf(npc)) do
+        local out = {}
+        fromObservation(o, out, {})
+        for _, e in ipairs(out) do
+          if e.a.source == "tame" then
+            teaches[npc] = teaches[npc] or {}
+            teaches[npc][e.r] = ns.CONF_SURE
+          end
+        end
+      end
+    end
+  else
+    -- nur, was gezeigt wird, mit Belegung, wie Liste und Tooltip
+    for npc in pairs(ns.BeastsIn(map)) do
+      info[npc] = ns.TeachInfo(npc, false)
+      for _, e in ipairs(info[npc] or {}) do
         if e.a.source == "tame" then
           teaches[npc] = teaches[npc] or {}
-          teaches[npc][e.r] = true
+          teaches[npc][e.r] = e.conf
         end
       end
     end
   end
+  local ranksAll, ranksFound, rankConf = {}, {}, {}
   -- Kacheln im Reiter „Gebiet“ (#19): je Lehrtier und je Rang, ob man es kennt. Feste Reihenfolge (NPC-ID,
   -- Fähigkeit und Rang), damit eine Kachel beim Entdecken an ihrem Platz bleibt und sich nur umdreht.
   p.teacherList, p.rankList = {}, {}
@@ -358,7 +413,7 @@ function ns.ZoneProgress(map)
     if p[st] then p[st] = p[st] + 1 end
     if discover then
       if st == "known" then p.beastsKnown = p.beastsKnown + 1 end
-    elseif ns.TeachInfo(npc, false) then
+    elseif info[npc] then
       p.beastsKnown = p.beastsKnown + 1
     end
     p.cells = p.cells + ownCells(npc, map)
@@ -368,8 +423,10 @@ function ns.ZoneProgress(map)
       local known = not discover or st == "known"
       if known then p.teachersKnown = p.teachersKnown + 1 end
       p.teacherList[#p.teacherList + 1] = { npc = npc, known = known }
-      for r in pairs(teaches[npc]) do
+      for r, conf in pairs(teaches[npc]) do
         ranksAll[r] = true
+        -- beste Belegung über die Lehrtiere der Zone: Zeichen im Tooltip der Rang-Kachel (#40)
+        rankConf[r] = math.min(rankConf[r] or conf, conf)
         -- erkannte Lehrtiere je Rang: Ziel für den Klick auf eine Rang-Kachel, wenn ns.Teachers keins nennt
         if known then
           teachersOf[r] = teachersOf[r] or {}
@@ -391,7 +448,8 @@ function ns.ZoneProgress(map)
   for r in pairs(ranksAll) do
     local npcs = teachersOf[r] or {}
     table.sort(npcs)
-    p.rankList[#p.rankList + 1] = { a = abilityOf[r], r = r, found = ranksFound[r] == true, npcs = npcs }
+    p.rankList[#p.rankList + 1] = { a = abilityOf[r], r = r, found = ranksFound[r] == true, npcs = npcs,
+      conf = rankConf[r] }
   end
   table.sort(p.teacherList, function(x, y) return x.npc < y.npc end)
   table.sort(p.rankList, function(x, y)
