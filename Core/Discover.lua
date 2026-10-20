@@ -179,12 +179,12 @@ end
 -- ---- Name einer Fährte ----
 -- Von weitem (über etwa 28 m) speichert die Sichtung nichts, die Fährte aber schon. Damit so ein Tier nicht
 -- „Unbekanntes Tier (#833)“ heißt, merkt sich das Addon Name und Familie dazu: lokal, nicht geteilt,
--- ForeverHunterPetsDB.trackNames[npc] = „Familie;Name“ in Client-Sprache. Die Sichtung geht vor; sobald es
--- eine gibt, fällt der Eintrag weg.
+-- ForeverHunterPetsDB.trackNames[npc] = „Familie;Name“ in Client-Sprache. Die eigene Sichtung geht vor; sobald
+-- es eine gibt, fällt der Eintrag weg. Eine fremde verdrängt ihn nicht (#47).
 function ns.NoteTrackName(npc, fam, name)
   if not (ns.db and npc) then return end
   local names = ns.db.trackNames
-  if ns.SeenName and ns.SeenName(npc) then
+  if ns.SeenName and select(2, ns.SeenName(npc)) then
     if names then names[npc] = nil end
     return
   end

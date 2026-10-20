@@ -146,16 +146,19 @@ function ns.PetFamily()
   return nil
 end
 
--- Name in Client-Sprache, wo es einen gibt (#3): aus einer Sichtung (Core/Sightings.lua), aus den Daten, aus
--- einer Fährte (nur von weitem gesehen, Core/Discover.lua); dann aus den Daten in der anderen Sprache; sonst
--- „Unbekanntes Tier (#ID)“ – dann kennt ihn noch niemand, und Anvisieren liefert ihn
+-- Name in Client-Sprache, wo es einen gibt (#3): aus einer eigenen Sichtung (Core/Sightings.lua), aus den Daten,
+-- aus einer Fährte (nur von weitem gesehen, Core/Discover.lua), aus einer fremden Sichtung; dann aus den Daten in
+-- der anderen Sprache; sonst „Unbekanntes Tier (#ID)“ – dann kennt ihn noch niemand, und Anvisieren liefert ihn.
+-- Die fremde Sichtung steht hinter den Daten, damit ein einzelner Melder keinen bekannten Namen ersetzt (#47).
 function ns.BeastName(id)
-  local seen = ns.SeenName and ns.SeenName(id)
-  if seen then return seen end
+  local seen, own
+  if ns.SeenName then seen, own = ns.SeenName(id) end
+  if seen and own then return seen end
   local b = D.beasts[id]
   if ownName(b) then return ownName(b) end
   local far = ns.TrackName and ns.TrackName(id)
   if far then return far end
+  if seen then return seen end
   if b and (b.de or b.en) then return ns.Name(b) end
   return (L["Unknown beast (#%d)"]):format(id)
 end

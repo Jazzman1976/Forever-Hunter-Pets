@@ -38,7 +38,7 @@ function ns.ParseSighting(s)
   return o
 end
 
--- byNpc[npc] = { names = { [Sprache] = Name }, min, max, fam, cls, speed, reps = { [Kürzel] = true }, own }
+-- byNpc[npc] = { names = { [Sprache] = Name }, ownNames = { [Sprache] = Name }, min, max, fam, cls, speed, reps = { [Kürzel] = true }, own }
 -- keys[Schlüssel] = Stelle in ForeverHunterPetsDB.sights
 local byNpc, keys
 local function key(o) return o.npc .. ":" .. o.level .. ":" .. o.lang .. ":" .. o.rep end
@@ -46,11 +46,12 @@ local function key(o) return o.npc .. ":" .. o.level .. ":" .. o.lang .. ":" .. 
 local function add(o, i)
   local b = byNpc[o.npc]
   if not b then
-    b = { names = {}, reps = {}, min = o.level, max = o.level, fam = o.fam, cls = o.cls }
+    b = { names = {}, ownNames = {}, reps = {}, min = o.level, max = o.level, fam = o.fam, cls = o.cls }
     byNpc[o.npc] = b
   end
   -- der eigene Name geht vor, sonst bleibt der erste
   if o.own or not b.names[o.lang] then b.names[o.lang] = o.name end
+  if o.own then b.ownNames[o.lang] = o.name end
   if o.own then b.own = true; b.fam, b.cls = o.fam, o.cls end
   if o.speed and (o.own or not b.speed) then b.speed = o.speed end
   b.min, b.max = math.min(b.min, o.level), math.max(b.max, o.level)
@@ -72,11 +73,12 @@ function ns.SightingsChanged() byNpc = nil end
 function ns.SightingCount() return #((ns.db and ns.db.sights) or {}) end
 function ns.SeenBeast(npc) return index()[npc] end
 
--- Name eines gesichteten Tiers in der Client-Sprache, sonst nil
+-- Name eines gesichteten Tiers in der Client-Sprache und ob er aus einer eigenen Sichtung stammt, sonst nil (#47)
 function ns.SeenName(npc)
   local b = index()[npc]
   if not b then return nil end
-  return b.names[GetLocale and GetLocale() or "enUS"]
+  local lang = GetLocale and GetLocale() or "enUS"
+  return b.names[lang], b.ownNames[lang] ~= nil
 end
 
 -- Hat die gespeicherte Sichtung an Stelle i schon ein Tempo? (neun Felder statt acht)
