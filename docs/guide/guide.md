@@ -58,7 +58,9 @@ Until you choose, the addon shows nothing that could spoil the search; it alread
 | Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
 | Collecting and sharing | on | on – explorers help everybody |
 
-Your finds count for your whole account: a beast one of your characters found counts as found for your other characters as well. The mode is chosen per character.
+In explorer mode every character discovers on its own: what your other characters sighted, found or tamed does not count for this one. If you'd rather share your finds across the account, switch on *Show finds of my other characters* below *Explorer mode* in the settings. The mode is chosen per character, and so is this option. Collecting and sharing with other players work the same either way.
+
+**Coming from version 0.10.0 or older:** back then finds counted for the whole account. Your main character – the one with the most sightings and tamings – keeps them; your other characters start from scratch.
 
 ## The window
 
@@ -198,6 +200,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Explorer mode | off (asked at first start) | explorer mode for this character; off = complete mode |
+| – Show finds of my other characters | off | in explorer mode, also count what your other characters found (per character) |
 | Minimap button | on | button at the minimap; Ctrl + drag to move it |
 | Remember filters | on | keeps the filters of *Abilities* and *Training* per character |
 | Beast tooltips | on | the addon's lines in beast tooltips |
@@ -228,4 +231,4 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 **A beast shows no status in the tooltip.** Status is shown in explorer mode only, and only for beasts that live in this zone or that you tracked here.
 
-**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters).
+**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds).

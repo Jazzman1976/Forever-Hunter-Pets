@@ -131,8 +131,17 @@ local function registerSettings()
       ns.char.modeChosen = true
       ns.SafeCall("mode", ns.ModeChanged)
     end)
-    Settings.CreateCheckbox(category, mode,
+    local modeInit = Settings.CreateCheckbox(category, mode,
       L["Shows only what you have found yourself: beasts you sighted, found or tamed, and what they teach. Abilities and ranks stay visible, and the addon tells you how much there is still to discover. Switched off (complete mode), it shows the complete data. Applies to this character. Tip: with enemy nameplates switched on, the addon notices beasts as you ride past."])
+    -- Funde der anderen Charaktere (#43): Unteroption, eingerückt und nur bedienbar im Entdeckermodus
+    local shared = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_ShareFinds", "shareFinds", ns.char,
+      Settings.VarType.Boolean, L["Show finds of my other characters"], false)
+    shared:SetValueChangedCallback(function() ns.SafeCall("mode", ns.ModeChanged) end)
+    local sharedInit = Settings.CreateCheckbox(category, shared,
+      L["Also counts what your other characters on this account have sighted, found and tamed. Switched off, this character discovers everything on its own."])
+    if modeInit and sharedInit and sharedInit.SetParentInitializer then
+      pcall(sharedInit.SetParentInitializer, sharedInit, modeInit, function() return ns.char.discover == true end)
+    end
   end
   local setting = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_Minimap", "minimap", ns.db.ui,
     Settings.VarType.Boolean, L["Minimap button"], true)

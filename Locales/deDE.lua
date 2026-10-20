@@ -187,6 +187,9 @@ ns.Locales.deDE = {
   ["Shows only what you have found yourself, and how much there is still to discover."] = "Zeigt nur, was du selbst gefunden hast, und wie viel es noch zu entdecken gibt.",
   ["You can change this for this character at any time in the settings."] = "Du kannst das für diesen Charakter jederzeit in den Einstellungen ändern.",
   ["Shows only what you have found yourself: beasts you sighted, found or tamed, and what they teach. Abilities and ranks stay visible, and the addon tells you how much there is still to discover. Switched off (complete mode), it shows the complete data. Applies to this character. Tip: with enemy nameplates switched on, the addon notices beasts as you ride past."] = "Zeigt nur, was du selbst gefunden hast: Tiere, die du gesichtet, gefunden oder gezähmt hast, und was sie lehren. Fähigkeiten und Ränge bleiben sichtbar, und das Addon sagt dir, wie viel es noch zu entdecken gibt. Ausgeschaltet (Komplettmodus) zeigt es den kompletten Datenbestand. Gilt für diesen Charakter. Tipp: Mit eingeschalteten Namensplaketten für Gegner bemerkt das Addon Tiere schon beim Vorbeireiten.",
+  -- Entdecken pro Charakter (#43)
+  ["Show finds of my other characters"] = "Funde meiner anderen Charaktere zeigen",
+  ["Also counts what your other characters on this account have sighted, found and tamed. Switched off, this character discovers everything on its own."] = "Zählt auch, was deine anderen Charaktere auf diesem Konto gesichtet, gefunden und gezähmt haben. Ausgeschaltet entdeckt dieser Charakter alles selbst.",
   -- Entdecken: Modi in den Ansichten (E3)
   ["%d undiscovered"] = "%d unentdeckt",
   ["? unknown"] = "? unbekannt",
