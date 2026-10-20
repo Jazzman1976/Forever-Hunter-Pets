@@ -30,7 +30,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
 6. **Gleiches sieht gleich aus und ist gleich** (Regel für immer, 16.10.2026). Derselbe Zustand bekommt überall dasselbe Element, Wort und Symbol; neue Ansichten nehmen vorhandene Bausteine (Kästchen aus „Fähigkeiten“, `ns.FamilyIcon`, `ns.StatusWord`, `ns.TeachText`).
-7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahmen: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es) und die Zeile für Tiere, deren Lehre noch niemand kennt (#23, sonst wirkt das Tier, als könne es nichts).
+7. **Knapp.** Keine Erklärtexte in Listen und Tooltips; Markierungen sind ein Wort oder „?“ / „!“. Erklärt wird in den Einstellungen und im Startdialog. Ausnahmen: der Erklär-Tooltip am Zähler „Tiere“ (dort sucht man es), der Tooltip an der Modusanzeige (#42, ausdrücklich gewünscht) und die Zeile für Tiere, deren Lehre noch niemand kennt (#23, sonst wirkt das Tier, als könne es nichts).
 8. **Nicht raten.** Was niemand weiß, sagt das Addon („? unbekannt“, „? unklar“, „Fundort unbekannt“). Keine Wahrscheinlichkeiten, keine Hochrechnung aus Familie und Stufe.
 
 ## 3 Begriffe
@@ -66,7 +66,7 @@ Wildtierkunde zeigt in Forever keine Fähigkeiten (an Blizzard gemeldet) und tau
 
 ### Ablage
 
-Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `filters`). Funde gelten kontoweit („Erkundung je Konto“), der Modus je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
+Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `shareFinds`, `filters`, dazu die eigenen Funde `seenIn` und `loc`). Gesammelt und geteilt wird kontoweit; im Entdeckermodus zählen die Funde des Charakters, auf Wunsch die des Kontos (#43). Der Modus gilt je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
 
 ### Vom Spiel ins Repo
 
@@ -110,8 +110,9 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | Ausbildung | unverändert | unverändert |
 | Sammeln und Teilen | an | an |
 
-- **Modus je Charakter, Funde je Konto.** Ein zweiter Charakter wählt neu, sieht aber die Funde des ersten als eigene.
-- **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad.
+- **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde meiner anderen Charaktere zeigen“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
+- **Der Entdeckermodus ist der empfohlene und der Standard** (Nutzer, 20.10.2026, #42: „Ich möchte niemandem etwas verbieten. Ich möchte überzeugen.“). Der Startdialog zeigt ihn zuerst, mit „Empfohlen.“ als Wort; der Komplettmodus folgt darunter, ehrlich als Weg für alle, die nicht suchen wollen. Wer den Dialog ohne Wahl schließt, spielt im Entdeckermodus; auch „Standard wiederherstellen“ in den Einstellungen ergibt ihn.
+- **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Bis 1.0.0 mit einem Absatz zur Beta (ermutigend: Lücken warten darauf, entdeckt zu werden). Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad; Hover erklärt ihn und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen.
 - **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „? unentdeckt“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus).
 - **Tipp Namensplaketten:** ein Satz am Ende der Moduswahl in den Einstellungen, bewusst unauffällig (nicht jeder mag Plaketten).
 
@@ -144,8 +145,10 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | Fundorte | – | eigene Zellen | alle Fundorte |
 
 - **Nur „Fähigkeiten bekannt“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
+- **Meldung „Entdeckt“** (20.10.2026, #51): Der Fortschritt wächst nur beim Zähmen, und genau dann sagt es der Chat – sonst bliebe der wichtigste Moment des Sammelspiels unbemerkt, bis man den Reiter öffnet. Nur im Entdeckermodus, eine Zeile unter „Beobachtet“, für die Zone, in der man zähmte: neue Rang-Kacheln („Entdeckt: Beißen Rang 3 – Dämmerwald: 5 von 12 Rängen“), sonst das Tier, das „Fähigkeiten bekannt“ wurde („… 4 von 9 Tieren“); nichts Neues, keine Zeile. Die Zahlen sind die des Reiters (`ns.ZoneProgress` vorher und nachher). Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten. Wird das Tier dadurch auch in einer anderen Zone bekannt, sagt das nur der Reiter. Fährten melden sich weiter nicht (sonst liefe der Chat voll).
 - **Immer „X von Y“** (18.10.2026, #19): Auch wenn alles bekannt ist, steht „8 von 8 …“, bei *Tiere* mit vollem Balken – für alle drei Zähler gleich. Vorher stand bei X = Y nur „8“; über den Kacheln wirkte das wie ein kaputter Umbruch. Im Komplettmodus zeigt der Tiere-Balken, wie weit das Datensammeln ist.
 - Ränge vom Tierausbilder und Ränge ohne Lehrtier in der Zone zählen nicht – die muss man dort nicht suchen.
+- **Komplettmodus: Es zählt, was gezeigt wird** (20.10.2026, #40). Die Zähler und Kacheln nehmen die Lehren aus `ns.TeachInfo`, wie Liste und Tooltip. Ist „Unsichere Angaben zeigen“ aus, zählen unsichere Lehren weder in X noch in Y; X wird nie größer als Y. Vorher zählten sie mit, auch wenn die Liste sie verschwieg, und eine einzelne fremde Zähmung zählte sofort. Der Entdeckermodus bleibt: Y ist das Grundgerüst aus allen Daten.
 - Zahl und Wort sind maßgeblich, der Balken nur zusätzlich. Gezählt wird beim Öffnen, Zonenwechsel und Auswählen.
 - **Kacheln statt Balken** bei Lehrtieren und Fähigkeiten (18.10.2026, #19): je Lehrtier bzw. Rang eine Kachel, unentdeckt mit dem roten Fragezeichen der Liste, entdeckt mit dem Icon der Familie bzw. der Fähigkeit – „ich muss diese Kachel noch aufdecken“. Die Reihenfolge ist fest (NPC-ID, Fähigkeit und Rang), eine Kachel dreht sich beim Entdecken an ihrem Platz um. Höchstens zwei Zeilen, der Rest als „+n“. Fundorte stehen als Fußnote unten links.
 
@@ -196,7 +199,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` zwischen Spielern, die gleichzeitig online sind. Ein Gruß nach dem Einloggen holt Neues von anderen.
 - **Was:** Zähmungen (`O1`), Sichtungen (`S1`), Fundort-Zellen (`F1`), Gruß (`H1`). Nicht geteilt: Fährten, Fernnamen, Status, Lernstand.
 - **Sparsam:** gedrosselt (eine Nachricht je 2 s, Bündel alle 5 Minuten), nur was die Daten noch nicht kennen, Obergrenzen für Gespeichertes. Einzelheiten und Zahlen in [addon-technik.md](../technik/addon-technik.md).
-- **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026).
+- **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026). Im öffentlichen Repo stehen fremde Einträge seit #48 mit gesalzenem Kürzel und nur dem Tag (20.10.2026).
 - **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen, Kanal verlassen.
 - **Leise:** Geht ein Grüßender offline, bevor die Antwort fertig ist, bricht sie ab, und die Meldungen „kein Spieler mit dem Namen …“ des Clients bleiben aus dem Chat (#28).
 - **Ungeprüft** mit mehreren Spielern – das gehört zu M5.
@@ -218,6 +221,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
 - Kästchen aus „Fähigkeiten“, Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile.
+- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ und „? unentdeckt“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang, „unentdeckt“ gibt es nur im Entdeckermodus, und dort ist alles belegt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
+- „lehrt nichts“ aus fremden Zähmungen gilt erst ab 3 Meldern, wie Ränge; eine eigene Zähmung zählt sofort (#40). Vorher reichte eine einzige fremde Zähmung, was eine Falschaussage sein konnte.
 - Erklärung der Status im Tooltip des Zählers „Tiere“.
 - Unentdeckte Tiere tragen die zweite Zeile „Gehe auf die Pirsch und finde es.“ (#19) – ohne sie hielten manche das für eine Lücke in den Daten.
 - Kachel-Tooltips knapp: erkanntes Lehrtier wie die Zeile (Name, Lehre, Klick zeigt es auf der Karte), entdeckter Rang Name, Rang und das leichteste Lehrtier der Zone (Klick zeigt es, Bewertung wie in „Fähigkeiten“), Unentdecktes nur „? unentdecktes Lehrtier“ bzw. „? unentdeckte Fähigkeit“.
@@ -225,6 +230,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.
 - Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
+- Im Komplettmodus, wenn es zum Tier Angaben unter der Schwelle gibt (unsicherer oder unbelegter Rang, fremde Zähmungen von weniger als 3 Meldern): „Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!“ (gold, einmal, #40). Auch roh geprüft, anders begründet als #23: Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne die Zeile bliebe ein Tier mit nur unsicheren Lehren bei ausgeschalteter Einstellung stumm. Nach einer eigenen Zähmung (jeder Charakter des Kontos) ist alles belegt, die Zeile fällt weg.
 - Nur für wilde Tiere (Familie, nicht vom Spieler kontrolliert) – sonst bekämen Wachen Fährten.
 - Neue Fährten melden sich nicht im Chat (liefe voll), sondern über den Status im Tooltip.
 
@@ -266,7 +272,9 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026) |
+
+Zum Release 1.0.0: **Beta-Hinweis im Startdialog entfernen** (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42).
 
 Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazzman1976/Forever-Hunter-Pets/milestones) auf GitHub, die Aufgaben als Issues darin und im öffentlichen [Project](https://github.com/users/Jazzman1976/projects/2). Diese Tabelle ist die Kurzfassung.
 

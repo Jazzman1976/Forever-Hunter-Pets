@@ -1,10 +1,11 @@
 // Baut aus den selbst erhobenen Daten in tools/eigene/ das Datenmodell tools/data.json.
-// Aufruf: node tools/build-data.mjs   (danach node tools/build-addon.mjs)
+// Aufruf: node tools/build-data.mjs [--neue-faehigkeiten]   (danach node tools/build-addon.mjs)
 //
 // Grundsatz (docs/konzept/entscheidungen.md): In die Daten kommt nur, was im Spiel selbst erhoben wurde
 // – im Ausbildungsfenster, beim Anvisieren, beim Zähmen – oder ein Befund aus dem Spiel. Fremde Quellen
 // gibt es hier nicht. Fehlt einer Angabe der Beleg, bricht
 // das Skript ab, statt sie still zu übernehmen.
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -400,8 +401,9 @@ const abilities = abilitiesIn.map((a) => {
 // ---- Sichtungen: Name, Stufe, Familie, Einstufung je Tier ----
 // Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_NEEDED verschiedene Melder das Tier gesehen haben (wie
 // beim Zähmen). Familie und Einstufung: die eigene, sonst die häufigste.
-// Namen (#3): je Sprache aus allen Sichtungen dieser Sprache, ohne Schwelle – ein Name ist kein Beleg. Sie kommen
-// nur an Tiere, die ohnehin ausgeliefert werden (siehe beastIds unten). Der eigene Name geht vor, sonst der häufigste.
+// Namen (#3, #47): je Sprache aus den Sichtungen dieser Sprache. Sie kommen nur an Tiere, die ohnehin ausgeliefert
+// werden (siehe beastIds unten). Der eigene Name geht vor; ein fremder nur, wenn genug verschiedene Melder ihn nennen
+// (enough), unter mehreren der mit den meisten Meldern. Mehrere Namen je Tier und Sprache stehen unter „Hinweise“.
 const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
 const sightedNames = new Map(); // NPC-ID → { de, en }
 {
@@ -418,10 +420,25 @@ const sightedNames = new Map(); // NPC-ID → { de, en }
     for (const s of list) if (f(s) != null) count.set(f(s), (count.get(f(s)) || 0) + 1);
     return [...count].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
   };
+  const pickName = (npc, lang, list) => {
+    const own = list.find((s) => ownReps.has(s.melder));
+    const reps = new Map(); // Name → Set der Melder
+    for (const s of list) {
+      if (!reps.has(s.name)) reps.set(s.name, new Set());
+      reps.get(s.name).add(s.melder);
+    }
+    if (reps.size > 1) {
+      warnings.push(`Tier ${npc} (${lang}): mehrere Namen – `
+        + [...reps].map(([n, r]) => `„${n}“ (${r.size} Melder)`).join(', '));
+    }
+    if (own) return own.name;
+    const best = [...reps].filter(([, r]) => enough(r)).sort((x, y) => y[1].size - x[1].size)[0];
+    return best ? best[0] : null;
+  };
   for (const [npc, list] of byNpc) {
     sightedNames.set(npc, {
-      de: pick(list.filter((s) => s.sprache === 'deDE'), (s) => s.name),
-      en: pick(list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
+      de: pickName(npc, 'deDE', list.filter((s) => s.sprache === 'deDE')),
+      en: pickName(npc, 'enUS', list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB')),
     });
     const own = list.filter((s) => ownReps.has(s.melder));
     const foreignReps = new Set(list.filter((s) => !ownReps.has(s.melder)).map((s) => s.melder));
@@ -463,10 +480,67 @@ for (const [id, f] of Object.entries(survey.familien)) families[id] = { de: f.na
 for (const [id, f] of Object.entries(familiesIn)) families[id] = { de: f.de || null, en: f.en || null, icon: f.icon || null };
 
 const data = { generatedAt: new Date().toISOString(), families, beasts, coords, abilities };
+
+// ---- Vergleich mit dem Stand in Git (#37) ----
+// Neue, weggefallene und umgezogene Fähigkeiten (Herkunft tame ↔ trainer) brechen ab, bis man sie geprüft hat und
+// mit --neue-faehigkeiten bestätigt: So wären die Jägerzauber aus #34 nicht unbemerkt in die Stammdaten gekommen.
+// Verglichen wird mit HEAD, nicht mit der Datei auf der Platte – sonst meldete ein zweiter Lauf nichts mehr.
+// Eine Fähigkeit ist dieselbe, wenn sie einen Rang (Zauber-ID) mit ihr teilt.
+const countPairs = (d) => d.abilities.reduce((s, a) => s + a.teach.length, 0);
+const countPoints = (d) => Object.values(d.coords).reduce((s, z) => s + Object.values(z).reduce((t, l) => t + l.length / 2, 0), 0);
+const countRanks = (d) => d.abilities.reduce((s, a) => s + a.ranks.length, 0);
+let old = null;
+try {
+  old = JSON.parse(execFileSync('git', ['show', 'HEAD:tools/data.json'], {
+    cwd: path.dirname(HERE), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+  }));
+} catch {
+  console.log('Hinweis: kein Stand von tools/data.json in Git – Fähigkeiten nicht verglichen.');
+}
+if (old) {
+  const nameOfAbility = (a) => (a.de || a.en) + (a.kind === 'trait' ? ` ${a.speed} s` : '');
+  const describe = (a) => `${nameOfAbility(a)}${a.de && a.en ? ` / ${a.en}` : ''} – ${a.kind}, ${a.source}, `
+    + `Ränge ${a.ranks.map((r) => `${r.rank}:${r.id}`).join(' ')}, Familien ${a.families.length ? a.families.join(' ') : '–'}, `
+    + `Lehrtiere ${a.teach.length}`;
+  const oldByRank = new Map(old.abilities.flatMap((a) => a.ranks.map((r) => [r.id, a])));
+  const matched = new Set();
+  const added = [], moved = [], newRanks = [];
+  for (const a of abilities) {
+    const was = a.ranks.map((r) => oldByRank.get(r.id)).find(Boolean);
+    if (!was) { added.push(a); continue; }
+    matched.add(was);
+    if (was.source !== a.source) moved.push(`${describe(a)} (vorher ${was.source})`);
+    const had = new Set(was.ranks.map((r) => r.id));
+    for (const r of a.ranks) if (!had.has(r.id)) newRanks.push(`${nameOfAbility(a)} Rang ${r.rank} (${r.id})`);
+  }
+  const gone = old.abilities.filter((a) => !matched.has(a));
+  const change = (label, before, after) => `${label} ${before} → ${after}${after !== before ? ` (${after > before ? '+' : ''}${after - before})` : ''}`;
+  console.log('Gegenüber dem Stand in Git: ' + [
+    change('Fähigkeiten', old.abilities.length, abilities.length), change('Ränge', countRanks(old), countRanks(data)),
+    change('Lehrtier-Paare', countPairs(old), countPairs(data)), change('Tiere', Object.keys(old.beasts).length, Object.keys(beasts).length),
+    change('Fundorte', countPoints(old), countPoints(data)),
+  ].join(', '));
+  if (newRanks.length) console.log(`Neue Ränge (${newRanks.length}):\n  ` + newRanks.join('\n  '));
+  const stop = [
+    ...added.map((a) => `neu: ${describe(a)}`),
+    ...gone.map((a) => `weggefallen: ${describe(a)}`),
+    ...moved.map((s) => `Herkunft gewechselt: ${s}`),
+  ];
+  if (stop.length) {
+    const confirmed = process.argv.includes('--neue-faehigkeiten');
+    const text = `${stop.length} ${stop.length === 1 ? 'Änderung' : 'Änderungen'} an den Fähigkeiten:\n  ` + stop.join('\n  ');
+    if (!confirmed) {
+      console.error(`Abbruch – ${text}\nErst prüfen (etwa Jägerzauber, falsche Tierausbilder-Angaben), dann mit --neue-faehigkeiten bestätigen.`);
+      process.exit(1);
+    }
+    console.log(`Bestätigt (--neue-faehigkeiten) – ${text}`);
+  }
+}
+
 fs.writeFileSync(OUT, JSON.stringify(data, null, 1) + '\n');
 
-const pairs = abilities.reduce((s, a) => s + a.teach.length, 0);
-const points = Object.values(coords).reduce((s, z) => s + Object.values(z).reduce((t, l) => t + l.length / 2, 0), 0);
+const pairs = countPairs(data);
+const points = countPoints(data);
 console.log(`Fertig: ${abilities.length} Fähigkeiten, ${spellRank.size} Ränge, ${pairs} Lehrtier-Paare, `
   + `${Object.keys(beasts).length} Tiere, ${Object.keys(families).length} Familien, ${points} Fundorte → ${path.relative(path.dirname(HERE), OUT)}`);
 if (unknownSpells) console.log(`${unknownSpells} beobachtete Zauber-IDs gehören zu keiner erhobenen Fähigkeit (erst die Fähigkeiten erheben).`);

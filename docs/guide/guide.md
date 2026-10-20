@@ -42,10 +42,14 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Complete mode** – shows everything that is known. You don't have to search for anything.
-- **Explorer mode** – shows only what you have found yourself, and how much there is still to discover.
+- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for.
+- **Complete mode** – if you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost.
 
-Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings. The current mode is shown in small letters in the top right corner of the window, next to the gear.
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.
+
+The window also tells you that the addon is in **beta**: hunters are still gathering its knowledge, so some beasts, ranks or spawn points may be missing. That isn't broken – it's waiting to be discovered, and every hunter who plays with the addon helps fill the gaps.
+
+The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
 ## Complete mode and explorer mode
 
@@ -58,7 +62,9 @@ Until you choose, the addon shows nothing that could spoil the search; it alread
 | Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
 | Collecting and sharing | on | on – explorers help everybody |
 
-Your finds count for your whole account: a beast one of your characters found counts as found for your other characters as well. The mode is chosen per character.
+In explorer mode every character discovers on its own: what your other characters sighted, found or tamed does not count for this one. If you'd rather share your finds across the account, switch on *Show finds of my other characters* below *Explorer mode* in the settings. The mode is chosen per character, and so is this option. Collecting and sharing with other players work the same either way.
+
+**Coming from version 0.10.0 or older:** back then finds counted for the whole account. Your main character – the one with the most sightings and tamings – keeps them; your other characters start from scratch.
 
 ## The window
 
@@ -87,7 +93,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
 ![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
-**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet.
+**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain beasts on).
 
 - **Explorer mode:** each beast carries its status, and the checkbox follows it:
 
@@ -110,7 +116,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 - Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
 - **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
 
-All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come.
+All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come. In complete mode the counters and tiles count what the list shows: with uncertain beasts switched off, uncertain ranks count nowhere; switched on, they count, and the rank tile's tooltip carries a **?** unless another beast of the zone teaches that rank for sure.
 
 ## Training
 
@@ -131,6 +137,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 3. **Every rank it teaches**, with the ability icon: *– learned* (grey) if you already know the rank, *– new* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
 5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
+6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 players – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already know (*Show known abilities* – this also hides *teaches nothing*).
 
@@ -158,7 +165,7 @@ The game only tells the addon where **you** are, not where the beast is. So a sp
 
 ### Taming
 
-When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *abilities known* in its zone.
+When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *abilities known* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: abilities of … known – Duskwood: 4 of 9 beasts* when the beast becomes *abilities known* there. Taming a beast you already knew stays quiet.
 
 ### Beast Training and the pet trainer
 
@@ -177,14 +184,14 @@ What your pet knows does not count – you only have the rank once the game says
 
 Addons can't reach the internet, so players share in the game: over your guild, your group and a hidden channel (`FHPetsNet`). Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. Messages are throttled, so the channel stays quiet.
 
-What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity.
+What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
 
 Switch **Share observations** off and nothing is sent or received.
 
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
+- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. That also goes for *teaches nothing*. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
 - **WoW Forever is in beta** and changes weekly. Where nothing is known, the addon says so instead of guessing.
@@ -197,7 +204,8 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Explorer mode | off (asked at first start) | explorer mode for this character; off = complete mode |
+| Explorer mode | on (asked at first start) | explorer mode for this character; off = complete mode |
+| – Show finds of my other characters | off | in explorer mode, also count what your other characters found (per character) |
 | Minimap button | on | button at the minimap; Ctrl + drag to move it |
 | Remember filters | on | keeps the filters of *Abilities* and *Training* per character |
 | Beast tooltips | on | the addon's lines in beast tooltips |
@@ -228,4 +236,4 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 **A beast shows no status in the tooltip.** Status is shown in explorer mode only, and only for beasts that live in this zone or that you tracked here.
 
-**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters).
+**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds the short codes of players who shared with you – please don't post it publicly.

@@ -118,6 +118,9 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
     ns.SafeCall("survey", ns.SurveyStatus)
   elseif cmd == "gebiet" or cmd == "area" then
     ns.SafeCall("area", ns.DiscoverStatus)
+  elseif cmd == "start" then
+    -- Startdialog zum Testen (Entwicklerwerkzeug, #42): Schließen ändert einen schon gewählten Modus nicht
+    ns.SafeCall("mode", ns.ShowModeDialog)
   elseif cmd == "zonen" or cmd == "zones" then
     ns.SafeCall("zones", ns.ZoneReport)
   else

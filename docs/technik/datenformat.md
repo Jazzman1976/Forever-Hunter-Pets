@@ -24,6 +24,10 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 | `faehigkeiten.json` | `[{ en?, de?, icon?, kind, source, speed?, families, ranks: [{ id, rank, level?, tp? }], beleg }]` für Angaben, die keine Erhebung liefert (etwa das Angriffstempo); geht vor der Erhebung | von Hand |
 | `tiere.json`, `familien.json` | `{ ID: { de?, en?, …, beleg } }`; gehen vor Sichtung und Erhebung | von Hand |
 
+**Fremde Einträge sind entschärft (#48):** In `sichtungen.json`, `beobachtungen.json`, `zellen-fremd.json` und `melder-wege.json` ist jedes Kürzel, das nicht in `eigene-melder.json` steht, nicht das Kürzel aus dem Spiel, sondern dessen HMAC-SHA256 mit dem geheimen Salz aus `.ignore/melder-salz.txt` (die ersten 8 Hex-Zeichen, Format wie bisher). In `melder-wege.json` gilt das für Melder und Absender gleich. `zeit` ist bei fremden Sichtungen und Zähmungen der Beginn des Tages (UTC). Fremde Zähmungen gelten beim Import nur als dieselbe, wenn der ganze Eintrag gleich ist; eigene wie bisher bei gleichem Tier und gleicher Sekunde.
+
+**Keine Dämonen (#80):** Sichtungen mit einer Dämonen-Familie (15, 16, 17, 19, 23, wie `ns.DEMON_FAMILY` in `Core/Sightings.lua`) übernimmt der Import nicht und entfernt sie aus dem Bestand, dazu die Zellen dieser Tiere in `zellen.json` und `zellen-fremd.json` und die Familien in `erhebung.json`.
+
 Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakternamens; Namen werden nirgends gespeichert.
 
 ## `tools/data.json`
@@ -31,6 +35,8 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 ```js
 { generatedAt, families, beasts, coords, abilities }
 ```
+
+`build-data.mjs` vergleicht jeden neuen Stand mit dem in Git und bricht bei neuen, weggefallenen oder umgezogenen Fähigkeiten ab, bis man sie mit `--neue-faehigkeiten` bestätigt (#37, [entwicklung.md](entwicklung.md#daten-bauen)).
 
 | Feld | Inhalt |
 | --- | --- |

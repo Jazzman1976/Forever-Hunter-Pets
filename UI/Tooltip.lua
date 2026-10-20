@@ -1,6 +1,6 @@
 -- Forever Hunter Pets · Tooltip eines Tiers: sein Status in dieser Zone (Fährte, gefunden, bekannt), dann
 -- Angriffstempo und die Ränge, die es beibringt, jeweils mit Lernstand des Jägers („gelernt“/„neu“). Über die Lehre wird nichts vermutet: Weiß
--- sie noch niemand, sagt das im Komplettmodus eine eigene Zeile (#23).
+-- sie noch niemand, sagt das im Komplettmodus eine eigene Zeile (#23); fehlen noch Belege, eine andere (#40).
 -- Gelernt / neu unterscheiden Farbe und Wort – nie die Farbe allein. Was nicht belegt ist, erscheint nur
 -- nach den Einstellungen und trägt ein „?“ bzw. „!“; erklärt wird das dort, nicht hier.
 local _, ns = ...
@@ -34,16 +34,13 @@ local function quiet()
   return ns.Possessing()
 end
 
--- Nur ein wildes Tier unter der Maus, wie bei der Sichtung: mit Familie, keinem Spieler gehörend. Sonst bekämen
--- Wachen und Händler Fährten und Fundorte.
+-- Nur ein wildes Tier unter der Maus, wie bei der Sichtung (ns.WildBeast): mit Familie, Wildtier, keinem Spieler
+-- gehörend. Sonst bekämen Wachen, Händler und Dämonen (#80) Fährten und Fundorte.
 local function wildBeastUnderMouse(guid)
   local okG, g = pcall(UnitGUID, "mouseover")
   if not (okG and guid and ns.clean(g) == ns.clean(guid)) then return false end
-  local okF, _, fam = pcall(UnitCreatureFamily, "mouseover")
-  fam = okF and tonumber(ns.clean(fam))
-  if not fam then return false end
-  local okC, controlled = pcall(UnitPlayerControlled, "mouseover")
-  return okC and ns.clean(controlled) == false, fam
+  local fam = ns.WildBeast("mouseover")
+  return fam ~= nil, fam
 end
 
 local function statusLine(id, guid)
@@ -91,7 +88,8 @@ local function addLines(tooltip, guid)
     list = rest
   end
   -- Weiß man, dass das Tier nichts lehrt, sagt der Tooltip das (Wunsch des Nutzers: sonst fehlt jeder Hinweis)
-  local info = id and ns.TeachInfo(id, ns.Discovering())
+  local info, unsure
+  if id then info, unsure = ns.TeachInfo(id, ns.Discovering()) end
   -- wie die gelernten Ränge: mit „Bekannte Fähigkeiten anzeigen“ aus nicht zeigen (Wunsch des Nutzers)
   local nothing = info ~= nil and #info == 0 and ns.db.ui.tooltipShowKnown ~= false
   -- Komplettmodus: Weiß noch niemand, was ein wildes Tier lehrt, sagt der Tooltip das, statt zu schweigen (#23,
@@ -99,7 +97,11 @@ local function addLines(tooltip, guid)
   -- unsichere Angaben sind keine fehlenden Daten.
   local missing = id and not ns.Discovering() and #ns.ObservationsOf(id) == 0
     and #(ns.AllBeastTeaches(id) or {}) == 0 and wildBeastUnderMouse(guid)
-  if #list == 0 and not status and not nothing and not missing then return end
+  -- Komplettmodus: Gibt es Angaben unter der Schwelle, bittet eine Zeile um mehr Belege (#40). Auch roh geprüft:
+  -- Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne sie bliebe ein Tier mit nur unsicheren Lehren
+  -- stumm. Nach einer eigenen Zähmung ist alles belegt, die Zeile fällt von selbst weg.
+  local proof = unsure and not missing and wildBeastUnderMouse(guid)
+  if #list == 0 and not status and not nothing and not missing and not proof then return end
 
   -- Leerzeilen davor und danach trennen die Zeilen von denen anderer Addons (Einstellungen)
   if ns.db.ui.tooltipGapBefore then tooltip:AddLine(" ") end
@@ -109,6 +111,9 @@ local function addLines(tooltip, guid)
   if nothing then tooltip:AddLine(L["teaches nothing"], 0.6, 0.6, 0.6) end   -- grau wie „gelernt“
   if missing then   -- gold wie der Status
     tooltip:AddLine(L["No hunter knows yet what this beast teaches. Tame it and help!"], 1, 0.82, 0, true)
+  end
+  if proof then   -- gold wie #23, einmal je Tier
+    tooltip:AddLine(L["Hunters need more proof of what this beast teaches. Tame it!"], 1, 0.82, 0, true)
   end
   for _, e in ipairs(list) do
     local text = iconTag(e.a) .. " " .. ns.AbilityName(e.a)

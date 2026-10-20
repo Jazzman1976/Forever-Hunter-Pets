@@ -324,6 +324,7 @@ local function receiveSighting(body, sender)
   if o.level < 1 or o.level > 63 or o.cls > 4 or o.fam < 1 or o.fam > 1000 or o.npc > 9999999 then return false, "Stufe oder Werte" end
   if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "Sprache oder Name" end
   if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "Tempo" end
+  if ns.DEMON_FAMILY[o.fam] then return false, "keine Jäger-Familie" end   -- Dämonen älterer Versionen (#80)
   local now = time and time() or 0
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   sightPerSender[sender] = (sightPerSender[sender] or 0) + 1

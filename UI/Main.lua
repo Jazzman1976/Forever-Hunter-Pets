@@ -83,6 +83,25 @@ local function create()
   end
   showMode()
   ns.OnModeChanged(showMode)
+  -- Hover erklärt den Modus und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen (#42). Die Schrift
+  -- selbst empfängt keine Maus, deshalb ein unsichtbarer Knopf darüber; ohne Text (vor der Wahl) ist er 0 breit.
+  f.modeHover = CreateFrame("Button", nil, f)
+  f.modeHover:SetAllPoints(f.mode)
+  f.modeHover:SetScript("OnClick", function() ns.SafeCall("settings", ns.OpenSettings) end)
+  f.modeHover:SetScript("OnEnter", function(self)
+    if not ns.ModeChosen() then return end
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+    if ns.Discovering() then
+      GameTooltip:SetText(L["Explorer mode"], 1, 1, 1)
+      GameTooltip:AddLine(L["You are in explorer mode – our recommendation. If you would rather see all details right away, switch explorer mode off in the settings."], 0.8, 0.8, 0.8, true)
+    else
+      GameTooltip:SetText(L["Complete mode"], 1, 1, 1)
+      GameTooltip:AddLine(L["You are in complete mode. There are no challenges here and no hunt of your own, but you see all details. Why not give explorer mode a try?"], 0.8, 0.8, 0.8, true)
+    end
+    GameTooltip:AddLine(L["Click: open the settings"], 0.4, 0.8, 1)
+    GameTooltip:Show()
+  end)
+  f.modeHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
   -- Inhaltsbereich unter der Titelzeile, je Ansicht ein eigener Rahmen an derselben Stelle
   f.content = CreateFrame("Frame", nil, f)

@@ -8,33 +8,60 @@
 --   „known“    bekannt: in dieser Zone gefunden und alle Fähigkeiten bekannt (eigene Zähmung)
 -- Was ein Tier lehrt, ist Wissen über die NPC-ID und gilt in allen Zonen. Ein Tier gehört nur zu Zonen, in
 -- denen es einen echten Fundort hat (Daten oder Zelle) – eine Sichtung über eine Zonengrenze hinweg zählt dort
--- nicht. Alle Funde sind kontoweit („Erkundung je Konto“). Gezählt wird bei Bedarf, nichts im Hintergrund.
+-- nicht. Gezählt wird bei Bedarf, nichts im Hintergrund.
 --
--- Neu gespeichert wird nur seenIn: je eigener Sichtung und Zähmung die Karte, auf der der Spieler stand,
--- ForeverHunterPetsDB.seenIn[npc] = "1431,1429" – lokal, nicht geteilt.
+-- Funde zählen je Charakter, auf Wunsch die des ganzen Kontos (#43); gesammelt und geteilt wird weiter
+-- kontoweit. Neu gespeichert wird nur seenIn: je eigener Sichtung und Zähmung die Karte, auf der der Spieler
+-- stand, ForeverHunterPetsDB.seenIn[npc] = "1431,1429" – lokal, nicht geteilt – und dasselbe je Charakter in
+-- ForeverHunterPetsCharDB.seenIn.
 local _, ns = ...
 local D = ns.Data
 
+-- ---- Wessen Funde zählen (#43) ----
+-- Im Entdeckermodus die des Charakters (ForeverHunterPetsCharDB: seenIn, loc), mit der Unteroption „Funde meiner
+-- anderen Charaktere zeigen“ (ns.char.shareFinds) die des Kontos; im Komplettmodus immer die des Kontos. Alle
+-- Lesestellen für Fährten, eigene Zellen (Core/Places.lua) und eigene Zähmungen gehen über diese Weiche.
+local function accountFinds()
+  return not ns.Discovering() or (ns.char ~= nil and ns.char.shareFinds == true)
+end
+function ns.Finds()
+  if accountFinds() then return ns.db end
+  return ns.char
+end
+
+-- Zählt die Zähmung als eigener Fund? Je Charakter nur die mit dessen Kürzel (Kürzel leer: noch nicht
+-- zugeordnet, Core/Comm.lua ordnet sie beim Einloggen zu).
+function ns.OwnTame(o)
+  if not o.own then return false end
+  return accountFinds() or o.rep == "" or o.rep == ns.MyRep()
+end
+
 -- ---- seenIn ----
--- true, wenn die Zone neu dazukam
-function ns.NoteSeenIn(npc, map)
-  if not (ns.db and npc and map) then return false end
-  ns.db.seenIn = ns.db.seenIn or {}
-  local list = ns.db.seenIn[npc]
-  local m = tostring(map)
+local function noteIn(store, npc, m)
+  store.seenIn = store.seenIn or {}
+  local list = store.seenIn[npc]
   if not list then
-    ns.db.seenIn[npc] = m
+    store.seenIn[npc] = m
     return true
   end
   for x in list:gmatch("%d+") do
     if x == m then return false end
   end
-  ns.db.seenIn[npc] = list .. "," .. m
+  store.seenIn[npc] = list .. "," .. m
   return true
 end
 
+-- Für das Konto und für den Charakter; true, wenn die Zone für das Konto neu dazukam
+function ns.NoteSeenIn(npc, map)
+  if not (ns.db and npc and map) then return false end
+  local m = tostring(map)
+  if ns.char then noteIn(ns.char, npc, m) end
+  return noteIn(ns.db, npc, m)
+end
+
 local function seenIn(npc, map)
-  local list = ns.db and ns.db.seenIn and ns.db.seenIn[npc]
+  local finds = ns.Finds()
+  local list = finds and finds.seenIn and finds.seenIn[npc]
   if not list then return false end
   local m = tostring(map)
   for x in list:gmatch("%d+") do
@@ -49,7 +76,7 @@ end
 local function tamedIn(npc, map)
   if not seenIn(npc, map) then return false end
   for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own then return true end
+    if ns.OwnTame(o) then return true end
   end
   return false
 end
@@ -57,7 +84,8 @@ end
 -- Zonen, in denen man das Tier selbst gezähmt hat { [map] = true }
 function ns.TamedZones(npc)
   local out = {}
-  local list = ns.db and ns.db.seenIn and ns.db.seenIn[npc]
+  local finds = ns.Finds()
+  local list = finds and finds.seenIn and finds.seenIn[npc]
   for x in (list or ""):gmatch("%d+") do
     local map = tonumber(x)
     if tamedIn(npc, map) then out[map] = true end
@@ -93,7 +121,7 @@ function ns.BeastsIn(map)
       if maps[map] and maps[map] ~= "" then out[npc] = true end
     end
   end
-  for npc in pairs((ns.db and ns.db.seenIn) or {}) do
+  for npc in pairs((ns.Finds() or {}).seenIn or {}) do
     if not out[npc] and (tamedIn(npc, map) or trackOnly(npc, map)) then out[npc] = true end
   end
   return out
@@ -110,7 +138,7 @@ function ns.DiscoverZones()
       for map, cells in pairs(maps) do if cells ~= "" then set[map] = true end end
     end
   end
-  for npc, list in pairs((ns.db and ns.db.seenIn) or {}) do
+  for npc, list in pairs((ns.Finds() or {}).seenIn or {}) do
     for map in pairs(ns.TamedZones(npc)) do set[map] = true end
     if nowhere(npc) then
       for x in list:gmatch("%d+") do set[tonumber(x)] = true end
@@ -124,13 +152,14 @@ end
 
 -- ---- Eigene Funde ----
 local function ownCells(npc, map)
-  local cells = ns.db and ns.db.loc and ns.db.loc[npc] and ns.db.loc[npc][map]
+  local finds = ns.Finds()
+  local cells = finds and finds.loc and finds.loc[npc] and finds.loc[npc][map]
   return cells and #cells / 2 or 0
 end
 
 local function ownTamed(npc)
   for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own then return true end
+    if ns.OwnTame(o) then return true end
   end
   return false
 end
@@ -150,12 +179,12 @@ end
 -- ---- Name einer Fährte ----
 -- Von weitem (über etwa 28 m) speichert die Sichtung nichts, die Fährte aber schon. Damit so ein Tier nicht
 -- „Unbekanntes Tier (#833)“ heißt, merkt sich das Addon Name und Familie dazu: lokal, nicht geteilt,
--- ForeverHunterPetsDB.trackNames[npc] = „Familie;Name“ in Client-Sprache. Die Sichtung geht vor; sobald es
--- eine gibt, fällt der Eintrag weg.
+-- ForeverHunterPetsDB.trackNames[npc] = „Familie;Name“ in Client-Sprache. Die eigene Sichtung geht vor; sobald
+-- es eine gibt, fällt der Eintrag weg. Eine fremde verdrängt ihn nicht (#47).
 function ns.NoteTrackName(npc, fam, name)
   if not (ns.db and npc) then return end
   local names = ns.db.trackNames
-  if ns.SeenName and ns.SeenName(npc) then
+  if ns.SeenName and select(2, ns.SeenName(npc)) then
     if names then names[npc] = nil end
     return
   end
@@ -195,7 +224,8 @@ function ns.StatusText(npc, map)
 end
 
 -- „? unklar“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
--- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter)
+-- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter).
+-- Nicht Belegtes trägt hinter dem Icon dasselbe „?“ bzw. „!“ wie im Tooltip (#40).
 function ns.TeachText(npc)
   local L = ns.L
   local info = ns.TeachInfo(npc, ns.Discovering())
@@ -203,7 +233,7 @@ function ns.TeachText(npc)
   if #info == 0 then return L["teaches nothing"] end
   local parts = {}
   for _, e in ipairs(info) do
-    parts[#parts + 1] = ("|T%s:14:14|t"):format(ns.AbilityIcon(e.a))
+    parts[#parts + 1] = ("|T%s:14:14|t"):format(ns.AbilityIcon(e.a)) .. ns.ConfMark(e.conf)
   end
   return (L["teaches %s"]):format(table.concat(parts, " "))
 end
@@ -248,32 +278,68 @@ local function fromObservation(o, out, have)
   end
 end
 
--- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r }, … }, leer = lehrt nichts.
--- discover = true: nur eigene Zähmungen (Entdeckermodus). Sonst auch Daten und fremde Zähmungen.
+-- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts.
+-- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
+-- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab 3 Meldern (ns.Observed), auch „lehrt nichts“
+-- (#40, vorher reichte eine einzige fremde Zähmung).
+-- Zweiter Wert (nur Komplettmodus): Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch
+-- Belege (Hinweiszeile im Tooltip, #40).
 function ns.TeachInfo(npc, discover)
-  local out, have, clear = {}, {}, false
-  for _, o in ipairs(ns.ObservationsOf(npc)) do
-    if o.own or not discover then
-      clear = true
-      fromObservation(o, out, have)
+  local out, have, clear, unsure = {}, {}, false, false
+  local function add(a, r, conf)
+    local e = have[r]
+    if not e then
+      e = { a = a, r = r, conf = conf }
+      have[r] = e
+      out[#out + 1] = e
+    elseif conf < e.conf then
+      e.conf = conf
     end
   end
-  if not discover then
-    -- nur, was die Einstellungen zeigen; Widerlegtes nie
-    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
-      if ns.ShowConf(e.conf) then
-        clear = true
-        addSeen(out, have, e.a, e.r)
+  local empty, nEmpty = {}, 0   -- fremde Melder, deren Zähmung keinen Rang zeigte
+  for _, o in ipairs(ns.ObservationsOf(npc)) do
+    local seen = {}
+    fromObservation(o, seen, {})
+    if ns.OwnTame(o) then
+      clear = true
+      for _, e in ipairs(seen) do add(e.a, e.r, ns.CONF_SURE) end
+    elseif not discover then
+      if #seen == 0 and not empty[o.rep] then
+        empty[o.rep] = true
+        nEmpty = nEmpty + 1
+      end
+      for _, e in ipairs(seen) do
+        local v = ns.Observed(npc, e.a, e.r)
+        if v == "seen" then
+          clear = true
+          add(e.a, e.r, ns.CONF_SURE)
+        elseif v == nil then
+          unsure = true   -- wie im Tooltip nicht gezeigt, bis 3 Melder ihn sahen
+        end
       end
     end
   end
-  if not clear then return nil end
+  if not discover then
+    -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
+    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
+      if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
+      if ns.ShowConf(e.conf) then
+        clear = true
+        add(e.a, e.r, e.conf)
+      end
+    end
+    if nEmpty > 0 then
+      if ns.ForeignEnough(empty, nEmpty) then clear = true
+      elseif not clear then unsure = true end
+    end
+  end
+  if not clear then return nil, unsure end
   table.sort(out, function(x, y)
     local nx, ny = ns.AbilityName(x.a), ns.AbilityName(y.a)
     if nx ~= ny then return nx < ny end
     return (x.r.rank or 0) < (y.r.rank or 0)
   end)
-  return out
+  return out, unsure
 end
 
 -- ---- Fortschritt einer Zone ----
@@ -283,42 +349,60 @@ end
 -- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
 --   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown und ranksFound selbst
 --                   identifiziert.
---   Komplettmodus:  X aus allen Daten – beastsKnown = irgendwer weiß, was es lehrt (Daten oder Zähmung);
---                   Lehrtiere und Ränge sind damit alle bekannt (X = Y).
+--   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
+--                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
+--                   Einstellungen ausblenden, zählt weder in X noch in Y.
 -- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone.
 function ns.ZoneProgress(map)
   local discover = ns.Discovering()
   local p = { beasts = 0, beastsKnown = 0, track = 0, found = 0, known = 0, teachers = 0, teachersKnown = 0,
     ranks = 0, ranksFound = 0, cells = 0, points = 0 }
-  local teaches = {}   -- npc → { r = true } aus den Daten, dazu aus Zähmungen (unten)
+  local teaches = {}   -- npc → { [r] = Belegung }
+  local info = {}      -- npc → ns.TeachInfo(npc, false) (Komplettmodus)
   local abilityOf, order = {}, {}   -- Rang → Fähigkeit und Platz in den Daten, für die Kacheln (#19)
   for i, a in ipairs(D.abilities) do
     for _, x in ipairs(a.ranks) do abilityOf[x], order[x] = a, i end
-    if a.source == "tame" then
-      for _, t in ipairs(a.teach) do
-        local r
-        for _, x in ipairs(a.ranks) do if x.rank == t[2] then r = x end end
-        if r and (t[3] or 1) < ns.CONF_REFUTED then
-          teaches[t[1]] = teaches[t[1]] or {}
-          teaches[t[1]][r] = true
+  end
+  if discover then
+    -- Grundgerüst aus den Daten, egal wie belegt (Widerlegtes nie)
+    for _, a in ipairs(D.abilities) do
+      if a.source == "tame" then
+        for _, t in ipairs(a.teach) do
+          local r
+          for _, x in ipairs(a.ranks) do if x.rank == t[2] then r = x end end
+          if r and (t[3] or 1) < ns.CONF_REFUTED then
+            teaches[t[1]] = teaches[t[1]] or {}
+            teaches[t[1]][r] = ns.CONF_SURE
+          end
         end
       end
     end
-  end
-  local ranksAll, ranksFound = {}, {}
-  -- Zähmungen (eigene und geteilte) zeigen Lehrtiere auch bei Tieren, die (noch) nicht in den Daten stehen
-  for npc in pairs(ns.BeastsIn(map)) do
-    for _, o in ipairs(ns.ObservationsOf(npc)) do
-      local out = {}
-      fromObservation(o, out, {})
-      for _, e in ipairs(out) do
+    -- Zähmungen (eigene und geteilte) zeigen Lehrtiere auch bei Tieren, die (noch) nicht in den Daten stehen
+    for npc in pairs(ns.BeastsIn(map)) do
+      for _, o in ipairs(ns.ObservationsOf(npc)) do
+        local out = {}
+        fromObservation(o, out, {})
+        for _, e in ipairs(out) do
+          if e.a.source == "tame" then
+            teaches[npc] = teaches[npc] or {}
+            teaches[npc][e.r] = ns.CONF_SURE
+          end
+        end
+      end
+    end
+  else
+    -- nur, was gezeigt wird, mit Belegung, wie Liste und Tooltip
+    for npc in pairs(ns.BeastsIn(map)) do
+      info[npc] = ns.TeachInfo(npc, false)
+      for _, e in ipairs(info[npc] or {}) do
         if e.a.source == "tame" then
           teaches[npc] = teaches[npc] or {}
-          teaches[npc][e.r] = true
+          teaches[npc][e.r] = e.conf
         end
       end
     end
   end
+  local ranksAll, ranksFound, rankConf = {}, {}, {}
   -- Kacheln im Reiter „Gebiet“ (#19): je Lehrtier und je Rang, ob man es kennt. Feste Reihenfolge (NPC-ID,
   -- Fähigkeit und Rang), damit eine Kachel beim Entdecken an ihrem Platz bleibt und sich nur umdreht.
   p.teacherList, p.rankList = {}, {}
@@ -329,7 +413,7 @@ function ns.ZoneProgress(map)
     if p[st] then p[st] = p[st] + 1 end
     if discover then
       if st == "known" then p.beastsKnown = p.beastsKnown + 1 end
-    elseif ns.TeachInfo(npc, false) then
+    elseif info[npc] then
       p.beastsKnown = p.beastsKnown + 1
     end
     p.cells = p.cells + ownCells(npc, map)
@@ -339,8 +423,10 @@ function ns.ZoneProgress(map)
       local known = not discover or st == "known"
       if known then p.teachersKnown = p.teachersKnown + 1 end
       p.teacherList[#p.teacherList + 1] = { npc = npc, known = known }
-      for r in pairs(teaches[npc]) do
+      for r, conf in pairs(teaches[npc]) do
         ranksAll[r] = true
+        -- beste Belegung über die Lehrtiere der Zone: Zeichen im Tooltip der Rang-Kachel (#40)
+        rankConf[r] = math.min(rankConf[r] or conf, conf)
         -- erkannte Lehrtiere je Rang: Ziel für den Klick auf eine Rang-Kachel, wenn ns.Teachers keins nennt
         if known then
           teachersOf[r] = teachersOf[r] or {}
@@ -362,7 +448,8 @@ function ns.ZoneProgress(map)
   for r in pairs(ranksAll) do
     local npcs = teachersOf[r] or {}
     table.sort(npcs)
-    p.rankList[#p.rankList + 1] = { a = abilityOf[r], r = r, found = ranksFound[r] == true, npcs = npcs }
+    p.rankList[#p.rankList + 1] = { a = abilityOf[r], r = r, found = ranksFound[r] == true, npcs = npcs,
+      conf = rankConf[r] }
   end
   table.sort(p.teacherList, function(x, y) return x.npc < y.npc end)
   table.sort(p.rankList, function(x, y)
@@ -381,7 +468,70 @@ function ns.DiscoverStatus()
   ns.Print(("%s (%s): Tiere %d von %d bekannt (%d Fährten, %d gefunden, %d bekannt) · Lehrtiere %d von %d · "
     .. "Ränge %d von %d · %d eigene Zellen"):format(ns.ZoneName(map), ns.Discovering() and "Entdecker" or "Komplett",
     p.beastsKnown, p.beasts, p.track, p.found, p.known, p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
+  local owner = ns.db and ns.db.discoverOwner
+  ns.Print(("Funde: %s · dieser Charakter %s · bisherige Funde %s"):format(
+    ns.Finds() == ns.db and "Konto" or "Charakter", ns.MyRep() or "?",
+    owner == nil and "noch nicht übernommen" or owner == "" and "gab es keine"
+      or ("übernommen von %s%s"):format(owner, owner == ns.MyRep() and " (dieser Charakter)" or "")))
 end
+
+-- ---- Bisherige Funde übernehmen (#43) ----
+-- Fährten und Zellen bis 0.10.0 liegen nur im Konto, ohne Charakter. Sie gehen einmal an den Hauptcharakter:
+-- den mit den meisten eigenen Sichtungen und Zähmungen (die tragen das Kürzel), bei Gleichstand das kleinere
+-- Kürzel. Jeder Charakter prüft das beim Einloggen; wer nicht der Hauptcharakter ist, fängt bei null an, bis
+-- sich der Hauptcharakter einloggt. Danach steht in ForeverHunterPetsDB.discoverOwner sein Kürzel („“: es gab
+-- nichts zu übernehmen). Nicht ganz genau: Was ein anderer Charakter nach dem Update und vor diesem Einloggen
+-- fand, steht auch im Konto und geht mit.
+local function mergeList(a, b)   -- „1431,1429“ + „1429,1411“
+  if not a then return b end
+  for x in b:gmatch("%d+") do
+    local have = false
+    for y in a:gmatch("%d+") do if x == y then have = true; break end end
+    if not have then a = a .. "," .. x end
+  end
+  return a
+end
+
+local function mergeCells(a, b)   -- „xyxy…“, jede Zelle einmal
+  a = a or ""
+  for i = 1, #b - 1, 2 do
+    local cell, have = b:sub(i, i + 1), false
+    for j = 1, #a - 1, 2 do if a:sub(j, j + 1) == cell then have = true; break end end
+    if not have then a = a .. cell end
+  end
+  return a
+end
+
+local function takeOver()
+  local db, char, me = ns.db, ns.char, ns.MyRep()
+  if not (db and char and me) or db.discoverOwner ~= nil then return end
+  if not (next(db.seenIn or {}) or next(db.loc or {})) then
+    db.discoverOwner = ""
+    return
+  end
+  local score = { [me] = 0 }
+  for rep in pairs(db.myReps or {}) do score[rep] = 0 end
+  for _, kind in ipairs({ { db.sights, ns.ParseSighting }, { db.obs, ns.ParseObservation } }) do
+    for _, s in ipairs(kind[1] or {}) do
+      local o = kind[2](s)
+      if o and score[o.rep] then score[o.rep] = score[o.rep] + 1 end
+    end
+  end
+  local best
+  for rep, n in pairs(score) do
+    if not best or n > score[best] or (n == score[best] and rep < best) then best = rep end
+  end
+  if best ~= me then return end
+  char.seenIn = char.seenIn or {}
+  for npc, list in pairs(db.seenIn or {}) do char.seenIn[npc] = mergeList(char.seenIn[npc], list) end
+  char.loc = char.loc or {}
+  for npc, maps in pairs(db.loc or {}) do
+    char.loc[npc] = char.loc[npc] or {}
+    for map, cells in pairs(maps) do char.loc[npc][map] = mergeCells(char.loc[npc][map], cells) end
+  end
+  db.discoverOwner = me
+end
+ns.On("PLAYER_LOGIN", function() ns.SafeCall("discover", takeOver) end)
 
 -- Die Probe „Kampf“ (E1) ist ausgewertet: Ein Kampf bringt nichts Zusätzliches, siehe
 -- docs/technik/api-befunde.md. Ihre Reste in den SavedVariables werden gelöscht.

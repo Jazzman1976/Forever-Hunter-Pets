@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.0-beta – 2026-10-20
+
+- **Every character discovers on its own:** in explorer mode, what your other characters found no longer counts for this one. Prefer the old way? Switch on *Show finds of my other characters* below *Explorer mode* in the settings. Coming from 0.10.0: your main character (most sightings and tamings) keeps its finds, the others start from scratch.
+- **Discoveries are celebrated:** in explorer mode, a taming that uncovers something in the *Zone* tab adds a chat line, for example *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks*.
+- **Explorer mode first:** the first-start window now recommends explorer mode, explains that the addon is in beta, and closing it without a choice starts you in explorer mode. Hover over the mode in the top right corner for a short explanation, click it to open the settings.
+- **Uncertain ranks marked in the Zone tab:** in complete mode an uncertain rank carries a **?** there too, as in the beast tooltip, and the counters count what the list shows.
+- **More trustworthy names:** a beast name reported by a single other player no longer overrides the known name; it needs 3 players like everything else. *Teaches nothing* from other players also needs 3 players now.
+- **Fixed:** demons that cannot be tamed (such as the Felstalker) no longer show up as beasts.
+- **Privacy:** shared data that reaches the project is stored in its public repository with the short code replaced by a new, secret one and the time cut to the day. Please don't post your account's SavedVariables file publicly.
+- **More data from the game:** 162 beasts (was 134), 105 teaching beasts (was 85), 626 spawn points (was 385), 1 new ability taught by crocolisks.
+
+No game restart needed – `/reload` is enough.
+
 ## 0.10.0-beta – 2026-10-18
 
 - **Explorer mode wants to be explored:** the *Zone* tab shows every teaching beast and every ability rank of a zone as a tile – a red question mark until you found it, then its icon. Click a tile to see the beast on the map. Undiscovered beasts invite you to go stalking.

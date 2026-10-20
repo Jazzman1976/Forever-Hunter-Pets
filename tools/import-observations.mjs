@@ -11,6 +11,10 @@
 //   gesucht wird (etwa der WoW-Ordner).
 // Gespeichert werden keine Namen: fremde Beobachtungen tragen schon ein Kürzel; eigene (Melder leer) bekommen
 // eines aus dem Namen des Account-Ordners, damit sie von denen anderer Dateien unterscheidbar bleiben.
+// Fremde Einträge werden entschärft, bevor sie ins öffentliche Repo kommen (#48): Das Kürzel ist ein ungesalzener
+// Hash des Charakternamens und ließe sich mit einer Namensliste zurückrechnen. Es wird deshalb mit einem geheimen
+// Salz neu gehasht (pseudo), und die Zeit gilt nur auf den Tag (dayStart). Eigene Kürzel bleiben, wie sie sind.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +30,10 @@ const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
 const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
 const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
+// Familien, die es nur bei Dämonen gibt, wie ns.DEMON_FAMILY in Core/Sightings.lua (#80): Solche Tiere sind nicht
+// zähmbar. Ihre Sichtungen, Fundort-Zellen und Familien kommen nicht in die Daten, auch nicht aus dem Bestand.
+const DEMON_FAMILY = new Set([15, 16, 17, 19, 23]);
+const demons = new Set(); // NPC-IDs als Zeichenkette
 
 // djb2, wie ns.ReporterHash im Addon
 function hash(s) {
@@ -33,6 +41,16 @@ function hash(s) {
   for (const ch of Buffer.from(s, 'utf8')) h = (h * 33 + ch) % 4294967296;
   return h.toString(16).padStart(8, '0');
 }
+
+// Salz für fremde Kürzel: privat in .ignore/, nie im Repo. Geht es verloren, bekommen dieselben Melder beim
+// nächsten Import neue Kürzel und zählen doppelt – deshalb sichern.
+const SALT_FILE = path.join(HERE, '..', '.ignore', 'melder-salz.txt');
+if (!fs.existsSync(SALT_FILE)) {
+  fs.mkdirSync(path.dirname(SALT_FILE), { recursive: true });
+  fs.writeFileSync(SALT_FILE, crypto.randomBytes(32).toString('hex') + '\n');
+  console.log(`Neues Salz angelegt: ${SALT_FILE} – bitte sichern`);
+}
+const SALT = fs.readFileSync(SALT_FILE, 'utf8').trim();
 
 function findFiles(p, depth = 0, out = []) {
   let st;
@@ -102,22 +120,35 @@ if (!files.length) {
   process.exit(1);
 }
 
+// Eigene Kürzel: Beobachtungen damit gelten im Generator schon mit einem Melder als belegt. Vor allem anderen
+// aus allen Dateien gesammelt, damit pseudo() kein eigenes Kürzel salzt.
+const own = new Set(fs.existsSync(OWN_OUT) ? JSON.parse(fs.readFileSync(OWN_OUT, 'utf8')) : []);
+for (const f of files) {
+  own.add(hash('konto:' + accountOf(f)));
+  for (const rep of parseMyReps(fs.readFileSync(f, 'utf8'))) own.add(rep);
+}
+// fremdes Kürzel → gesalzenes (8 Hex-Zeichen wie bisher), eigenes bleibt
+const pseudo = (rep) => own.has(rep) ? rep : crypto.createHmac('sha256', SALT).update(rep).digest('hex').slice(0, 8);
+// Beginn des Tages (UTC), für die Zeit fremder Einträge
+const dayStart = (t) => t - (t % 86400);
+// fremden Eintrag entschärfen (Kürzel und Zeit), eigenen unverändert lassen
+const mask = (r) => own.has(r.melder) ? r : { ...r, melder: pseudo(r.melder), zeit: dayStart(r.zeit) };
+
 const old = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : [];
-// Dieselbe Zähmung: gleiches Tier zur selben Sekunde. Das echte Kürzel ersetzt ein Ersatzkürzel.
-const key = (r) => `${r.npc}:${r.zeit}`;
+// Dieselbe Zähmung: gleiches Tier zur selben Sekunde. Das echte Kürzel ersetzt ein Ersatzkürzel. Fremde tragen
+// nur den Tag; bei ihnen gilt nur der ganz gleiche Eintrag als derselbe, sonst fielen verschiedene Zähmungen
+// am selben Tag zusammen.
+const key = (r) => own.has(r.melder) ? `${r.npc}:${r.zeit}` : JSON.stringify(r);
 const all = new Map(old.map((r) => [key(r), r]));
 let read = 0, bad = 0;
-// Eigene Kürzel: Beobachtungen damit gelten im Generator schon mit einem Melder als belegt.
-const own = new Set(fs.existsSync(OWN_OUT) ? JSON.parse(fs.readFileSync(OWN_OUT, 'utf8')) : []);
 for (const f of files) {
   const ownRep = hash('konto:' + accountOf(f));
   const text = fs.readFileSync(f, 'utf8');
-  own.add(ownRep);
-  for (const rep of parseMyReps(text)) own.add(rep);
   for (const s of parseObs(text)) {
     read++;
-    const r = record(s, ownRep);
+    let r = record(s, ownRep);
     if (!r) { bad++; continue; }
+    r = mask(r);
     const had = all.get(key(r));
     if (!had || (had.ersatz && !r.ersatz)) all.set(key(r), r);
   }
@@ -143,15 +174,17 @@ for (const f of files) {
     const x = s.match(/^(\d+);(\d+);(\d);(\d+);([a-z]{2}[A-Z]{2});([^;|]+);(\d+);([0-9a-f]{8});?([\d.]*)$/);
     if (!x) continue;
     sightsRead++;
-    const r = { npc: +x[1], stufe: +x[2], einstufung: +x[3], familie: +x[4], sprache: x[5], name: x[6].replace(/\\(.)/g, '$1'),
+    let r = { npc: +x[1], stufe: +x[2], einstufung: +x[3], familie: +x[4], sprache: x[5], name: x[6].replace(/\\(.)/g, '$1'),
       zeit: +x[7], melder: x[8], ...(x[9] ? { tempo: +x[9] } : {}) };
     if (r.stufe < 1 || r.stufe > 63 || r.zeit < MIN_TIME) continue;
+    r = mask(r);
     if (r.tempo != null && (r.tempo < 0.5 || r.tempo > 5)) delete r.tempo;
     // eine Sichtung mit Tempo ersetzt dieselbe ohne
     const had = sightsAll.get(sightKey(r));
     if (!had || (r.tempo != null && had.tempo == null)) sightsAll.set(sightKey(r), r);
   }
 }
+for (const [k, r] of sightsAll) if (DEMON_FAMILY.has(r.familie)) { demons.add(String(r.npc)); sightsAll.delete(k); }
 const sightList = [...sightsAll.values()].sort((x, y) => x.npc - y.npc || x.stufe - y.stufe || x.zeit - y.zeit);
 fs.writeFileSync(SIGHT_OUT, '[\n' + sightList.map((r) => '  ' + JSON.stringify(r)).join(',\n') + '\n]\n');
 console.log(`${sightsRead} Sichtungen gelesen, ${sightList.length - sightsOld.length} neu → ${sightList.length} in tools/eigene/sichtungen.json `
@@ -180,6 +213,7 @@ for (const f of files) {
     }
   }
 }
+for (const npc of demons) delete cellsOut[npc];
 const sortedCells = Object.fromEntries(Object.entries(cellsOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b))]));
 fs.writeFileSync(CELLS_OUT, '{\n' + Object.entries(sortedCells).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
@@ -199,9 +233,10 @@ for (const f of files) {
   for (const [npc, maps] of Object.entries(locIn || {})) {
     for (const [map, byRep] of Object.entries(maps || {})) {
       if (!byRep || typeof byRep !== 'object') continue;
-      for (const [rep, cells] of Object.entries(byRep)) {
-        if (!/^[0-9a-f]{8}$/.test(rep)) continue;
+      for (const [raw, cells] of Object.entries(byRep)) {
+        if (!/^[0-9a-f]{8}$/.test(raw)) continue;
         if (typeof cells !== 'string' || cells.length % 2 || [...cells].some((c) => !CELL_ALPHA.includes(c))) continue;
+        const rep = pseudo(raw);
         const have = (((foreignOut[npc] ??= {})[map] ??= {})[rep] ??= '');
         const set = new Set(have.match(/../g) || []);
         let add = '';
@@ -212,6 +247,7 @@ for (const f of files) {
     }
   }
 }
+for (const npc of demons) delete foreignOut[npc];
 const sortedForeign = Object.fromEntries(Object.entries(foreignOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b)
     .map(([map, byRep]) => [map, Object.fromEntries(Object.entries(byRep).sort(([a], [b]) => a.localeCompare(b)))]))]));
@@ -221,7 +257,8 @@ console.log(`${foreignNew} neue fremde Fundort-Zellen → tools/eigene/zellen-fr
 // ---- Herkunft fremder Kürzel (Core/Comm.lua, #15) → tools/eigene/melder-wege.json ----
 // { melder: [absender, …] }, aus ForeverHunterPetsDB.via (je Melder „abs1abs2…“), nur Kürzel. Über alle Dateien
 // vereinigt: Kam ein Melder bei zwei Spielern über verschiedene Absender, sind das zwei Wege. Die Datei entsteht
-// erst, wenn es etwas zu vermerken gibt; ohne sie zählt der Generator wie bisher.
+// erst, wenn es etwas zu vermerken gibt; ohne sie zählt der Generator wie bisher. Melder und Absender laufen
+// durch dasselbe pseudo(), damit „direkt gekommen“ (Absender = Melder) erhalten bleibt.
 const wegeOld = fs.existsSync(WAYS_OUT) ? JSON.parse(fs.readFileSync(WAYS_OUT, 'utf8')) : null;
 const wege = new Map(Object.entries(wegeOld || {}).map(([rep, l]) => [rep, new Set(l)]));
 let wegeNew = 0;
@@ -230,10 +267,11 @@ for (const f of files) {
   try {
     via = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.via;
   } catch { continue; }
-  for (const [rep, s] of Object.entries(via || {})) {
-    if (!/^[0-9a-f]{8}$/.test(rep) || typeof s !== 'string' || !/^([0-9a-f]{8})+$/.test(s)) continue;
+  for (const [raw, s] of Object.entries(via || {})) {
+    if (!/^[0-9a-f]{8}$/.test(raw) || typeof s !== 'string' || !/^([0-9a-f]{8})+$/.test(s)) continue;
+    const rep = pseudo(raw);
     const set = wege.get(rep) ?? wege.set(rep, new Set()).get(rep);
-    for (const from of s.match(/.{8}/g)) if (!set.has(from)) { set.add(from); wegeNew++; }
+    for (const from of s.match(/.{8}/g).map(pseudo)) if (!set.has(from)) { set.add(from); wegeNew++; }
   }
 }
 if (wegeOld || wege.size) {
@@ -297,6 +335,7 @@ for (const f of files) {
     if (e.t) z.datum = z.datum && z.datum < day(e.t) ? z.datum : day(e.t);
   }
 }
+for (const fam of DEMON_FAMILY) delete survey.familien[fam];
 const sortKeys = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => a - b));
 for (const k of ['raenge', 'listen', 'familien', 'zauberbuch']) survey[k] = sortKeys(survey[k]);
 // je Rang eine Zeile, wie bei den Beobachtungen

@@ -151,10 +151,16 @@ function ns.Observed(npcId, a, r)
   return nil
 end
 
--- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus)
+-- Reichen diese fremden Melder { [rep] = true } (n verschiedene)? Dieselbe Schwelle wie oben, etwa für fremde
+-- Zähmungen, die gar keinen Rang zeigten („lehrt nichts“, #40)
+function ns.ForeignEnough(reps, n)
+  return enough(reps, n)
+end
+
+-- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
 function ns.OwnSeen(npcId, a, r)
   for _, o in ipairs(index()[npcId] or {}) do
-    if o.own and verdict(o, a, r) == "seen" then return true end
+    if ns.OwnTame(o) and verdict(o, a, r) == "seen" then return true end
   end
   return false
 end
@@ -238,6 +244,39 @@ local function petSpells()
   return ids
 end
 
+-- ---- Meldung „Entdeckt“ (#51) ----
+-- Nur im Entdeckermodus und nur für die Zone, in der man zähmte. Vorher (bevor Zelle, Zone und Zähmung
+-- gespeichert sind) und nachher dieselbe Zählung wie im Reiter „Gebiet“ (ns.ZoneProgress), damit Chat und
+-- Reiter dieselben Zahlen zeigen. Neue Rang-Kacheln gehen vor; sonst zählt, ob das Tier „Fähigkeiten bekannt“
+-- wurde. Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten.
+local function discoverState(npc, map)
+  if not (map and ns.Discovering()) then return nil end
+  local found = {}
+  for _, e in ipairs(ns.ZoneProgress(map).rankList) do
+    if e.found then found[e.r] = true end
+  end
+  return { status = ns.BeastStatus(npc, map), found = found }
+end
+
+local function announceDiscovery(npc, map, before)
+  if not (before and ns.Discovering()) then return end
+  local p = ns.ZoneProgress(map)
+  local parts = {}
+  for _, e in ipairs(p.rankList) do
+    if e.found and not before.found[e.r] then
+      local rank = ns.RankLabel(e.a, e.r)
+      parts[#parts + 1] = ns.AbilityName(e.a) .. (rank ~= "" and (" " .. rank) or "")
+    end
+  end
+  if #parts > 0 then
+    ns.Print((L["Discovered: %s – %s: %d of %d ranks"]):format(table.concat(parts, ", "), ns.ZoneName(map),
+      p.ranksFound, p.ranks))
+  elseif before.status ~= "known" and ns.BeastStatus(npc, map) == "known" then
+    ns.Print((L["Discovered: abilities of %s known – %s: %d of %d beasts"]):format(ns.BeastName(npc),
+      ns.ZoneName(map), p.beastsKnown, p.beasts))
+  end
+end
+
 local function record()
   if not pending then return end
   if GetTime() - pending.started > WAIT then pending = nil; return end
@@ -252,6 +291,7 @@ local function record()
   speed = okS and tonumber(ns.clean(speed))
   local p = pending
   pending = nil
+  local before = discoverState(p.npc, p.seenMap)   -- vor Zelle, Zone und Zähmung (#51)
   if p.map and ns.AddCells then ns.AddCells(p.npc, p.map, p.cell) end
   if p.seenMap and ns.NoteSeenIn then ns.NoteSeenIn(p.npc, p.seenMap) end
   if not (level and level > 0) then return end
@@ -308,6 +348,7 @@ local function record()
     ns.Print((L["Observed: %s (level %d) brought %s"]):format(ns.BeastName(p.npc),
       level, #parts > 0 and table.concat(parts, ", ") or L["no ability"]))
     ns.ObservationsChanged()
+    announceDiscovery(p.npc, p.seenMap, before)
   end
   ns.ObservationsChanged()
   announce()

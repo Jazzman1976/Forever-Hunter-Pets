@@ -17,7 +17,7 @@ Namen und Beschreibungen der Fähigkeiten (`C_Spell`), Icons, Zonennamen (`C_Map
 | Weg | Auslöser | Liefert | Modul | Datei in `tools/eigene/` |
 | --- | --- | --- | --- | --- |
 | **Erhebung** | Fenster „Wildtierausbildung“ oder Tierausbilder öffnen; Pet rufen | Fähigkeiten, Ränge, Zauber-IDs (aus dem Tooltip der Zeile), Pet-Stufe, angezeigte TP, Familien je Fähigkeit; vom Tierausbilder Jägerstufe und Preis; das Zauberbuch der Pets | `Core/Survey.lua` | `erhebung.json` |
-| **Sichtung** | Tier mit Familie anvisieren, mit der Maus berühren oder mit Namensplakette sehen, bis etwa 28 m | NPC-ID, Name in Client-Sprache, Stufe, Einstufung, Familie und Familienname, Angriffstempo | `Core/Sightings.lua` | `sichtungen.json` |
+| **Sichtung** | Wildtier mit Familie (kein Dämon, #80) anvisieren, mit der Maus berühren oder mit Namensplakette sehen, bis etwa 28 m | NPC-ID, Name in Client-Sprache, Stufe, Einstufung, Familie und Familienname, Angriffstempo | `Core/Sightings.lua` | `sichtungen.json` |
 | **Zähmen** | „Wildtier zähmen“ gelingt | Zauber-IDs und Angriffstempo, die das Tier mitbrachte; Stufe | `Core/Observe.lua` | `beobachtungen.json` |
 | **Fundort** | Sichtung oder Zähmbeginn, Tier in etwa 10 m | Zelle eines Rasters von 2 % der Karte (50 × 50) an der Position des Spielers | `Core/Places.lua` | `zellen.json` |
 | **Befund** | von Hand, nach Beobachtung im Spiel | ein Lehrtier bestätigt oder widerlegt, mit Quelle und Datum | – | `korrekturen.json` |
@@ -32,7 +32,7 @@ Dazu kommen von Hand `tiere.json`, `familien.json` und `faehigkeiten.json` (für
 - **Zauber aus dem Zauberbuch**, die in keiner Liste stehen, kommen dazu, ohne Pet-Stufe und TP: Das Pet kann sie, der Jäger noch nicht.
 - **TP:** Die Wildtierausbildung zeigt beim aktuellen Rang des Pets 0, bei höheren den Preis abzüglich dessen, bei niedrigeren den vollen Preis. Daraus wird der Preis zurückgerechnet; was sich noch nicht rechnen lässt, bleibt leer.
 - **Je Familie** gilt die zuletzt gelesene vollständige Wildtierausbildung. Sie ersetzt die vorige, damit eine falsche Liste (etwa beim Pet-Wechsel) nicht stehen bleibt.
-- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 3 Meldern, mit dem häufigsten Namen.
+- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 3 Meldern. Der Name: der eigene, sonst ein fremder, den selbst genug Melder nennen (#47); abweichende Namen meldet der Generator.
 - **Fundorte:** Zellen werden als Punkt in der Zellmitte ausgeliefert: eigene sofort, fremde ab 3 Meldern (je Melder gespeichert seit #2). Ältere fremde Zellen ohne Melder bleiben im Spiel.
 
 Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit; sie stehen in deren SavedVariables und kommen über den Import in die eigenen Daten, wenn sie die Regeln unten erfüllen.

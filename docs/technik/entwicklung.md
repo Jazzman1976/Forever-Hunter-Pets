@@ -53,6 +53,8 @@ Die gespeicherten Daten des Addons liegen nach `/reload` oder Logout hier:
 
 Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die Dateien `ForeverHunterPets.lua` (im Konto und je Charakter) einmal in `Forever-Hunter-Pets.lua` um. Die Variablen darin heißen weiter `ForeverHunterPetsDB`.
 
+`/fhp start` zeigt den Startdialog noch einmal, auch wenn der Charakter schon gewählt hat (Entwicklerwerkzeug, nicht in der Befehlsübersicht); Schließen ändert dann nichts, eine Wahl setzt den Modus. Ganz zurück auf „noch nicht gewählt“: `/run ForeverHunterPetsCharDB.modeChosen = nil`, danach `/fhp`.
+
 `/fhp api` schreibt ein API-Protokoll dorthin (`ForeverHunterPetsDB.probe`). So kommt Spielausgabe in eine Datei, ohne dass jemand Chatzeilen abtippt.
 
 ## Prüfen ohne Spiel
@@ -68,9 +70,15 @@ Zwei npm-Pakete, in einem Ordner außerhalb des Repos installiert:
 
 ```
 node tools/import-observations.mjs <WoW-Ordner>   # Erhebung, Sichtungen, Zähmungen, Fundort-Zellen und eigene Kürzel nach tools/eigene/
-node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe der Beleg fehlt
+node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe der Beleg fehlt oder sich Fähigkeiten ändern
 node tools/build-addon.mjs     # erzeugt Data/Data.lua
 ```
+
+**Salz für fremde Kürzel (#48):** Der Import rechnet fremde Kürzel mit dem Salz aus `.ignore/melder-salz.txt` neu und rundet die Zeit fremder Einträge auf den Tag (Format in [datenformat.md](datenformat.md)). Fehlt die Datei, legt der Import ein neues Salz an und sagt das. **Die Datei sichern:** Mit einem neuen Salz bekommen dieselben Melder neue Kürzel und zählen doppelt, Daten könnten zu früh als belegt gelten. Wer sonst importiert, braucht dieselbe Datei (privat weitergeben, nie ins Repo).
+
+**Vergleich mit dem Stand in Git (#37):** `build-data.mjs` vergleicht das Ergebnis mit `tools/data.json` in `HEAD` (nicht mit der Datei auf der Platte, sonst meldete ein zweiter Lauf nichts mehr) und gibt eine Übersicht alt → neu aus: Fähigkeiten, Ränge, Lehrtier-Paare, Tiere, Fundorte, dazu neue Ränge bekannter Fähigkeiten. Kommt eine Fähigkeit dazu, fällt eine weg oder wechselt eine die Herkunft (von Tieren ↔ beim Tierausbilder), bricht es ab, ohne `tools/data.json` zu schreiben, und listet sie mit Rängen, Familien und Zahl der Lehrtiere auf. Erst prüfen – so sahen die Jägerzauber aus #34 aus: von Tieren, mit Familien, aber ohne ein einziges Lehrtier –, dann mit `node tools/build-data.mjs --neue-faehigkeiten` bestätigen. Fähigkeiten gelten als dieselben, wenn sie einen Rang (Zauber-ID) teilen. Der Vergleich von Hand nach jedem Import entfällt damit; vor einem Release bleibt der Probe-Import, dessen Übersicht man liest.
+
+**Import vor jedem Release (#39):** Die Stammdaten wachsen nur durch einen Import. Er kommt einmal vor jedem Release als eigenes Issue, vor dem Release-Branch (im Release-Branch kommen keine neuen Daten): im Spiel `/reload` oder Logout, Import, `build-data.mjs` (neue Fähigkeiten im Issue auflisten und vom Maintainer bestätigen lassen), `build-addon.mjs`, Test im Spiel, PR nach `develop`.
 
 `--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig war das für Erhebungen bis Version 8, in denen das Addon die Wildtierausbildung manchmal als Tierausbilder erhob (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Seit #32 ordnet das Addon das Fenster richtig ein, bereinigt die SavedVariables beim Wechsel auf Version 9, und der Import liest ältere Erhebungen nicht mehr (seit #34 erst ab Version 10, weil Version 9 Jägerzauber enthalten kann); der Schalter bleibt als Vorsicht.
 
@@ -121,13 +129,13 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
     | Testing | wartet auf den Test im Spiel oder wird getestet | Maintainer: testen, Ergebnis ins Issue |
     | Test passed | getestet, wartet auf den PR | Claude: Commit, Push, PR |
     | In pull request | PR offen, wartet auf Review und Merge | Maintainer: mergen |
-    | Done | gemergt und geschlossen | Claude: aufräumen |
+    | Done | gemergt nach `develop` und geschlossen (automatisch über `Closes #<Nr>`) | Claude: aufräumen |
 
     Ohne Freigabe des Maintainers wird weder ein Plan geschrieben (*Approved*) noch umgesetzt (*Ready for development*). Der Umsetzungsplan steht als Kommentar im Issue: was sich ändert und wo, Bewertung nach Mehrwert, Komplexität und Risiko, was geprüft wird und was der Maintainer testen soll. Den Status setzt, wer gerade handelt. Soll der Maintainer (wieder) testen, kommt das Issue nach *Testing*, und der Kommentar beschreibt **Schritt für Schritt**, was er tun soll – vom `/reload` über jeden Klick bis zu dem, was er zurückmelden soll.
   - **Issue:** Jede Änderung hat ein GitHub-Issue. Gibt es keins, wird eins angelegt.
   - **Branch:** `feature/<Nr>-<issue-titel-als-slug>`, Titel klein, Wörter mit Bindestrich, etwa `feature/3-tiernamen-in-der-sprache-des-clients`, Umlaute als ae, oe, ue, ss. Gemeint ist das Muster „[Issue-Nummer] [Issue-Name]“; Git erlaubt in Branch-Namen weder Leerzeichen noch eckige Klammern.
   - **Commits:** `#<Nr> <Issue-Titel> => <was im Commit passiert ist>`, etwa `#3 Tiernamen in der Sprache des Clients => Namen aus der Sichtung vor den Daten`. Bei einem englischen Issue bleibt der Titel englisch, der Teil nach `=>` ist deutsch wie alle Commit-Meldungen.
-  - **Pull Request:** Nach `develop` kommt nichts direkt, nur per PR, in der Sprache des Issues. Er erklärt genau, **was** geändert wurde, **warum** und **welche Folgen** es hat (Daten, Speicher, Verkehr im Kanal, Verhalten im Spiel, Doku), dazu, was wie geprüft ist. `Fixes #<Nr>` im PR schließt das Issue beim Merge. Gemergt wird erst nach dem Test im Spiel.
+  - **Pull Request:** Nach `develop` kommt nichts direkt, nur per PR, in der Sprache des Issues. Er erklärt genau, **was** geändert wurde, **warum** und **welche Folgen** es hat (Daten, Speicher, Verkehr im Kanal, Verhalten im Spiel, Doku), dazu, was wie geprüft ist. Der PR-Text beginnt mit `Closes #<Nr>`, auch bei einem deutschen PR (Regel des Nutzers, 20.10.2026): GitHub versteht nur englische Schlüsselwörter (`Closes`, `Fixes`, `Resolves`), „Schließt #47“ verknüpft nichts. Weil `develop` der Standard-Branch ist, schließt schon der Merge nach `develop` das Issue, und die Automatik des Projects setzt es auf *Done*. Release-PRs nach `main` tragen kein `Closes`. **Definition of Done:** Das Issue ist dokumentiert, lokal im Spiel getestet und nach `develop` gemergt. Gemergt wird erst nach dem Test im Spiel.
   - **Test im Spiel:** Was der Maintainer im Spiel prüfen soll, kommt als Kommentar ins Issue (Checkliste in der Sprache des Issues mit Schritten und erwartetem Ergebnis), sobald es bereitsteht. So ist es auch in der nächsten Sitzung auffindbar; das Ergebnis wird dort ebenfalls festgehalten.
   - **Ausnahmen** sind erlaubt, wenn sie vorher abgesprochen sind: etwa kein Issue für eine Kleinigkeit, mehrere Issues in einem Branch (dann `feature/<Nr>-<Nr>-<slug>` und `#<Nr> #<Nr> …` in den Commits) oder ein Commit direkt auf `develop`. Die Regel soll Überblick und ein ruhiges Review jeder Änderung ermöglichen, nicht verbieten.
 - **Inkremente:** ein Schritt nach dem anderen, jeder im Spiel prüfbar. Committet und gemergt wird, nachdem der Schritt im Spiel getestet ist.
