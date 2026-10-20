@@ -401,8 +401,9 @@ const abilities = abilitiesIn.map((a) => {
 // ---- Sichtungen: Name, Stufe, Familie, Einstufung je Tier ----
 // Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_NEEDED verschiedene Melder das Tier gesehen haben (wie
 // beim Zähmen). Familie und Einstufung: die eigene, sonst die häufigste.
-// Namen (#3): je Sprache aus allen Sichtungen dieser Sprache, ohne Schwelle – ein Name ist kein Beleg. Sie kommen
-// nur an Tiere, die ohnehin ausgeliefert werden (siehe beastIds unten). Der eigene Name geht vor, sonst der häufigste.
+// Namen (#3, #47): je Sprache aus den Sichtungen dieser Sprache. Sie kommen nur an Tiere, die ohnehin ausgeliefert
+// werden (siehe beastIds unten). Der eigene Name geht vor; ein fremder nur, wenn genug verschiedene Melder ihn nennen
+// (enough), unter mehreren der mit den meisten Meldern. Mehrere Namen je Tier und Sprache stehen unter „Hinweise“.
 const sighted = new Map(); // NPC-ID → { de, en, fam, cls, min, max }
 const sightedNames = new Map(); // NPC-ID → { de, en }
 {
@@ -419,10 +420,25 @@ const sightedNames = new Map(); // NPC-ID → { de, en }
     for (const s of list) if (f(s) != null) count.set(f(s), (count.get(f(s)) || 0) + 1);
     return [...count].sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
   };
+  const pickName = (npc, lang, list) => {
+    const own = list.find((s) => ownReps.has(s.melder));
+    const reps = new Map(); // Name → Set der Melder
+    for (const s of list) {
+      if (!reps.has(s.name)) reps.set(s.name, new Set());
+      reps.get(s.name).add(s.melder);
+    }
+    if (reps.size > 1) {
+      warnings.push(`Tier ${npc} (${lang}): mehrere Namen – `
+        + [...reps].map(([n, r]) => `„${n}“ (${r.size} Melder)`).join(', '));
+    }
+    if (own) return own.name;
+    const best = [...reps].filter(([, r]) => enough(r)).sort((x, y) => y[1].size - x[1].size)[0];
+    return best ? best[0] : null;
+  };
   for (const [npc, list] of byNpc) {
     sightedNames.set(npc, {
-      de: pick(list.filter((s) => s.sprache === 'deDE'), (s) => s.name),
-      en: pick(list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB'), (s) => s.name),
+      de: pickName(npc, 'deDE', list.filter((s) => s.sprache === 'deDE')),
+      en: pickName(npc, 'enUS', list.filter((s) => s.sprache === 'enUS' || s.sprache === 'enGB')),
     });
     const own = list.filter((s) => ownReps.has(s.melder));
     const foreignReps = new Set(list.filter((s) => !ownReps.has(s.melder)).map((s) => s.melder));

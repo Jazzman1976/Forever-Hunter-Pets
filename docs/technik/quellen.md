@@ -32,7 +32,7 @@ Dazu kommen von Hand `tiere.json`, `familien.json` und `faehigkeiten.json` (für
 - **Zauber aus dem Zauberbuch**, die in keiner Liste stehen, kommen dazu, ohne Pet-Stufe und TP: Das Pet kann sie, der Jäger noch nicht.
 - **TP:** Die Wildtierausbildung zeigt beim aktuellen Rang des Pets 0, bei höheren den Preis abzüglich dessen, bei niedrigeren den vollen Preis. Daraus wird der Preis zurückgerechnet; was sich noch nicht rechnen lässt, bleibt leer.
 - **Je Familie** gilt die zuletzt gelesene vollständige Wildtierausbildung. Sie ersetzt die vorige, damit eine falsche Liste (etwa beim Pet-Wechsel) nicht stehen bleibt.
-- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 3 Meldern, mit dem häufigsten Namen.
+- **Tiere:** aus eigenen Sichtungen sofort, aus fremden ab 3 Meldern. Der Name: der eigene, sonst ein fremder, den selbst genug Melder nennen (#47); abweichende Namen meldet der Generator.
 - **Fundorte:** Zellen werden als Punkt in der Zellmitte ausgeliefert: eigene sofort, fremde ab 3 Meldern (je Melder gespeichert seit #2). Ältere fremde Zellen ohne Melder bleiben im Spiel.
 
 Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit; sie stehen in deren SavedVariables und kommen über den Import in die eigenen Daten, wenn sie die Regeln unten erfüllen.
