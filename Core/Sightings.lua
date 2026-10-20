@@ -24,6 +24,11 @@ local MAX_STORED = 10000      -- fremde Sichtungen; Speicher geht vor
 local CLS = { normal = 0, trivial = 0, minus = 0, elite = 1, rareelite = 2, worldboss = 3, rare = 4 }
 ns.LOCALES = { deDE = true, enUS = true, enGB = true, frFR = true, esES = true, esMX = true, ptBR = true,
   itIT = true, ruRU = true, koKR = true, zhCN = true, zhTW = true }
+-- Familien, die es nur bei Dämonen gibt (#80). Beim Sammeln entscheidet der Kreaturtyp (ns.WildBeast); gespeicherte
+-- und geteilte Sichtungen kennen ihn nicht, nur die Familie. 15 Teufelsjäger und 16 Leerwandler im Spiel geprüft
+-- (20.10.2026), 17 Sukkubus, 19 Verdammniswache, 23 Wichtel nach Classic, ungeprüft. Gleiche Liste in
+-- tools/import-observations.mjs.
+ns.DEMON_FAMILY = { [15] = true, [16] = true, [17] = true, [19] = true, [23] = true }
 
 -- ---- Ablage ----
 function ns.ParseSighting(s)
@@ -228,20 +233,35 @@ local function record(unit, npc, fam)
   if ns.AddSighting(s) then queueShare(s, ns.ParseSighting(s)) end
 end
 
--- Ist die Einheit ein Tier, das uns angeht? NPC-ID und Familie, sonst nil. Billige Prüfungen zuerst.
-local function beast(unit)
+-- Ein wildes Tier: kein Spieler, mit Familie, Kreaturtyp Wildtier, von keinem Spieler gesteuert. Familie und
+-- Familienname, sonst nil. Billige Prüfungen zuerst. Auch Dämonen haben eine Familie (Teufelsjäger, Leerwandler);
+-- UnitCreatureType nennt nach dem Namen eine Typ-ID, Wildtier 1, Dämon 3 (im Spiel geprüft am 20.10.2026, #80).
+-- Liefert ein Client keine ID, zählt die Familie allein.
+function ns.WildBeast(unit)
   local okP, isPlayer = pcall(UnitIsPlayer, unit)
   if not okP or ns.clean(isPlayer) ~= false then return nil end
   local okF, famName, fam = pcall(UnitCreatureFamily, unit)
   fam = okF and tonumber(ns.clean(fam))
   if not fam then return nil end
+  if UnitCreatureType then
+    local okT, _, kind = pcall(UnitCreatureType, unit)
+    kind = okT and tonumber(ns.clean(kind))
+    if kind and kind ~= 1 then return nil end
+  end
   local okC, controlled = pcall(UnitPlayerControlled, unit)
   if not okC or ns.clean(controlled) ~= false then return nil end   -- Pets, gezähmte Tiere
+  return fam, ns.clean(famName)
+end
+
+-- Ist die Einheit ein Tier, das uns angeht? GUID, NPC-ID, Familie und Familienname, sonst nil.
+local function beast(unit)
+  local fam, famName = ns.WildBeast(unit)
+  if not fam then return nil end
   local okG, guid = pcall(UnitGUID, unit)
   guid = okG and ns.clean(guid)
   local npc = guid and ns.NpcFromGuid(guid)
   if not npc then return nil end
-  return guid, npc, fam, ns.clean(famName)
+  return guid, npc, fam, famName
 end
 
 -- Ein Durchlauf für ein Tier: Fährte aus jeder Entfernung, Stammdaten aus etwa 28 m, Fundort-Zelle aus
@@ -343,6 +363,49 @@ end
 
 -- Die Proben (Entfernung, Inkrement 4; Angriffstempo, 16.10.2026) haben ihre Fragen beantwortet
 ns.On("ADDON_LOADED", function() if ns.db then ns.db.sightProbe, ns.db.speedProbe = nil, nil end end)
+
+-- ---- Dämonen aus dem Bestand (#80) ----
+-- Bis 0.10.x kamen Dämonen mit Familie als Tiere in die Ablage. Beim Laden fliegen sie heraus: aus Sichtungen,
+-- Fernnamen, Fährten und Fundort-Zellen (Konto und dieser Charakter), ihre Familien aus der Erhebung. Ohne
+-- Merker, damit auch verschwindet, was ältere Versionen anderer Spieler später noch teilen.
+local cleaned = false
+local function dropDemons()
+  local db = ns.db
+  if cleaned or not db then return end
+  cleaned = true
+  local demons, kept, dropped = {}, {}, false
+  for _, s in ipairs(db.sights or {}) do
+    local o = ns.ParseSighting(s)
+    if o and ns.DEMON_FAMILY[o.fam] then
+      demons[o.npc], dropped = true, true
+    else
+      kept[#kept + 1] = s
+    end
+  end
+  if dropped then
+    db.sights = kept
+    ns.SightingsChanged()
+  end
+  for npc, v in pairs(db.trackNames or {}) do
+    if ns.DEMON_FAMILY[type(v) == "string" and tonumber(v:match("^(%d+);")) or 0] then demons[npc] = true end
+  end
+  for npc in pairs(demons) do
+    if db.trackNames then db.trackNames[npc] = nil end
+    for _, store in ipairs({ db, ns.char or {} }) do
+      for _, key in ipairs({ "seenIn", "loc", "locIn" }) do
+        if store[key] then store[key][npc] = nil end
+      end
+    end
+  end
+  local s = db.survey
+  if type(s) == "table" then
+    for fam in pairs(ns.DEMON_FAMILY) do
+      if s.families then s.families[fam] = nil end
+      if s.familyIcons then s.familyIcons[fam] = nil end
+    end
+  end
+end
+ns.On("ADDON_LOADED", function() ns.SafeCall("sight", dropDemons) end)
 
 ns.On("PLAYER_TARGET_CHANGED", function() ns.SafeCall("sight", track, "target", true) end)
 ns.On("UPDATE_MOUSEOVER_UNIT", function() ns.SafeCall("sight", track, "mouseover", true) end)

@@ -17,7 +17,7 @@ Namen und Beschreibungen der Fähigkeiten (`C_Spell`), Icons, Zonennamen (`C_Map
 | Weg | Auslöser | Liefert | Modul | Datei in `tools/eigene/` |
 | --- | --- | --- | --- | --- |
 | **Erhebung** | Fenster „Wildtierausbildung“ oder Tierausbilder öffnen; Pet rufen | Fähigkeiten, Ränge, Zauber-IDs (aus dem Tooltip der Zeile), Pet-Stufe, angezeigte TP, Familien je Fähigkeit; vom Tierausbilder Jägerstufe und Preis; das Zauberbuch der Pets | `Core/Survey.lua` | `erhebung.json` |
-| **Sichtung** | Tier mit Familie anvisieren, mit der Maus berühren oder mit Namensplakette sehen, bis etwa 28 m | NPC-ID, Name in Client-Sprache, Stufe, Einstufung, Familie und Familienname, Angriffstempo | `Core/Sightings.lua` | `sichtungen.json` |
+| **Sichtung** | Wildtier mit Familie (kein Dämon, #80) anvisieren, mit der Maus berühren oder mit Namensplakette sehen, bis etwa 28 m | NPC-ID, Name in Client-Sprache, Stufe, Einstufung, Familie und Familienname, Angriffstempo | `Core/Sightings.lua` | `sichtungen.json` |
 | **Zähmen** | „Wildtier zähmen“ gelingt | Zauber-IDs und Angriffstempo, die das Tier mitbrachte; Stufe | `Core/Observe.lua` | `beobachtungen.json` |
 | **Fundort** | Sichtung oder Zähmbeginn, Tier in etwa 10 m | Zelle eines Rasters von 2 % der Karte (50 × 50) an der Position des Spielers | `Core/Places.lua` | `zellen.json` |
 | **Befund** | von Hand, nach Beobachtung im Spiel | ein Lehrtier bestätigt oder widerlegt, mit Quelle und Datum | – | `korrekturen.json` |

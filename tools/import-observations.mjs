@@ -30,6 +30,10 @@ const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
 const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
 const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
+// Familien, die es nur bei Dämonen gibt, wie ns.DEMON_FAMILY in Core/Sightings.lua (#80): Solche Tiere sind nicht
+// zähmbar. Ihre Sichtungen, Fundort-Zellen und Familien kommen nicht in die Daten, auch nicht aus dem Bestand.
+const DEMON_FAMILY = new Set([15, 16, 17, 19, 23]);
+const demons = new Set(); // NPC-IDs als Zeichenkette
 
 // djb2, wie ns.ReporterHash im Addon
 function hash(s) {
@@ -180,6 +184,7 @@ for (const f of files) {
     if (!had || (r.tempo != null && had.tempo == null)) sightsAll.set(sightKey(r), r);
   }
 }
+for (const [k, r] of sightsAll) if (DEMON_FAMILY.has(r.familie)) { demons.add(String(r.npc)); sightsAll.delete(k); }
 const sightList = [...sightsAll.values()].sort((x, y) => x.npc - y.npc || x.stufe - y.stufe || x.zeit - y.zeit);
 fs.writeFileSync(SIGHT_OUT, '[\n' + sightList.map((r) => '  ' + JSON.stringify(r)).join(',\n') + '\n]\n');
 console.log(`${sightsRead} Sichtungen gelesen, ${sightList.length - sightsOld.length} neu → ${sightList.length} in tools/eigene/sichtungen.json `
@@ -208,6 +213,7 @@ for (const f of files) {
     }
   }
 }
+for (const npc of demons) delete cellsOut[npc];
 const sortedCells = Object.fromEntries(Object.entries(cellsOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b))]));
 fs.writeFileSync(CELLS_OUT, '{\n' + Object.entries(sortedCells).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
@@ -241,6 +247,7 @@ for (const f of files) {
     }
   }
 }
+for (const npc of demons) delete foreignOut[npc];
 const sortedForeign = Object.fromEntries(Object.entries(foreignOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b)
     .map(([map, byRep]) => [map, Object.fromEntries(Object.entries(byRep).sort(([a], [b]) => a.localeCompare(b)))]))]));
@@ -328,6 +335,7 @@ for (const f of files) {
     if (e.t) z.datum = z.datum && z.datum < day(e.t) ? z.datum : day(e.t);
   }
 }
+for (const fam of DEMON_FAMILY) delete survey.familien[fam];
 const sortKeys = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => a - b));
 for (const k of ['raenge', 'listen', 'familien', 'zauberbuch']) survey[k] = sortKeys(survey[k]);
 // je Rang eine Zeile, wie bei den Beobachtungen

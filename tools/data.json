@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T07:34:22.840Z",
+ "generatedAt": "2026-10-20T12:54:56.424Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -50,11 +50,6 @@
    "de": "Weitschreiter",
    "en": null,
    "icon": 132198
-  },
-  "15": {
-   "de": "Teufelsjäger",
-   "en": null,
-   "icon": null
   },
   "20": {
    "de": "Skorpid",
@@ -961,14 +956,6 @@
    "fam": 2,
    "min": 9,
    "max": 9,
-   "cls": 0
-  },
-  "3774": {
-   "de": "Teufelstöter",
-   "en": null,
-   "fam": 15,
-   "min": 22,
-   "max": 22,
    "cls": 0
   },
   "3809": {
