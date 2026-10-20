@@ -397,6 +397,16 @@ local function dropDemons()
       end
     end
   end
+  -- Was ein Charakter in seenIn und loc hat, steht immer auch beim Konto (ns.NoteSeenIn, ns.AddCells, Übernahme).
+  -- Fehlt eine NPC dort, war sie ein Dämon, den schon ein anderer Charakter aus dem Konto entfernt hat.
+  local char = ns.char
+  if char then
+    for _, key in ipairs({ "seenIn", "loc" }) do
+      for npc in pairs(char[key] or {}) do
+        if not (db[key] and db[key][npc]) then char[key][npc] = nil end
+      end
+    end
+  end
   local s = db.survey
   if type(s) == "table" then
     for fam in pairs(ns.DEMON_FAMILY) do
