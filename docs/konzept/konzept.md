@@ -147,6 +147,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Nur „Fähigkeiten bekannt“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
 - **Immer „X von Y“** (18.10.2026, #19): Auch wenn alles bekannt ist, steht „8 von 8 …“, bei *Tiere* mit vollem Balken – für alle drei Zähler gleich. Vorher stand bei X = Y nur „8“; über den Kacheln wirkte das wie ein kaputter Umbruch. Im Komplettmodus zeigt der Tiere-Balken, wie weit das Datensammeln ist.
 - Ränge vom Tierausbilder und Ränge ohne Lehrtier in der Zone zählen nicht – die muss man dort nicht suchen.
+- **Komplettmodus: Es zählt, was gezeigt wird** (20.10.2026, #40). Die Zähler und Kacheln nehmen die Lehren aus `ns.TeachInfo`, wie Liste und Tooltip. Ist „Unsichere Angaben zeigen“ aus, zählen unsichere Lehren weder in X noch in Y; X wird nie größer als Y. Vorher zählten sie mit, auch wenn die Liste sie verschwieg, und eine einzelne fremde Zähmung zählte sofort. Der Entdeckermodus bleibt: Y ist das Grundgerüst aus allen Daten.
 - Zahl und Wort sind maßgeblich, der Balken nur zusätzlich. Gezählt wird beim Öffnen, Zonenwechsel und Auswählen.
 - **Kacheln statt Balken** bei Lehrtieren und Fähigkeiten (18.10.2026, #19): je Lehrtier bzw. Rang eine Kachel, unentdeckt mit dem roten Fragezeichen der Liste, entdeckt mit dem Icon der Familie bzw. der Fähigkeit – „ich muss diese Kachel noch aufdecken“. Die Reihenfolge ist fest (NPC-ID, Fähigkeit und Rang), eine Kachel dreht sich beim Entdecken an ihrem Platz um. Höchstens zwei Zeilen, der Rest als „+n“. Fundorte stehen als Fußnote unten links.
 
@@ -219,6 +220,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
 - Kästchen aus „Fähigkeiten“, Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile.
+- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ und „? unentdeckt“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang, „unentdeckt“ gibt es nur im Entdeckermodus, und dort ist alles belegt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
+- „lehrt nichts“ aus fremden Zähmungen gilt erst ab 3 Meldern, wie Ränge; eine eigene Zähmung zählt sofort (#40). Vorher reichte eine einzige fremde Zähmung, was eine Falschaussage sein konnte.
 - Erklärung der Status im Tooltip des Zählers „Tiere“.
 - Unentdeckte Tiere tragen die zweite Zeile „Gehe auf die Pirsch und finde es.“ (#19) – ohne sie hielten manche das für eine Lücke in den Daten.
 - Kachel-Tooltips knapp: erkanntes Lehrtier wie die Zeile (Name, Lehre, Klick zeigt es auf der Karte), entdeckter Rang Name, Rang und das leichteste Lehrtier der Zone (Klick zeigt es, Bewertung wie in „Fähigkeiten“), Unentdecktes nur „? unentdecktes Lehrtier“ bzw. „? unentdeckte Fähigkeit“.
@@ -226,6 +229,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.
 - Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
+- Im Komplettmodus, wenn es zum Tier Angaben unter der Schwelle gibt (unsicherer oder unbelegter Rang, fremde Zähmungen von weniger als 3 Meldern): „Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!“ (gold, einmal, #40). Auch roh geprüft, anders begründet als #23: Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne die Zeile bliebe ein Tier mit nur unsicheren Lehren bei ausgeschalteter Einstellung stumm. Nach einer eigenen Zähmung (jeder Charakter des Kontos) ist alles belegt, die Zeile fällt weg.
 - Nur für wilde Tiere (Familie, nicht vom Spieler kontrolliert) – sonst bekämen Wachen Fährten.
 - Neue Fährten melden sich nicht im Chat (liefe voll), sondern über den Status im Tooltip.
 

@@ -40,7 +40,8 @@ local function famAndLevel(npc)
   return fam, level
 end
 
--- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „? unklar“ bzw. „lehrt nichts“
+-- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „? unklar“ bzw. „lehrt nichts“.
+-- Nicht Belegtes mit „?“ bzw. „!“ hinter dem Rang, wie im Tooltip des Tiers (#40).
 local function teachTooltip(owner, npc)
   GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
   GameTooltip:SetText(ns.BeastName(npc))
@@ -53,7 +54,7 @@ local function teachTooltip(owner, npc)
     for _, e in ipairs(info) do
       local rank = ns.RankLabel(e.a, e.r)
       GameTooltip:AddLine(("|T%s:16:16|t %s"):format(ns.AbilityIcon(e.a), ns.AbilityName(e.a))
-        .. (rank ~= "" and (" · " .. rank) or ""), 1, 1, 1)
+        .. (rank ~= "" and (" · " .. rank) or "") .. ns.ConfMark(e.conf), 1, 1, 1)
     end
   end
   GameTooltip:AddLine(L["Click: show on the map"], 0.4, 0.8, 1)
@@ -321,7 +322,9 @@ function ns.BuildArea(parent)
       local npc = easiestHere(item)
       b.tip = function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(ns.AbilityName(item.a) .. (rank ~= "" and (" · " .. rank) or ""), 1, 1, 1)
+        -- „?“ bzw. „!“, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt (#40)
+        GameTooltip:SetText(ns.AbilityName(item.a) .. (rank ~= "" and (" · " .. rank) or "")
+          .. ns.ConfMark(item.conf), 1, 1, 1)
         if npc then
           GameTooltip:AddLine(ns.BeastName(npc), 0.8, 0.8, 0.8)
           GameTooltip:AddLine(L["Click: show on the map"], 0.4, 0.8, 1)
