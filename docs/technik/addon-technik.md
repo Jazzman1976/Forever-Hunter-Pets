@@ -25,7 +25,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
 | `UI/MapCanvas.lua` | Karte mit Fundorten, 3D-Modell und die Kartenseite eines Tiers |
 | `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |
-| `UI/ModeDialog.lua` | Startdialog: Komplett- oder Entdeckermodus, einmal je Charakter |
+| `UI/ModeDialog.lua` | Startdialog: Entdecker- (empfohlen) oder Komplettmodus, einmal je Charakter; Schließen = Entdeckermodus; `/fhp start` |
 | `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y bekannt“ (fertig: nur die Zahl) |
 | `UI/Main.lua` | Fenster, Reiter, Zahnrad zu den Einstellungen (`ns.OpenSettings` öffnet per `Settings.OpenToCategory` die eigene Kategorie und schließt das Fenster) |
 | `UI/Settings.lua` | Seite im Addon-Menü, Knopf an der Minikarte; oben das Logo als eigenes Element (`Settings.CreateElementInitializer` mit der Vorlage aus `UI/Settings.xml`, #5) |

@@ -42,10 +42,14 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Complete mode** – shows everything that is known. You don't have to search for anything.
-- **Explorer mode** – shows only what you have found yourself, and how much there is still to discover.
+- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for.
+- **Complete mode** – if you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost.
 
-Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings. The current mode is shown in small letters in the top right corner of the window, next to the gear.
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.
+
+The window also tells you that the addon is in **beta**: hunters are still gathering its knowledge, so some beasts, ranks or spawn points may be missing. That isn't broken – it's waiting to be discovered, and every hunter who plays with the addon helps fill the gaps.
+
+The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
 ## Complete mode and explorer mode
 
@@ -199,7 +203,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Explorer mode | off (asked at first start) | explorer mode for this character; off = complete mode |
+| Explorer mode | on (asked at first start) | explorer mode for this character; off = complete mode |
 | – Show finds of my other characters | off | in explorer mode, also count what your other characters found (per character) |
 | Minimap button | on | button at the minimap; Ctrl + drag to move it |
 | Remember filters | on | keeps the filters of *Abilities* and *Training* per character |

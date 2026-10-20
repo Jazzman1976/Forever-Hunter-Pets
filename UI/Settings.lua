@@ -126,7 +126,7 @@ local function registerSettings()
   -- Entdeckermodus je Charakter (Core/Discover.lua); umschalten heißt auch: gewählt
   if ns.char then
     local mode = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_DiscoverMode", "discover", ns.char,
-      Settings.VarType.Boolean, L["Explorer mode"], false)
+      Settings.VarType.Boolean, L["Explorer mode"], true)   -- Standard wie beim Schließen des Startdialogs (#42)
     mode:SetValueChangedCallback(function()
       ns.char.modeChosen = true
       ns.SafeCall("mode", ns.ModeChanged)
