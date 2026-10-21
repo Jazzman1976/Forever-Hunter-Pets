@@ -426,3 +426,137 @@ function ns.ProbeTame()
   end
   ns.Print("Zähm-Probe läuft 10 Minuten. Pet freilassen (oder in den Stall), dann ein Tier zähmen. Am besten eins, dessen Fähigkeiten du kennst.")
 end
+
+-- ---- /fhp besitzer: erkennt man Begleiter von NPCs am Tooltip? (#90) ----
+-- Schreibt 10 Minuten lang still nach ForeverHunterPetsDB.probe: je Tier mit Familie (Ziel, Maus, Namensplakette)
+-- einmal die Einheit, die Tooltip-Zeilen über C_TooltipInfo (mit Zeilentyp) und über einen versteckten Tooltip.
+-- Dazu die Vorlagen UNITNAME_* des Clients und rote Fehlermeldungen (UI_ERROR_MESSAGE), etwa beim Zähmen.
+local ownerUntil, ownerStart, ownerHooked, ownerSeen, ownerTip = 0, 0, false, {}, nil
+
+local function dumpTooltip(unit)
+  if C_TooltipInfo and C_TooltipInfo.GetUnit then
+    local ok, d = pcall(C_TooltipInfo.GetUnit, unit)
+    d = ok and ns.clean(d)
+    if type(d) == "table" and type(d.lines) == "table" then
+      for i, l in ipairs(d.lines) do
+        out(("  TooltipInfo %d: typ=%s links=%s rechts=%s"):format(i, show(l.type), show(l.leftText), show(l.rightText)))
+      end
+    else
+      out("  C_TooltipInfo.GetUnit = " .. (ok and show(d) or ("FEHLER: " .. tostring(d))))
+    end
+  else
+    out("  C_TooltipInfo.GetUnit gibt es nicht")
+  end
+  if ownerTip == nil and CreateFrame then
+    local ok, t = pcall(CreateFrame, "GameTooltip", "ForeverHunterPetsProbeTip", nil, "GameTooltipTemplate")
+    ownerTip = ok and t or false
+  end
+  if not ownerTip then out("  versteckter Tooltip: nicht anzulegen"); return end
+  ownerTip:SetOwner(WorldFrame or UIParent, "ANCHOR_NONE")
+  local ok, err = pcall(ownerTip.SetUnit, ownerTip, unit)
+  if not ok then out("  SetUnit FEHLER: " .. tostring(err)) end
+  local n = ownerTip:NumLines() or 0
+  out("  versteckter Tooltip: " .. tostring(n) .. " Zeile(n)")
+  for i = 1, n do
+    local left, right = _G["ForeverHunterPetsProbeTipTextLeft" .. i], _G["ForeverHunterPetsProbeTipTextRight" .. i]
+    out(("  Zeile %d: links=%s rechts=%s"):format(i, show(left and left:GetText()), show(right and right:GetText())))
+  end
+  ownerTip:Hide()
+end
+
+local function dumpOwnerUnit(unit, why)
+  if UnitIsPlayer(unit) then return end
+  local fam = ns.clean(UnitCreatureFamily(unit))
+  if not fam then return end
+  local guid = ns.clean(UnitGUID(unit))
+  if guid and ownerSeen[guid] then return end
+  if guid then ownerSeen[guid] = true end
+  out(("--- %s (%s, +%.0f s) ---"):format(unit, why, GetTime() - ownerStart))
+  dumpUnit(unit)
+  probe("UnitCreatureType(" .. unit .. ")", UnitCreatureType, unit)
+  probe("UnitClassification(" .. unit .. ")", UnitClassification, unit)
+  probe("UnitPlayerControlled(" .. unit .. ")", UnitPlayerControlled, unit)
+  probe("UnitIsOtherPlayersPet(" .. unit .. ")", UnitIsOtherPlayersPet, unit)
+  probe("UnitIsCharmed(" .. unit .. ")", UnitIsCharmed, unit)
+  probe("UnitReaction(" .. unit .. ", player)", UnitReaction, unit, "player")
+  probe("UnitCanAttack(player, " .. unit .. ")", UnitCanAttack, "player", unit)
+  dumpTooltip(unit)
+end
+
+local function onOwnerEvent(e, ...)
+  if GetTime() > ownerUntil then return end
+  silent = true
+  if e == "PLAYER_TARGET_CHANGED" then
+    if UnitExists("target") then dumpOwnerUnit("target", "Ziel") end
+  elseif e == "UPDATE_MOUSEOVER_UNIT" then
+    if UnitExists("mouseover") then dumpOwnerUnit("mouseover", "Maus") end
+  elseif e == "NAME_PLATE_UNIT_ADDED" then
+    local unit = ns.clean((...))
+    if unit then dumpOwnerUnit(unit, "Namensplakette") end
+  elseif e == "UI_ERROR_MESSAGE" then
+    local _, msg = ...
+    msg = ns.clean(msg)
+    out(("EREIGNIS +%.0f s UI_ERROR_MESSAGE: %s"):format(GetTime() - ownerStart, join(...)))
+    -- welche Konstante des Clients steckt hinter dem Text?
+    if type(msg) == "string" then
+      local hits = {}
+      for k, v in pairs(_G) do
+        if v == msg and type(k) == "string" and #hits < 10 then hits[#hits + 1] = k end
+      end
+      table.sort(hits)
+      out("  Konstanten mit diesem Text: " .. (#hits > 0 and table.concat(hits, ", ") or "keine"))
+    end
+    if UnitExists("target") then
+      out("  Ziel dabei:")
+      probe("  UnitGUID(target)", UnitGUID, "target")
+      probe("  UnitName(target)", UnitName, "target")
+    end
+  elseif e == "UNIT_SPELLCAST_FAILED" and ns.clean((...)) == "player" then
+    out(("EREIGNIS +%.0f s UNIT_SPELLCAST_FAILED: %s"):format(GetTime() - ownerStart, join(...)))
+  end
+  silent = false
+end
+
+function ns.ProbeOwner()
+  log = {}
+  ns.db.probe = log
+  ownerStart = GetTime()
+  ownerUntil = ownerStart + 600
+  ownerSeen = {}
+  silent = true
+  out("=== Besitzer-Probe " .. date("%Y-%m-%d %H:%M:%S") .. " · Addon " .. ns.version .. " ===")
+  probe("GetBuildInfo()", GetBuildInfo)
+  probe("GetLocale()", GetLocale)
+  out("--- Vorlagen des Clients ---")
+  local names = {}
+  for k, v in pairs(_G) do
+    if type(k) == "string" and type(v) == "string" and (k:find("^UNITNAME_") or k:find("OWNER")) then
+      names[#names + 1] = k
+    end
+  end
+  table.sort(names)
+  for i, k in ipairs(names) do
+    if i > 60 then out("  … (" .. #names .. " insgesamt)"); break end
+    out("  " .. k .. " = " .. _G[k])
+  end
+  if Enum and Enum.TooltipDataLineType then
+    out("Enum.TooltipDataLineType = " .. show(Enum.TooltipDataLineType))
+  end
+  -- was gerade schon da ist
+  if UnitExists("target") then dumpOwnerUnit("target", "Ziel beim Aufruf") end
+  if UnitExists("mouseover") then dumpOwnerUnit("mouseover", "Maus beim Aufruf") end
+  for i = 1, 40 do
+    local unit = "nameplate" .. i
+    if UnitExists(unit) then dumpOwnerUnit(unit, "Namensplakette beim Aufruf") end
+  end
+  silent = false
+  if not ownerHooked then
+    ownerHooked = true
+    for _, e in ipairs({ "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "NAME_PLATE_UNIT_ADDED",
+        "UI_ERROR_MESSAGE", "UNIT_SPELLCAST_FAILED" }) do
+      local name = e
+      ns.On(name, function(...) onOwnerEvent(name, ...) end)
+    end
+  end
+  ns.Print("Besitzer-Probe läuft 10 Minuten. Tiere mit und ohne Besitzer in die Nähe holen, mit der Maus überfahren, anvisieren, eins zu zähmen versuchen. Danach /reload.")
+end

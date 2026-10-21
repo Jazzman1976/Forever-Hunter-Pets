@@ -108,6 +108,8 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
     ns.SafeCall("map", ns.ProbeMap)
   elseif cmd == "zaehmen" or cmd == "zähmen" or cmd == "tame" then
     ns.SafeCall("tame", ns.ProbeTame)
+  elseif cmd == "besitzer" or cmd == "owner" then
+    ns.SafeCall("owner", ns.ProbeOwner)
   elseif cmd == "teilen" or cmd == "share" then
     if (msg or ""):lower():match("^%s*%S+%s+test") then
       ns.SafeCall("share", ns.ShareTest)
@@ -124,7 +126,7 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
   elseif cmd == "zonen" or cmd == "zones" then
     ns.SafeCall("zones", ns.ZoneReport)
   else
-    ns.Print(L["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp share (sharing status), /fhp survey (survey status), /fhp area (progress in this zone)"])
+    ns.Print(L["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp survey (survey status), /fhp area (progress in this zone)"])
   end
 end
 

@@ -19,7 +19,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `Core/Places.lua` | Fundorte als Zellen eines Rasters, nur aus der Nähe |
 | `Core/Discover.lua` | Entdecken: Status je Tier und Zone, was ein Tier lehrt, Fortschritt je Zone; `/fhp gebiet` |
 | `Core/Comm.lua` | Teilen im Spiel: Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` |
-| `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
+| `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`, `/fhp besitzer`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
 | `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
 | `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool |
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |

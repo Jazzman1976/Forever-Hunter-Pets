@@ -224,7 +224,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), what was stored or dropped and why, and the last message from another player |
 | `/fhp zones` | zones the addon has no map for |
-| `/fhp api`, `/fhp map`, `/fhp tame` | developer tools: probes that write a log to the saved variables |
+| `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 
 ## Questions and answers
 
