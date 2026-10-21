@@ -567,8 +567,14 @@ function ns.BuildAbilities(parent)
     count:SetText((L["%d rank entries from %d abilities"]):format(#self.entries, n))
   end
 
+  -- Gebaut wird nur, was zu sehen ist (#50): Im Hintergrund merkt sich die Ansicht nur, dass sie veraltet ist,
+  -- und baut beim nächsten Öffnen einmal neu (rebuild, unten) – wie „Ausbildung“ und „Gebiet“
+  local function whenVisible(fn)
+    if parent:IsVisible() then fn() else v.stale = true end
+  end
+
   -- Lernstand geändert (abgehakt oder vom Spiel erkannt): nur die Häkchen nachziehen, nicht scrollen
-  ns.OnKnownChanged(function()
+  ns.OnKnownChanged(function() whenVisible(function()
     -- blendet ein Status-Häkchen etwas aus, kann der Rang damit aus der Liste fallen oder dazukommen
     if not (v.show.available and v.show.unavailable and v.show.known) then
       v:ApplyFilter(true)
@@ -581,7 +587,7 @@ function ns.BuildAbilities(parent)
       row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet has it"])) or ""))
     end
     if v.selected and detail:IsShown() then v:RenderDetail() end
-  end)
+  end) end)
 
   -- Der Client lädt Zaubertexte nach; kommt die Beschreibung der gewählten Zeile, neu zeichnen
   ns.On("SPELL_TEXT_UPDATE", function(spellID)
@@ -654,7 +660,7 @@ function ns.BuildAbilities(parent)
   filterDD:SetPoint("TOPLEFT")
   -- mit einer neuen Stufe werden weitere Tiere zähmbar; der Client nennt sie erst kurz danach
   ns.On("PLAYER_LEVEL_UP", function()
-    ns.After(0.5, function() v:ApplyFilter(true) end)
+    ns.After(0.5, function() whenVisible(function() v:ApplyFilter(true) end) end)
   end)
 
   -- „Aktuelle Zone“ folgt dem Spieler: die Zone wird bei jedem Zonenwechsel neu bestimmt
@@ -705,16 +711,17 @@ function ns.BuildAbilities(parent)
     if v.follow then followZone() end
     if v.followPet then followPet() end   -- nach dem Einloggen ist das Pet erst jetzt bekannt
   end
-  ns.On("ZONE_CHANGED_NEW_AREA", zoneChanged)
-  ns.On("PLAYER_ENTERING_WORLD", zoneChanged)
+  ns.On("ZONE_CHANGED_NEW_AREA", function() whenVisible(zoneChanged) end)
+  ns.On("PLAYER_ENTERING_WORLD", function() whenVisible(zoneChanged) end)
   -- „Aktuelle Familie“ folgt dem aktiven Pet. Ohne Pet gilt kein Familienfilter.
   local famDD
-  followPet = function()
+  -- noBuild: nur Beschriftung und Familie bestimmen, die Liste baut der Aufrufer
+  followPet = function(noBuild)
     local id, name = ns.PetFamily()
     famDD.label:SetText(L["Current family"] .. ": " .. (name or L["no pet"]))
     if v.fam == id then return end
     v.fam = id
-    v:ApplyFilter()
+    if not noBuild then v:ApplyFilter() end
   end
   local function selectFam(value)
     saved.fam = value
@@ -731,14 +738,23 @@ function ns.BuildAbilities(parent)
   famDD:SetPoint("TOPRIGHT")
   zoneDD:SetPoint("RIGHT", famDD, "LEFT", -DD_GAP, 0)
   ns.On("UNIT_PET", function(unit)
-    if v.followPet and ns.clean(unit) == "player" then followPet() end
+    if v.followPet and ns.clean(unit) == "player" then whenVisible(followPet) end
   end)
 
-  -- Neue Zähmung, neue Fähigkeit aus der Erhebung oder Angaben in den Einstellungen ein- oder ausgeschaltet:
-  -- Zonenauswahl und Liste neu bauen (#24: vorher nur die Liste, mit veralteter Zone)
-  ns.OnShowConfChanged(function()
+  -- Der eine Weg zum Neubauen: Zonenauswahl, Familie und Liste (#24: vorher nur die Liste, mit veralteter Zone)
+  local function rebuild()
     refreshZones()
+    if v.followPet then followPet(true) end
     if not (v.follow and followZone(true)) then v:ApplyFilter(true) end
+  end
+  -- Neue Zähmung (auch fremde, alle 5 s), neue Fähigkeit aus der Erhebung oder Angaben in den Einstellungen
+  -- ein- oder ausgeschaltet
+  ns.OnShowConfChanged(function() whenVisible(rebuild) end)
+  -- beim Öffnen des Fensters und beim Wechsel auf den Reiter einmal nachziehen, was im Hintergrund liegen blieb
+  parent:HookScript("OnShow", function()
+    if not v.stale then return end
+    v.stale = false
+    ns.SafeCall("abilities", rebuild)
   end)
 
   -- Stand der letzten Sitzung. Eine Zone oder Familie, die es in den Daten nicht mehr gibt,
