@@ -129,6 +129,7 @@ local function create()
       local on = k == key
       if on then tab.bg:SetColorTexture(0.62, 0.83, 0.37, 0.35) else tab.bg:SetColorTexture(1, 1, 1, 0.06) end
       if on then tab.label:SetTextColor(1, 1, 1) else tab.label:SetTextColor(1, 0.82, 0) end
+      tab.bar:SetShown(on)
     end
     if key == "training" then f.training:Render() end
     if key == "area" then f.area:Render() end
@@ -141,6 +142,13 @@ local function create()
     tab.hl = tab:CreateTexture(nil, "HIGHLIGHT")
     tab.hl:SetAllPoints()
     tab.hl:SetColorTexture(1, 1, 1, 0.08)
+    -- der aktive Reiter trägt unten einen Balken: Form, nicht nur Farbe (#59)
+    tab.bar = tab:CreateTexture(nil, "ARTWORK")
+    tab.bar:SetColorTexture(1, 1, 1, 1)
+    tab.bar:SetHeight(2)
+    tab.bar:SetPoint("BOTTOMLEFT")
+    tab.bar:SetPoint("BOTTOMRIGHT")
+    tab.bar:Hide()
     tab.label = ns.W.Text(tab, "GameFontNormal")
     tab.label:SetPoint("CENTER")
     tab.label:SetText(t[2])

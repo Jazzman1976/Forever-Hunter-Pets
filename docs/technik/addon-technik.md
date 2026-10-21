@@ -21,7 +21,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `Core/Comm.lua` | Teilen im Spiel: Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` |
 | `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
 | `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
-| `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool |
+| `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool, Markierung der gewählten Zeile (`W.Selection`) |
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
 | `UI/MapCanvas.lua` | Karte mit Fundorten, 3D-Modell und die Kartenseite eines Tiers |
 | `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |
