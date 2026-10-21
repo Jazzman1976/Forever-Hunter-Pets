@@ -168,8 +168,8 @@ local function registerSettings()
     L["Puts an empty line above the addon's lines in the tooltip, to set them apart from other addons."])
   sub("ForeverHunterPets_TooltipGapAfter", "tooltipGapAfter", L["Empty line after"], false,
     L["Puts an empty line below the addon's lines in the tooltip, to set them apart from other addons."])
-  sub("ForeverHunterPets_TooltipKnown", "tooltipShowKnown", L["Show known abilities"], true,
-    L["Also lists the ranks you have already learned (marked “learned”) and “teaches nothing” for beasts that teach nothing. Switched off, the tooltip only shows what is new to you and the attack speed."])
+  sub("ForeverHunterPets_TooltipKnown", "tooltipShowKnown", L["Also show ranks you have"], true,
+    L["Also lists the ranks you have (marked “you have it”) and “teaches nothing” for beasts that teach nothing. Switched off, the tooltip only shows the ranks you lack and the attack speed."])
   -- Belegung der Lehrtiere: unsicher und unbelegt sind standardmäßig aus. Wer sie einschaltet, liest
   -- hier, was „?“ und „!“ bedeuten; in Liste und Tooltip steht dazu kein Erklärtext.
   local function conf(key, variable, label, text)

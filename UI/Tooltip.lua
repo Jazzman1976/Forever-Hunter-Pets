@@ -127,9 +127,9 @@ local function addLines(tooltip, guid)
       if not ns.char then
         tooltip:AddLine(text, 1, 1, 1)
       elseif ns.IsKnown(e.r) then
-        tooltip:AddLine(text .. " – " .. L["learned"], 0.6, 0.6, 0.6)
+        tooltip:AddLine(text .. " – " .. L["you have it"], 0.6, 0.6, 0.6)
       else
-        tooltip:AddLine(text .. " – " .. L["new"], 0.25, 1, 0.25)
+        tooltip:AddLine(text .. " – " .. L["you lack it"], 0.25, 1, 0.25)
       end
     end
   end
