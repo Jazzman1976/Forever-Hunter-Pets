@@ -17,7 +17,7 @@ Wie in diesem Projekt gearbeitet wird. Die Kurzfassung für Contributors steht i
 - **Forever ändert sich wöchentlich**, solange die Beta läuft (Start: 04.11.2026). Erhobene Daten können veralten; ein Widerspruch zwischen Zähmungen derselben NPC-ID (Meldung von `tools/build-data.mjs`) ist oft das erste Zeichen.
 - **Daten sammeln läuft neben der Entwicklung.** Gesammelt wird parallel; das ist keine Voraussetzung für neue Inkremente (16.10.2026).
 - **Jeder Vorschlag wird bewertet** (Wunsch des Nutzers, 16.10.2026): Changes, Features und Anpassungen nach **Mehrwert** (Business Value), **Komplexität** und **Risiko** – in dieser Reihenfolge –, je auf einer Skala von 1 (gering) bis 10 (hoch), mit kurzer Begründung. So lässt sich vergleichen, was sich lohnt.
-  **Bugs** bekommen eine vierte Spalte **Schwere** (Regel des Nutzers, 21.10.2026): Mehrwert | Komplexität | Risiko | Schwere. Risiko ist das Risiko der Änderung, Schwere sagt, wie schlimm der Fehler selbst ist. Skala, hoch = schlimmer:
+  **Bugs** (Label `bug`, auch falsche Daten; nicht Feature-Wünsche) bekommen eine vierte Spalte **Schwere** (Regel des Nutzers, 21.10.2026): Mehrwert | Komplexität | Risiko | Schwere. Risiko ist das Risiko der Änderung, Schwere sagt, wie schlimm der Fehler selbst ist. Skala, hoch = schlimmer:
 
   | Schwere | Bedeutung |
   | --- | --- |
