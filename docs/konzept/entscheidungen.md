@@ -37,6 +37,8 @@ Jede hier wurde ausdrücklich getroffen. Vor einer Änderung an der betroffenen 
 - **Lernstand von Hand nur mit „Manuelles Editieren“** (Einstellung, Standard aus; 14.10.2026). Das Häkchen in „Fähigkeiten“ war zu leicht aus Versehen gesetzt, und der Lernstand wird inzwischen zuverlässig automatisch erkannt. Ausgeschaltet zeigt das Kästchen nur an, ein Klick darauf wählt die Zeile.
 - **Deutsch und Englisch, nach Client-Sprache.** Fähigkeits- und Zonennamen kommen vom Client, Tier- und Familiennamen aus den Daten.
 
+- **Neues in einer Zone ist eine gute Nachricht, ein Erfolg bleibt erreicht** (21.10.2026, #66). Wächst eine Zone durch Funde anderer Jäger, sagt der Reiter „Gebiet“ das einmal („+ Seit du zuletzt hier nachgesehen hast …“), statt still von „8 von 8“ auf „8 von 9“ zu fallen. Die Zeile steht über den Tieren, weil unter den Zählern mit zwei Zeilen Kacheln kein Platz bleibt. Erfolge (E8) werden später nie zurückgenommen, wenn eine Zone größer wird. Grund: Rückschritte frustrieren; und weil alle zusammen schnell sammeln, ist das ohnehin ein Übergang.
+
 ## Daten
 
 - **Fähigkeiten aus der Erhebung** (16.10.2026). Ränge gleichen Namens bilden eine Fähigkeit; der englische Name ist kein Schlüssel mehr, Befunde nennen den Rang über die Zauber-ID. Bietet der Tierausbilder einen Rang an, gilt die Fähigkeit für alle Familien, sonst nur für die, in deren Wildtierausbildung oder Zauberbuch sie stand – was nicht gesehen wurde, wird nicht angenommen. Je Familie gilt die letzte vollständige Liste, weil eine falsche (etwa beim Pet-Wechsel) sonst stehen bliebe.

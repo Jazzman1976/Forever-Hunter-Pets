@@ -205,6 +205,8 @@ ns.Locales.deDE = {
   -- Entdecken: Reiter „Gebiet“ (E4)
   ["Zone"] = "Gebiet",
   ["No beasts known in this zone yet."] = "Noch kein Tier in diesem Gebiet bekannt.",
+  ["+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on."] = "+ Seit du zuletzt hier nachgesehen hast, haben andere Jäger 1 neues Tier entdeckt – die Jagd geht weiter.",
+  ["+ Since you last looked here, other hunters have discovered %d new beasts – the hunt goes on."] = "+ Seit du zuletzt hier nachgesehen hast, haben andere Jäger %d neue Tiere entdeckt – die Jagd geht weiter.",
   ["No zone with beasts known yet."] = "Noch kein Gebiet mit Tieren bekannt.",
   ["Beasts"] = "Tiere",
   ["%d of %d known"] = "%d von %d bekannt",
