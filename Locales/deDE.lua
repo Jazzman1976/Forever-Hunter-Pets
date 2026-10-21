@@ -186,7 +186,7 @@ ns.Locales.deDE = {
   ["Explorer mode"] = "Entdeckermodus",
   -- Startdialog und Modusanzeige (#42)
   ["Forever Hunter Pets turns finding pets into a hunt of your own – or simply shows you everything that is known."] = "Forever Hunter Pets macht die Suche nach Pets zu deiner eigenen Jagd – oder zeigt dir einfach alles, was bekannt ist.",
-  ["Recommended. Track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for."] = "Empfohlen. Spüre die Tiere selbst auf: Jedes Tier, das du siehst, findest und zähmst, füllt dein Buch der Entdeckungen, Zone für Zone. Dafür ist das Addon gemacht.",
+  ["Recommended. Track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for."] = "Empfohlen. Spüre die Tiere selbst auf: Jedes Tier, das du siehst, findest und zähmst, kommt in den Reiter „Gebiet“, dein Verzeichnis der Tiere jeder Zone. Dafür ist das Addon gemacht.",
   ["If you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost."] = "Wenn du lieber nicht suchst: zeigt alles, was Jäger mit dem Addon bisher herausgefunden haben. Du siehst sofort alle Details, aber ein Teil des Spaßes geht verloren.",
   ["Each character discovers on its own. In the settings you can show what your other characters have found."] = "Jeder Charakter entdeckt für sich. In den Einstellungen kannst du einblenden, was deine anderen Charaktere schon gefunden haben.",
   ["Beta"] = "Beta",

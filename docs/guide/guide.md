@@ -42,7 +42,7 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for.
+- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for.
 - **Complete mode** – if you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost.
 
 If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.

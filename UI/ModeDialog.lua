@@ -84,7 +84,7 @@ local function create()
 
   -- zwei Wahlmöglichkeiten untereinander, der Entdeckermodus zuerst: Knopf, daneben die Erklärung
   for _, c in ipairs({
-    { true, L["Explorer mode"], L["Recommended. Track the beasts down yourself: every beast you sight, find and tame fills your book of discoveries, zone by zone. This is what the addon is made for."] },
+    { true, L["Explorer mode"], L["Recommended. Track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for."] },
     { false, L["Complete mode"], L["If you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost."] },
   }) do
     local b = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
