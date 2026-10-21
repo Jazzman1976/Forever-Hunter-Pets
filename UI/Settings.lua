@@ -194,7 +194,7 @@ local function registerSettings()
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
   Settings.CreateCheckbox(category, share,
-    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Switched off, nothing is sent or received."])
+    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."])
   Settings.RegisterAddOnCategory(category)
   ns.settingsCategory = category
 end

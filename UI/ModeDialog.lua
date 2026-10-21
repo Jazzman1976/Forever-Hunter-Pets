@@ -105,11 +105,25 @@ local function create()
   chars:SetText(L["Each character discovers on its own. In the settings you can show what your other characters have found."])
   y = y - chars:GetStringHeight() - 10
 
+  -- Hinweis zum Teilen und zur Veröffentlichung (#49); fehlt, wenn Teilen schon aus ist
+  local share = W.Text(f, "GameFontHighlightSmall", true)
+  share:SetPoint("TOPLEFT", 16, y)
+  share:SetWidth(DW - 32)
+  share:SetText(L["Sharing is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch this off in the settings."])
+
   local note = W.Text(f, "GameFontDisableSmall", true)
-  note:SetPoint("TOPLEFT", 16, y)
   note:SetWidth(DW - 32)
   note:SetText(L["You can change this for this character at any time in the settings."])
-  f:SetHeight(-y + note:GetStringHeight() + 16)
+
+  -- beim Zeigen: Teilen kann sich seit dem letzten Mal geändert haben
+  function f.Layout()
+    local on = not (ns.db and ns.db.ui and ns.db.ui.share == false)
+    share:SetShown(on)
+    local ny = on and y - share:GetStringHeight() - 10 or y
+    note:ClearAllPoints()
+    note:SetPoint("TOPLEFT", 16, ny)
+    f:SetHeight(-ny + note:GetStringHeight() + 16)
+  end
 
   f:SetScript("OnHide", function() ns.SafeCall("mode", closed) end)
   return f
@@ -119,5 +133,6 @@ end
 function ns.ShowModeDialog(onChosen)
   if not dialog then dialog = create() end
   after = onChosen
+  dialog.Layout()
   dialog:Show()
 end

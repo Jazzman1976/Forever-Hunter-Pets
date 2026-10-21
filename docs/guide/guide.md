@@ -49,6 +49,8 @@ If you close the window without choosing, you play in explorer mode. Until you c
 
 The window also tells you that the addon is in **beta**: hunters are still gathering its knowledge, so some beasts, ranks or spawn points may be missing. That isn't broken – it's waiting to be discovered, and every hunter who plays with the addon helps fill the gaps.
 
+It also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
+
 The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
 ## Complete mode and explorer mode
