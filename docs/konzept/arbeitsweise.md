@@ -17,4 +17,14 @@ Wie in diesem Projekt gearbeitet wird. Die Kurzfassung für Contributors steht i
 - **Forever ändert sich wöchentlich**, solange die Beta läuft (Start: 04.11.2026). Erhobene Daten können veralten; ein Widerspruch zwischen Zähmungen derselben NPC-ID (Meldung von `tools/build-data.mjs`) ist oft das erste Zeichen.
 - **Daten sammeln läuft neben der Entwicklung.** Gesammelt wird parallel; das ist keine Voraussetzung für neue Inkremente (16.10.2026).
 - **Jeder Vorschlag wird bewertet** (Wunsch des Nutzers, 16.10.2026): Changes, Features und Anpassungen nach **Mehrwert** (Business Value), **Komplexität** und **Risiko** – in dieser Reihenfolge –, je auf einer Skala von 1 (gering) bis 10 (hoch), mit kurzer Begründung. So lässt sich vergleichen, was sich lohnt.
+  **Bugs** bekommen eine vierte Spalte **Schwere** (Regel des Nutzers, 21.10.2026): Mehrwert | Komplexität | Risiko | Schwere. Risiko ist das Risiko der Änderung, Schwere sagt, wie schlimm der Fehler selbst ist. Skala, hoch = schlimmer:
+
+  | Schwere | Bedeutung |
+  | --- | --- |
+  | 1–2 | Schönheitsfehler, falscher oder irreführender Text |
+  | 3–4 | Anzeige oder Funktion eingeschränkt, es gibt einen Ausweg; unnötige Last |
+  | 5–6 | Funktion fällt aus oder Daten fehlen bzw. sind falsch, bei Einzelnen oder still |
+  | 7–8 | falsche oder verlorene Daten bei vielen oder allen, eine Schutzregel ist ausgehebelt |
+  | 9–10 | Lua-Fehler oder Addon unbenutzbar, eigene Daten des Spielers zerstört |
+
 - **Gleiches sieht immer gleich aus und ist gleich** (Regel des Nutzers für immer, 16.10.2026). Derselbe Zustand bekommt im ganzen Addon dasselbe Element, Symbol und Wort – etwa das Kästchen aus „Fähigkeiten“ mit Haken für „bekannt“ auch im Reiter „Gebiet“, das Familien-Icon überall über `ns.FamilyIcon`. Neue Ansichten nehmen vorhandene Bausteine, statt eigene zu erfinden.
