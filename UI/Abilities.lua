@@ -307,7 +307,8 @@ function ns.BuildAbilities(parent)
 
   local title = W.Text(dc, "GameFontNormalLarge")
   title:SetPoint("TOPLEFT", iconBtn, "TOPRIGHT", 10, -3)
-  local sub = W.Text(dc, "GameFontHighlight")
+  -- die Kopfzeile darf umbrechen: mit allen Teilen ist sie im deutschen Client breiter als die Spalte (#87)
+  local sub = W.Text(dc, "GameFontHighlight", true)
   sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
   local desc = W.Text(dc, "GameFontHighlight", true)
   local fams = W.Text(dc, "GameFontHighlightSmall", true)
@@ -395,12 +396,14 @@ function ns.BuildAbilities(parent)
     if ns.Learnable(a) and ns.IsKnown(r) then
       parts[#parts + 1] = "|cff9fd45f" .. L["you have it"] .. "|r"
     elseif petAhead(e) then
-      -- kurz halten: die Zeile ist einzeilig, der Hinweis darunter erklärt den Rest
+      -- kurz halten: der Hinweis darunter erklärt den Rest
       table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(L["you lack it"]))
     end
+    sub:SetWidth(DW - 44 - 10)
     sub:SetText(table.concat(parts, " · "))
 
-    local y = 56
+    -- unter Icon und Kopfzeile; bricht die Kopfzeile um, rückt alles darunter mit
+    local y = math.max(56, 3 + title:GetStringHeight() + 6 + sub:GetStringHeight() + 10)
     y = place(desc, y, ns.Description(r))
     y = place(fams, y, (L["Learnable by: %s"]):format(familiesText(a)))
     y = place(hint, y + 4, hintText(e))
