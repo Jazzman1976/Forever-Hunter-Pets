@@ -12,7 +12,7 @@ The data is collected in game. The simplest way to contribute is to play with th
 
 ## Reporting a problem
 
-Open an [issue](https://github.com/Jazzman1976/Forever-Hunter-Pets/issues/new/choose) – the forms for bugs and data findings help, but every field is optional and a plain issue is fine too. Useful to include:
+Open an [issue](https://github.com/Jazzman1976/Forever-Hunter-Pets/issues/new/choose) – the forms for bugs (wrong data included) and feature wishes help, but every field is optional and a plain issue is fine too. Useful to include:
 
 - the addon version (shown in chat at login) and your client language
 - what you did, what you expected and what happened
