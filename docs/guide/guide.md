@@ -147,7 +147,7 @@ The addon quietly notes what you see – outside combat and instances, without s
 
 ### Seeing a beast
 
-The addon looks at beasts you **target**, **hover over** with the mouse, or see with a **nameplate** (enemy nameplates must be switched on – then it notices beasts just by riding past).
+The addon looks at beasts you **target**, **hover over** with the mouse, or see with a **nameplate** (enemy nameplates must be switched on – then it notices beasts just by riding past). Only beasts you could tame count: pets of other hunters, companions of NPCs (their tooltip names an owner) and demons are left out.
 
 | Distance | What is noted |
 | --- | --- |

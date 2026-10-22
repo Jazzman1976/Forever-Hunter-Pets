@@ -29,6 +29,7 @@ const SIGHT_OUT = path.join(HERE, 'eigene', 'sichtungen.json');
 const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
 const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
 const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
+const BLOCK_OUT = path.join(HERE, 'eigene', 'nicht-zaehmbar.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
 // Familien, die es nur bei Dämonen gibt, wie ns.DEMON_FAMILY in Core/Sightings.lua (#80): Solche Tiere sind nicht
 // zähmbar. Ihre Sichtungen, Fundort-Zellen und Familien kommen nicht in die Daten, auch nicht aus dem Bestand.
@@ -131,6 +132,8 @@ for (const f of files) {
 const pseudo = (rep) => own.has(rep) ? rep : crypto.createHmac('sha256', SALT).update(rep).digest('hex').slice(0, 8);
 // Beginn des Tages (UTC), für die Zeit fremder Einträge
 const dayStart = (t) => t - (t % 86400);
+// Datum (UTC) einer Zeit, für Belege
+const day = (t) => new Date(t * 1000).toISOString().slice(0, 10);
 // fremden Eintrag entschärfen (Kürzel und Zeit), eigenen unverändert lassen
 const mask = (r) => own.has(r.melder) ? r : { ...r, melder: pseudo(r.melder), zeit: dayStart(r.zeit) };
 
@@ -162,6 +165,44 @@ console.log(`${files.length} Datei(en), ${read} Beobachtungen gelesen (${bad} un
   `${list.length - old.length} neu → ${list.length} in tools/eigene/beobachtungen.json von ${reps.size} Meldern ` +
   `(${own.size} eigene Kürzel)`);
 
+// ---- Sperrliste (#90): Tooltip-Treffer (Core/Sightings.lua) → tools/eigene/nicht-zaehmbar.json ----
+// ForeverHunterPetsDB.owned[npc] = { name, maps = { [uiMapID] = Zeit } }: ein Tier, dessen Tooltip einen Besitzer nannte
+// (Begleiter eines NPCs). Je Tier und Karte ein Beleg; was die Liste schon sperrt, kommt nicht noch einmal hinein.
+// Danach filtert die Liste Sichtungen und Zellen wie die Dämonen, auch aus dem Bestand: Zellen je Karte, Sichtungen
+// (ohne Karte) nur bei Einträgen, die überall gelten. Gleiche Regel wie ns.Blocked im Addon und in build-data.mjs.
+const blockList = fs.existsSync(BLOCK_OUT) ? JSON.parse(fs.readFileSync(BLOCK_OUT, 'utf8')) : [];
+const blocked = (npc, map, level) => blockList.some((e) => e.npc === Number(npc)
+  && (e.karten == null || (map != null && e.karten.includes(Number(map))))
+  && (e.stufen == null || (level != null && level >= e.stufen.min && level <= (e.stufen.max ?? e.stufen.min))));
+let blockNew = 0;
+for (const f of files) {
+  let owned;
+  try {
+    owned = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.owned;
+  } catch { continue; }
+  for (const [npcRaw, o] of Object.entries(owned || {})) {
+    const npc = Number(npcRaw);
+    if (!Number.isInteger(npc) || npc < 1 || !o || typeof o.maps !== 'object') continue;
+    for (const [mapRaw, t] of Object.entries(o.maps)) {
+      const map = Number(mapRaw);
+      if (!Number.isInteger(map) || map < 1 || typeof t !== 'number' || t < MIN_TIME || blocked(npc, map)) continue;
+      const datum = day(t);
+      let e = blockList.find((x) => x.npc === npc && x.grund === 'besitzer' && x.karten && x.stufen == null);
+      if (!e) {
+        e = { npc, ...(typeof o.name === 'string' && o.name ? { name: o.name } : {}), karten: [], grund: 'besitzer',
+          quelle: 'Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel', datum };
+        blockList.push(e);
+      }
+      e.karten = [...e.karten, map].sort((a, b) => a - b);
+      if (datum < e.datum) e.datum = datum;
+      blockNew++;
+    }
+  }
+}
+blockList.sort((x, y) => x.npc - y.npc);
+fs.writeFileSync(BLOCK_OUT, '[\n' + blockList.map((e) => '  ' + JSON.stringify(e)).join(',\n') + '\n]\n');
+console.log(`${blockNew} neue Karten nicht zähmbarer Tiere → tools/eigene/nicht-zaehmbar.json (${blockList.length} Einträge)`);
+
 // ---- Sichtungen (Core/Sightings.lua) → tools/eigene/sichtungen.json ----
 // „npc;stufe;einstufung;familie;sprache;name;zeit;melder[;tempo]“, je Tier, Stufe, Sprache und Melder eine
 const sightKey = (r) => `${r.npc}:${r.stufe}:${r.sprache}:${r.melder}`;
@@ -185,6 +226,7 @@ for (const f of files) {
   }
 }
 for (const [k, r] of sightsAll) if (DEMON_FAMILY.has(r.familie)) { demons.add(String(r.npc)); sightsAll.delete(k); }
+for (const [k, r] of sightsAll) if (blocked(r.npc, null, r.stufe)) sightsAll.delete(k);
 const sightList = [...sightsAll.values()].sort((x, y) => x.npc - y.npc || x.stufe - y.stufe || x.zeit - y.zeit);
 fs.writeFileSync(SIGHT_OUT, '[\n' + sightList.map((r) => '  ' + JSON.stringify(r)).join(',\n') + '\n]\n');
 console.log(`${sightsRead} Sichtungen gelesen, ${sightList.length - sightsOld.length} neu → ${sightList.length} in tools/eigene/sichtungen.json `
@@ -214,6 +256,10 @@ for (const f of files) {
   }
 }
 for (const npc of demons) delete cellsOut[npc];
+for (const [npc, maps] of Object.entries(cellsOut)) {
+  for (const map of Object.keys(maps)) if (blocked(npc, map)) delete maps[map];
+  if (!Object.keys(maps).length) delete cellsOut[npc];
+}
 const sortedCells = Object.fromEntries(Object.entries(cellsOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b))]));
 fs.writeFileSync(CELLS_OUT, '{\n' + Object.entries(sortedCells).map(([npc, maps]) => `  ${JSON.stringify(npc)}: ${JSON.stringify(maps)}`).join(',\n') + '\n}\n');
@@ -248,6 +294,10 @@ for (const f of files) {
   }
 }
 for (const npc of demons) delete foreignOut[npc];
+for (const [npc, maps] of Object.entries(foreignOut)) {
+  for (const map of Object.keys(maps)) if (blocked(npc, map)) delete maps[map];
+  if (!Object.keys(maps).length) delete foreignOut[npc];
+}
 const sortedForeign = Object.fromEntries(Object.entries(foreignOut).sort(([a], [b]) => a - b)
   .map(([npc, maps]) => [npc, Object.fromEntries(Object.entries(maps).sort(([a], [b]) => a - b)
     .map(([map, byRep]) => [map, Object.fromEntries(Object.entries(byRep).sort(([a], [b]) => a.localeCompare(b)))]))]));
@@ -285,7 +335,6 @@ if (wegeOld || wege.size) {
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),
 // je Familie gilt die jüngste vollständige Liste der Wildtierausbildung. Namen stehen je Client-Sprache.
-const day = (t) => new Date(t * 1000).toISOString().slice(0, 10);
 const survey = fs.existsSync(SURVEY_OUT)
   ? JSON.parse(fs.readFileSync(SURVEY_OUT, 'utf8'))
   : { raenge: {}, listen: {}, familien: {}, zauberbuch: {} };
