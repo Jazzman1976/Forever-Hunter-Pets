@@ -300,6 +300,7 @@ local function receiveCells(body, sender)
   if #rep ~= 8 then return false, "Melder" end
   if npc < 1 or npc > 9999999 or map < 1 or map > 100000 or #cells > ns.CELL_BUNDLE * 2 then return false, "Karte oder Größe" end
   if not ns.ValidCells(cells) then return false, "Zellen" end
+  if ns.Blocked(npc, map) then return false, "nicht zähmbar" end   -- ältere Versionen anderer Spieler (#90)
   cellsPerSender[sender] = (cellsPerSender[sender] or 0) + 1
   if cellsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
   if (ns.AddCells(npc, map, cells, rep) or 0) == 0 then return false, "schon bekannt", rep end
@@ -325,6 +326,7 @@ local function receiveSighting(body, sender)
   if not ns.LOCALES[o.lang] or #o.name > 60 or o.name:find("%c") then return false, "Sprache oder Name" end
   if o.speed and (o.speed < 0.5 or o.speed > 5) then return false, "Tempo" end
   if ns.DEMON_FAMILY[o.fam] then return false, "keine Jäger-Familie" end   -- Dämonen älterer Versionen (#80)
+  if ns.BlockedSighting(o.npc, o.level) then return false, "nicht zähmbar" end   -- Begleiter von NPCs (#90)
   local now = time and time() or 0
   if not o.time or o.time < MIN_TIME or (now > 0 and o.time > now + 86400) then return false, "Zeit unplausibel" end
   sightPerSender[sender] = (sightPerSender[sender] or 0) + 1

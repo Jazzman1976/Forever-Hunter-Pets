@@ -21,6 +21,7 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 | `melder-wege.json` | `{ melder: [absender, …] }`, über welche Absender ein fremdes Kürzel ankam, nur Kürzel (#15); über alle importierten Dateien vereinigt. Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei Absender kamen; ein Melder ohne Eintrag gilt als „Herkunft unbekannt“ und zählt wie bisher. Fehlt die Datei, zählt alles wie vor #15 | Import aus `ForeverHunterPetsDB.via` (je Melder `"abs1abs2…"`, höchstens 4 Absender, höchstens 5000 Melder); die Datei entsteht erst, wenn es etwas zu vermerken gibt |
 | `korrekturen.json` | `[{ npc, name, ability, rank, zauber?, befund: bestätigt\|widerlegt, quelle, datum }]`; `zauber` ist die ID des Rangs und geht vor dem Namen | von Hand |
 | `fundorte.json` | `[{ npc, name, map, punkte: [[x, y], …] in Prozent, quelle, datum }]` | von Hand |
+| `nicht-zaehmbar.json` | `[{ npc, name?, karten?: [uiMapID], stufen?: { min, max }, grund, quelle, datum }]`, Sperrliste (#90): Tiere, die sich nicht zähmen lassen, etwa Begleiter von NPCs. Ein Eintrag gilt, wenn alle Felder, die er hat, zutreffen; ohne `karten` überall, ohne `stufen` auf jeder Stufe. `grund`: `besitzer` (Tooltip nennt einen Besitzer), `zähmen-scheitert` (Meldung beim Zähmen) oder `befund` (von Hand) | von Hand und Import aus `ForeverHunterPetsDB.owned` (je Tier und Karte ein Beleg, Grund `besitzer`) |
 | `faehigkeiten.json` | `[{ en?, de?, icon?, kind, source, speed?, families, ranks: [{ id, rank, level?, tp? }], beleg }]` für Angaben, die keine Erhebung liefert (etwa das Angriffstempo); geht vor der Erhebung | von Hand |
 | `tiere.json`, `familien.json` | `{ ID: { de?, en?, …, beleg } }`; gehen vor Sichtung und Erhebung | von Hand |
 
@@ -28,12 +29,14 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 
 **Keine Dämonen (#80):** Sichtungen mit einer Dämonen-Familie (15, 16, 17, 19, 23, wie `ns.DEMON_FAMILY` in `Core/Sightings.lua`) übernimmt der Import nicht und entfernt sie aus dem Bestand, dazu die Zellen dieser Tiere in `zellen.json` und `zellen-fremd.json` und die Familien in `erhebung.json`.
 
+**Keine gesperrten Tiere (#90):** Was unter `nicht-zaehmbar.json` fällt, übernimmt der Import nicht und entfernt es aus dem Bestand: Zellen in `zellen.json` und `zellen-fremd.json` je gesperrter Karte, Sichtungen (sie kennen keine Karte) nur bei Einträgen ohne `karten`. `build-data.mjs` lässt dieselben Fundorte, Zellen und Sichtungen weg; ein gesperrtes Tier, dem danach kein Fundort und kein Lehrtier-Paar bleibt, fällt ganz aus `beasts` (von Hand Gepflegtes in `tiere.json` bleibt).
+
 Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakternamens; Namen werden nirgends gespeichert.
 
 ## `tools/data.json`
 
 ```js
-{ generatedAt, families, beasts, coords, abilities }
+{ generatedAt, families, beasts, coords, abilities, nichtZaehmbar }
 ```
 
 `build-data.mjs` vergleicht jeden neuen Stand mit dem in Git und bricht bei neuen, weggefallenen oder umgezogenen Fähigkeiten ab, bis man sie mit `--neue-faehigkeiten` bestätigt (#37, [entwicklung.md](entwicklung.md#daten-bauen)).
@@ -43,6 +46,7 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 | `families` | `{ ID: { de, en, icon } }` |
 | `beasts` | `{ NPC-ID: { de, en, fam, min, max, cls } }`; `cls` ist die Einstufung: 0 normal, 1 Elite, 2 Rar-Elite, 3 Boss, 4 Rar |
 | `coords` | `{ NPC-ID: { uiMapID: [x, y, x, y, …] } }` in Promille der Karte |
+| `nichtZaehmbar[]` | `{ npc, karten, stufen }` aus `nicht-zaehmbar.json`, ohne Name und Beleg; `null`, wo ein Feld fehlt |
 | `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }`; `tp` ist leer (`null`), solange kein Preis belegt ist – eine 0 nur aus einer einzigen Familie reicht nicht (#4) |
 
 - `kind`: `general` (alle Familien), `family` (die in `families`), `trait` (Angriffstempo, `speed` in Sekunden): ein passiver Zauber aus dem Zauberbuch, dessen Tempo die Zähmungen zeigen; ist der Zauber für ein Tempo noch nicht gesehen, eine negative Ersatz-ID (etwa −150 für 1,5 s), für die das Addon den Client nicht fragt.
@@ -58,3 +62,4 @@ Dieselben Daten als Lua-Tabelle `ns.Data`, kompakt:
 - `beasts[npc]` trägt zusätzlich `zones = { uiMapID, … }`; Felder ohne Wert fehlen.
 - `coords[npc][uiMapID]` ist eine Zeichenkette mit sechs Ziffern je Punkt (x und y in Promille); das Addon packt sie erst aus, wenn eine Karte aufgeht.
 - `teach = { { NPC-ID, Rang }, { NPC-ID, Rang, 2 } }`: das dritte Feld nur bei unsicher (2) oder unbelegt (3).
+- `notTameable[npc]`: `true` (überall gesperrt) oder eine Liste von Bedingungen `{ maps = { [uiMapID] = true }, min, max }`, etwa `[3939] = { { maps = { [1413] = true } } }` (#90, `ns.Blocked` in `Core/Sightings.lua`).

@@ -147,7 +147,7 @@ The addon quietly notes what you see – outside combat and instances, without s
 
 ### Seeing a beast
 
-The addon looks at beasts you **target**, **hover over** with the mouse, or see with a **nameplate** (enemy nameplates must be switched on – then it notices beasts just by riding past).
+The addon looks at beasts you **target**, **hover over** with the mouse, or see with a **nameplate** (enemy nameplates must be switched on – then it notices beasts just by riding past). Only beasts you could tame count: pets of other hunters, companions of NPCs (their tooltip names an owner) and demons are left out.
 
 | Distance | What is noted |
 | --- | --- |
@@ -224,7 +224,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), what was stored or dropped and why, and the last message from another player |
 | `/fhp zones` | zones the addon has no map for |
-| `/fhp api`, `/fhp map`, `/fhp tame` | developer tools: probes that write a log to the saved variables |
+| `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 
 ## Questions and answers
 

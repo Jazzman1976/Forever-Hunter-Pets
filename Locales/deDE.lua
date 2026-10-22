@@ -115,7 +115,7 @@ ns.Locales.deDE = {
   ["enemy faction territory"] = "Gebiet der Gegenfraktion",
   ["Error in %s:"] = "Fehler in %s:",
   ["Open with %s"] = "Öffnen mit %s",
-  ["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp share (sharing status), /fhp survey (survey status), /fhp area (progress in this zone)"] = "Befehle: /fhp (öffnen oder schließen), /fhp zonen (Gebiete ohne Karte), /fhp api (API-Probe), /fhp karte (Karten-Probe), /fhp zaehmen (Zähm-Probe), /fhp teilen (Stand beim Teilen), /fhp erhebung (Stand der Erhebung), /fhp gebiet (Fortschritt in diesem Gebiet)",
+  ["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp survey (survey status), /fhp area (progress in this zone)"] = "Befehle: /fhp (öffnen oder schließen), /fhp zonen (Gebiete ohne Karte), /fhp api (API-Probe), /fhp karte (Karten-Probe), /fhp zaehmen (Zähm-Probe), /fhp besitzer (Besitzer-Probe), /fhp teilen (Stand beim Teilen), /fhp erhebung (Stand der Erhebung), /fhp gebiet (Fortschritt in diesem Gebiet)",
   -- Einstellungen und Knopf an der Minikarte
   ["Minimap button"] = "Minikartenbutton",
   ["Shows a button at the minimap that opens Forever Hunter Pets. Hold Ctrl and drag to move it around the minimap."] = "Zeigt an der Minikarte einen Button, der Forever Hunter Pets öffnet. Mit gedrückter Strg-Taste lässt er sich am Rand der Minikarte verschieben.",
