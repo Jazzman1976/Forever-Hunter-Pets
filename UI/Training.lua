@@ -66,9 +66,9 @@ function ns.BuildTraining(parent)
     { key = "ok", label = L["learnable"], tip = L["Your pet can learn it right now: its family allows it, its level is high enough and it has the training points."] },
     { key = "tp", label = L["not enough TP"], tip = L["Family and pet level fit, but your pet has too few free training points. With a lower rank already learned, only the difference counts."] },
     { key = "later", label = L["pet level too low"], tip = L["Your pet needs a higher level for this rank."] },
-    { key = "has", label = L["already learned"], tip = L["Ranks your active pet has already learned."] },
+    { key = "has", label = L["your pet has it"], tip = L["Ranks your active pet already has."] },
     { header = L["Family"] },
-    { key = "no", label = L["for other families"], tip = L["Ranks you know, but the family of your active pet cannot learn."] },
+    { key = "no", label = L["for other families"], tip = L["Ranks you have, but the family of your active pet cannot learn."] },
   }
   local filterDD = W.MultiDropdown(parent, nil, L["Show"], FILTERS, function(key, on)
     v.show[key] = on
@@ -104,7 +104,7 @@ function ns.BuildTraining(parent)
     if e.state == "ok" then return L["Your pet can learn this now"] end
     if e.state == "tp" then return (L["Not enough training points: costs %d, your pet has %d"]):format(e.cost, e.free) end
     if e.state == "later" then return (L["Needs pet level %d (your pet: %d)"]):format(e.r.level, v.level) end
-    if e.state == "has" then return L["Your pet has already learned this"] end
+    if e.state == "has" then return L["Your pet has it"] end
     if e.state == "no" then return (L["%s cannot learn this."]):format(ns.FamilyName(v.fam)) end
     return nil
   end
@@ -350,10 +350,10 @@ function ns.BuildTraining(parent)
       or L["Nothing to show with this selection."])
 
     head:SetText(L["Beast Training"] .. (fam and (" · " .. ns.FamilyName(fam)) or ""))
-    local parts = { (total == 1 and L["1 learned rank"] or L["%d learned ranks"]):format(total) }
+    local parts = { (total == 1 and L["1 rank you have"] or L["%d ranks you have"]):format(total) }
     if #entries ~= total then parts[#parts + 1] = (L["%d shown"]):format(#entries) end
     if fam then
-      parts[#parts + 1] = (L["%d learnable, %d short of TP, %d later, %d already learned, %d not learnable"]):format(
+      parts[#parts + 1] = (L["%d learnable, %d short of TP, %d later, %d your pet has, %d not learnable"]):format(
         n.ok, n.tp, n.later, n.has, n.no)
     else
       parts[#parts + 1] = L["call your pet"]

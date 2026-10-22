@@ -393,10 +393,10 @@ function ns.BuildAbilities(parent)
     local meta = metaText(e)
     if meta ~= "" then parts[#parts + 1] = meta end
     if ns.Learnable(a) and ns.IsKnown(r) then
-      parts[#parts + 1] = "|cff9fd45f" .. L["learned"] .. "|r"
+      parts[#parts + 1] = "|cff9fd45f" .. L["you have it"] .. "|r"
     elseif petAhead(e) then
       -- kurz halten: die Zeile ist einzeilig, der Hinweis darunter erklärt den Rest
-      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(L["not learned yet"]))
+      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(L["you lack it"]))
     end
     sub:SetText(table.concat(parts, " · "))
 
@@ -518,7 +518,7 @@ function ns.BuildAbilities(parent)
     b.box:SetScript("OnEnter", function(self)
       local e = self.row.entry
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText(L["Learned"], 1, 1, 1)
+      GameTooltip:SetText(L["You have it"], 1, 1, 1)
       GameTooltip:AddLine(ns.IsKnown(e.r) and L["You have learned this rank."] or L["You have not learned this rank yet."], 1, 0.82, 0)
       GameTooltip:AddLine(L["The tick shows which ranks you can teach your pets. The addon sets it on its own from the Beast Training window and when the game reports that you learned the spell. A tick counts for this rank only."], 0.8, 0.8, 0.8, true)
       if ns.db.ui.manualEdit then
@@ -554,7 +554,7 @@ function ns.BuildAbilities(parent)
       row.icon:SetTexture(ns.AbilityIcon(e.a))
       row.name:SetText(e.name)
       row.rank:SetText(ns.RankLabel(e.a, e.r))
-      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet knows it"])) or ""))
+      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet has it"])) or ""))
       row.sel:SetShown(e == self.selected)
       row.box:SetShown(ns.Learnable(e.a))
       row.box.check:SetShown(ns.IsKnown(e.r))
@@ -575,7 +575,7 @@ function ns.BuildAbilities(parent)
       local row = v.rows.items[i]
       local e = row.entry
       row.box.check:SetShown(ns.IsKnown(e.r))
-      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet knows it"])) or ""))
+      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet has it"])) or ""))
     end
     if v.selected and detail:IsShown() then v:RenderDetail() end
   end)
@@ -636,12 +636,12 @@ function ns.BuildAbilities(parent)
   local DD_W = (RIGHT_W - DD_GAP) / 2
   local FILTERS = {
     { header = L["Status"] },
-    { key = "available", label = L["available"], tip = L["Not ticked yet, and you can learn it now: a beast up to your level teaches it, or the pet trainer does."] },
-    { key = "unavailable", label = L["unavailable"], tip = L["Not ticked yet, and out of reach for now: every beast that teaches it is above your level, or no source is known."] },
-    { key = "known", label = L["already known"], tip = L["Ranks you have ticked as learned."] },
+    { key = "available", label = L["you lack it, in reach"], tip = L["Not ticked yet, and you can learn it now: a beast up to your level teaches it, or the pet trainer does."] },
+    { key = "unavailable", label = L["you lack it, out of reach"], tip = L["Not ticked yet, and out of reach for now: every beast that teaches it is above your level, or no source is known."] },
+    { key = "known", label = L["you have it"], tip = L["Ranks you have: ticked because you learned them."] },
     { header = L["Source"] },
-    { key = "innate", label = L["innate"], tip = L["What a beast brings along when tamed and can never be taught, like its attack speed. Untick to hide it; whether it shows also depends on “available” and “unavailable”."] },
-    { key = "trainer", label = L["Pet trainer"], tip = L["Abilities you learn from the pet trainer, without finding and taming a beast. Untick to hide them; whether they show also depends on “available”, “unavailable” and “already known”."] },
+    { key = "innate", label = L["innate"], tip = L["What a beast brings along when tamed and can never be taught, like its attack speed. Untick to hide it; whether it shows also depends on “you lack it, in reach” and “you lack it, out of reach”."] },
+    { key = "trainer", label = L["Pet trainer"], tip = L["Abilities you learn from the pet trainer, without finding and taming a beast. Untick to hide them; whether they show also depends on “you lack it, in reach”, “you lack it, out of reach” and “you have it”."] },
   }
   local filterDD = W.MultiDropdown(parent, nil, L["Show"], FILTERS, function(key, on)
     v.show[key] = on

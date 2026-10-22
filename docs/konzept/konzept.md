@@ -48,6 +48,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 | **Melder, Kürzel** | wer etwas gemeldet hat, als Hash statt Name | `ns.MyRep`, `db.myReps` |
 | **Belegung** | wie sicher ein Lehrtier-Paar ist: belegt, unsicher, unbelegt, widerlegt | `conf`, `ns.CONF_*` |
 | **Status** | wie weit man selbst mit einem Tier in einer Zone ist (nur Entdeckermodus) | `ns.BeastStatus` |
+| **Lernstand: hast du / fehlt dir** | ob der Jäger einen Rang hat; „hat dein Pet“, wenn nur das aktive Pet ihn hat. Jeder Zustand nennt, wen er meint (#77); „bekannt“ heißt nur „Fähigkeiten bekannt“ beim Tier | `ns.IsKnown`, `ns.char.known` |
 | **Komplett-/Entdeckermodus** | was angezeigt wird (alles / nur Eigenes), je Charakter | `ns.Discovering()` |
 
 ## 4 Daten: woher, wohin
@@ -131,7 +132,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Was ein Tier lehrt, gilt zonenübergreifend:** Die Fähigkeiten hängen an der NPC-ID, nur der Rang an der Stufe. „Bekannt“ wird ein Tier in einer Zone trotzdem erst, wenn es dort gefunden ist.
 - **Wo lebt ein Tier?** (`ns.LivesIn`) Wo es einen echten Fundort hat: Daten, Zelle oder eigene Zähmung. Hat es nirgends einen, zählt seine Fährte, wo man es gesehen hat ([§9](#9-fährten)).
 - **Wörter:** Jäger-Sprache, als Zustand formuliert, ohne Icon. Verlauf: „Fährte“ mit Pfoten-Icon, dann „gesichtet / gefunden / bekannt“ – zu nah beieinander, der Unterschied war unklar. Im Code heißt der Status weiter `track`. Texte: `ns.StatusWord`, `ns.StatusText` (liefert im Komplettmodus `nil`).
-- **„lehrt nichts“** steht grau im Tooltip, wenn feststeht, dass ein Tier nichts lehrt (sonst fehlte jeder Hinweis); folgt der Einstellung „Bekannte Fähigkeiten anzeigen“. „Kein Lehrtier in den Daten“ heißt allein nie „lehrt nichts“ – das klärt erst eine Zähmung; bis dahin „? unklar“.
+- **„lehrt nichts“** steht grau im Tooltip, wenn feststeht, dass ein Tier nichts lehrt (sonst fehlte jeder Hinweis); folgt der Einstellung „Auch Ränge zeigen, die du hast“. „Kein Lehrtier in den Daten“ heißt allein nie „lehrt nichts“ – das klärt erst eine Zähmung; bis dahin „? unklar“.
 
 ## 7 Fortschritt
 
@@ -186,9 +187,9 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 ## 11 Lernstand
 
-- **Aus Sicht des Jägers.** „Verfügbar / nicht verfügbar / bereits bekannt“ meinen den Jäger, nicht das Pet. Was das aktive Pet lernen kann, zeigt nur „Ausbildung“.
+- **Aus Sicht des Jägers.** „fehlt dir, erreichbar / fehlt dir, außer Reichweite / hast du“ meinen den Jäger, nicht das Pet. Was das aktive Pet lernen kann, zeigt nur „Ausbildung“.
 - **Ränge einzeln:** Rang 3 schließt Rang 2 nicht ein (Korrektur vom 21.09.2026). Gespeichert je Zauber-ID.
-- **Was das Pet kann, ist nicht gelernt** (0.2.1). Ein verfrühter Haken ist gefährlicher als ein fehlender – man ließe das Tier zu früh frei. Angezeigt wird stattdessen „dein Pet kann es“.
+- **Was das Pet kann, ist nicht gelernt** (0.2.1). Ein verfrühter Haken ist gefährlicher als ein fehlender – man ließe das Tier zu früh frei. Angezeigt wird stattdessen „hat dein Pet“.
 - **Quellen:** Wildtierausbildung (Zauber-ID über den Tooltip der Zeile) und Lernmeldung (trägt die ID eines Jäger-Zaubers, zugeordnet über Name und den Rang, den das Pet schon hat).
 - **Gesammelt, nie von selbst entfernt:** Die Ausbildung zeigt nur die Familie des aktiven Pets; ein fehlender Eintrag heißt nichts.
 - **Von Hand nur mit „Manuelles Editieren“** (Standard aus) – das Kästchen war zu leicht aus Versehen gesetzt.
@@ -229,7 +230,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.
-- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
+- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– hast du“ (grau) / „– fehlt dir“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
 - Im Komplettmodus, wenn es zum Tier Angaben unter der Schwelle gibt (unsicherer oder unbelegter Rang, fremde Zähmungen von weniger als 3 Meldern): „Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!“ (gold, einmal, #40). Auch roh geprüft, anders begründet als #23: Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne die Zeile bliebe ein Tier mit nur unsicheren Lehren bei ausgeschalteter Einstellung stumm. Nach einer eigenen Zähmung (jeder Charakter des Kontos) ist alles belegt, die Zeile fällt weg.
 - Nur für wilde Tiere (Familie, nicht vom Spieler kontrolliert) – sonst bekämen Wachen Fährten.
 - Neue Fährten melden sich nicht im Chat (liefe voll), sondern über den Status im Tooltip.

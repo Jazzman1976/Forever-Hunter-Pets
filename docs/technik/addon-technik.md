@@ -60,7 +60,7 @@ kennt ihn aber erst, wenn das Tier ihn im Kampf oft genug eingesetzt hat und die
 Bis 0.2.0 trug das Addon alles, was `IsSpellKnown(id, true)` für das aktive Pet meldet, als gelernt
 ein (Herkunft `p`) – zu früh: Wer sich darauf verließ, ließ das Tier frei, bevor er den Rang hatte.
 Seit 0.2.1 dient `IsSpellKnown` nur noch der Anzeige (`ns.PetKnows`, `ns.PetRanks`): Die Ansicht
-„Fähigkeiten“ markiert solche Ränge mit „dein Pet kann es“ (Liste) und „noch nicht gelernt“ (Detail). Alte `p`-Einträge
+„Fähigkeiten“ markiert solche Ränge mit „hat dein Pet“ (Liste) und „fehlt dir“ (Detail). Alte `p`-Einträge
 werden beim Einloggen entfernt; was wirklich gelernt ist, steht beim nächsten Öffnen der
 Wildtierausbildung wieder da.
 
@@ -89,7 +89,7 @@ es keine Zustände, dann wirkt sie nicht.
 `GameTooltip`; fehlt der Prozessor, über `OnTooltipSetUnit`. Die NPC-ID steckt in der GUID
 (`Creature-0-…-<NPC-ID>-…`); eine geheime GUID wird verworfen. Zeilen gibt es für Tiere aus den Daten und für eigene Funde (`ns.BeastInfo`); über andere wird nichts vermutet. Statuszeile, „lehrt nichts“ und die Regeln je Modus: [konzept.md](../konzept/konzept.md#6-status-eines-tiers). `ns.BeastTeaches(npcId)` ist der umgekehrte Index zu
 `teach`, beim ersten Aufruf gebaut. Die Familie nennt der Client schon. Das angeborene Angriffstempo steht als erste Zeile in der Liste („Schnellerer Angriff III (1,5 s)“, eine Nachkommastelle, weiß, ohne Lernstand), danach jeder erlernbare Rang auf
-einer eigenen Zeile: Fähigkeits-Icon (wie in der Wildtierausbildung), „Name (Rang n)“; gelernt grau mit „– gelernt“, offen grün mit „– neu“ – nie nur
+einer eigenen Zeile: Fähigkeits-Icon (wie in der Wildtierausbildung), „Name (Rang n)“; gelernt grau mit „– hast du“, offen grün mit „– fehlt dir“ – nie nur
 Farbe. Abschaltbar in den Einstellungen (`ns.db.ui.tooltip`); darunter zwei Unteroptionen für eine Leerzeile davor (Standard an, `tooltipGapBefore`) und danach (Standard aus, `tooltipGapAfter`), als Abstand zu anderen Addons. Sie hängen per `SetParentInitializer` am Hauptschalter und sind ohne ihn gesperrt.
 
 **Belegung der Lehrtiere.** Das dritte Feld eines `teach`-Eintrags ist die Belegung: fehlt es, gilt der Eintrag als belegt; `2` heißt unsicher, `3` unbelegt (geschätzt). Widerlegte Paare stehen nicht in den Daten; im Spiel widerlegte bekommen `ns.CONF_REFUTED` (4). Herkunft in [quellen.md](quellen.md#belegung-der-lehrtiere).
@@ -97,7 +97,7 @@ Farbe. Abschaltbar in den Einstellungen (`ns.db.ui.tooltip`); darunter zwei Unte
 - `ns.Teachers` und `ns.BeastTeaches` liefern nur, was gezeigt wird. Sortiert wird zuerst nach Belegung, dann nach Aufwand. `list.hidden` zählt, was ausgeblendet ist.
 - `ns.AllBeastTeaches` liefert alles.
 - In „Fähigkeiten“ stehen Unsicheres und Unbelegtes unter eigenen Überschriften, mit „?“ (unsicher) bzw. „!“ (unbelegt) hinter dem Namen (`ns.ConfMark`) und ohne Stern. Ein Rang ohne Lehrtier zeigt „unentdeckt“.
-- Im Tooltip steht das Zeichen hinter dem Rang: „Beißen (Rang 4)? – neu“.
+- Im Tooltip steht das Zeichen hinter dem Rang: „Beißen (Rang 4)? – fehlt dir“.
 - Ändert sich ein Schalter, ruft `ns.ShowConfChanged()` die Ansicht neu auf. Der Tooltip liest die Schalter bei jedem Aufruf.
 
 **Beobachtungen beim Zähmen** (`Core/Observe.lua`). Der Ablauf wurde mit der Zähm-Probe ermittelt, siehe [api-befunde.md](api-befunde.md).
