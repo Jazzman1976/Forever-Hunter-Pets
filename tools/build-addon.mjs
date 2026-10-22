@@ -70,6 +70,21 @@ for (const a of D.abilities) {
   lines.push(`      teach = { ${a.teach.map((t) => `{ ${t.id}, ${t.rank}${t.conf > 1 ? `, ${t.conf}` : ''} }`).join(', ')} },`);
   lines.push('    },');
 }
+lines.push('  },');
+
+// Sperrliste (#90, Core/Sightings.lua): je NPC true (überall gesperrt) oder eine Liste von Bedingungen
+// { maps = { [uiMapID] = true }, min, max }
+const blocks = new Map();
+for (const e of D.nichtZaehmbar || []) {
+  const l = blocks.get(e.npc) ?? blocks.set(e.npc, []).get(e.npc);
+  l.push(e.karten == null && e.stufen == null ? true
+    : `{ ${[e.karten ? `maps = { ${e.karten.map((m) => `[${m}] = true`).join(', ')} }` : null,
+      e.stufen ? `min = ${e.stufen.min}, max = ${e.stufen.max ?? e.stufen.min}` : null].filter(Boolean).join(', ')} }`);
+}
+lines.push('  notTameable = {');
+for (const [npc, l] of [...blocks].sort(([a], [b]) => a - b)) {
+  lines.push(`    [${npc}] = ${l.includes(true) ? 'true' : `{ ${l.join(', ')} }`},`);
+}
 lines.push('  },', '}', '');
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

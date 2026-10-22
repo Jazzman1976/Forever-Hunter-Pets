@@ -3,7 +3,7 @@
 Wie in diesem Projekt gearbeitet wird. Die Kurzfassung für Contributors steht in [entwicklung.md](../technik/entwicklung.md); hier steht das Warum.
 
 - **Agil, ein Inkrement nach dem anderen.** Jedes muss für sich im Spiel prüfbar sein, bevor das nächste beginnt. Grund: Die Forever-API ist kaum dokumentiert, und fast jede Annahme musste im Spiel geprüft werden – große Schritte scheitern spät.
-- **Commit erst nach dem Test im Spiel.** Den Test macht der Maintainer; aus dem Entwicklungswerkzeug heraus lässt sich WoW nicht starten. Was zu testen ist, steht als Kommentar im Issue (Wunsch des Nutzers, 17.10.2026): Dort findet er es auch in einer späteren Sitzung, ohne nachfragen zu müssen.
+- **Merge erst nach dem Test im Spiel.** Im `feature/…`-Branch wird jederzeit committet, auch vor dem Test; PR und Merge nach `develop` erst danach (Regel des Nutzers, 21.10.2026: so lassen sich die Commits je Issue trennen, und Zwischenstände gehen nicht verloren). Den Test macht der Maintainer; aus dem Entwicklungswerkzeug heraus lässt sich WoW nicht starten. Was zu testen ist, steht als Kommentar im Issue (Wunsch des Nutzers, 17.10.2026): Dort findet er es auch in einer späteren Sitzung, ohne nachfragen zu müssen.
 - **Erst proben, dann bauen.** Unklare API-Fragen klärt eine Probe (`/fhp api` schreibt in die SavedVariables), nicht eine Vermutung. Ergebnisse stehen in [api-befunde.md](../technik/api-befunde.md).
 - **Screenshots aus dem Spiel** legt der Maintainer lokal in `.ignore/` ab; der Ordner ist nicht eingecheckt.
 - **Releases mit Release-Branch** (Regel des Nutzers, 18.10.2026; ersetzt „Releases ohne Release-Branch“ vom 17.10.2026, so liefen 0.6.0 bis 0.8.0). Ein Release bekommt ein Issue und einen Branch `release/<version>-beta`; erst dort kommen Version und Release Notes hinein, dazu Korrekturen aus dem Abschlusstest. Dann per PR zuerst nach `main` (mit Zusammenfassung zur Abnahme), Tag, danach per PR zurück nach `develop`. Grund: Seit der Regel „nichts direkt auf `develop`“ passt ein Release direkt auf `develop` nicht mehr; der Abschlusstest bekommt einen festen Stand, an dem nur noch Korrekturen landen, und auf `develop` geht die Entwicklung parallel weiter, während das Release gründlich getestet wird.
@@ -17,4 +17,14 @@ Wie in diesem Projekt gearbeitet wird. Die Kurzfassung für Contributors steht i
 - **Forever ändert sich wöchentlich**, solange die Beta läuft (Start: 04.11.2026). Erhobene Daten können veralten; ein Widerspruch zwischen Zähmungen derselben NPC-ID (Meldung von `tools/build-data.mjs`) ist oft das erste Zeichen.
 - **Daten sammeln läuft neben der Entwicklung.** Gesammelt wird parallel; das ist keine Voraussetzung für neue Inkremente (16.10.2026).
 - **Jeder Vorschlag wird bewertet** (Wunsch des Nutzers, 16.10.2026): Changes, Features und Anpassungen nach **Mehrwert** (Business Value), **Komplexität** und **Risiko** – in dieser Reihenfolge –, je auf einer Skala von 1 (gering) bis 10 (hoch), mit kurzer Begründung. So lässt sich vergleichen, was sich lohnt.
+  **Bugs** (Label `bug`, auch falsche Daten; nicht Feature-Wünsche) bekommen eine vierte Spalte **Schwere** (Regel des Nutzers, 21.10.2026): Mehrwert | Komplexität | Risiko | Schwere. Risiko ist das Risiko der Änderung, Schwere sagt, wie schlimm der Fehler selbst ist. Skala, hoch = schlimmer:
+
+  | Schwere | Bedeutung |
+  | --- | --- |
+  | 1–2 | Schönheitsfehler, falscher oder irreführender Text |
+  | 3–4 | Anzeige oder Funktion eingeschränkt, es gibt einen Ausweg; unnötige Last |
+  | 5–6 | Funktion fällt aus oder Daten fehlen bzw. sind falsch, bei Einzelnen oder still |
+  | 7–8 | falsche oder verlorene Daten bei vielen oder allen, eine Schutzregel ist ausgehebelt |
+  | 9–10 | Lua-Fehler oder Addon unbenutzbar, eigene Daten des Spielers zerstört |
+
 - **Gleiches sieht immer gleich aus und ist gleich** (Regel des Nutzers für immer, 16.10.2026). Derselbe Zustand bekommt im ganzen Addon dasselbe Element, Symbol und Wort – etwa das Kästchen aus „Fähigkeiten“ mit Haken für „bekannt“ auch im Reiter „Gebiet“, das Familien-Icon überall über `ns.FamilyIcon`. Neue Ansichten nehmen vorhandene Bausteine, statt eigene zu erfinden.

@@ -192,6 +192,7 @@ end
 function ns.AddCells(npc, map, cells, foreign)
   local s = store(foreign)
   if not (s and npc and map and ns.ValidCells(cells)) then return 0 end
+  if ns.Blocked(npc, map) then return 0 end   -- nicht zähmbar auf dieser Karte (#90)
   local charNew = not foreign and addOwnChar(npc, map, cells)
   s[npc] = s[npc] or {}
   local byRep = foreign and (s[npc][map] or {})

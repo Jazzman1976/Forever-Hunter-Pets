@@ -25,7 +25,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 ## 2 Grundsätze (in dieser Rangfolge)
 
 1. **Nur eigene Daten und Client-Daten.** Keine fremden Datenquellen – nie im Repo, nie im Addon, auch nicht als Herkunftsangabe in Texten. Nichts aus fremden Addons (Code oder Tabellen). Lizenz: MIT für Code, erhobene Daten (auch von anderen Spielern geteilte) und Logo.
-2. **Wenig Kanal-Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Der verborgene Kanal darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
+2. **Wenig Kanal-Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Der verborgene Kanal darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Auf einen Gruß aus dem Kanal antworten deshalb im Schnitt nur ein bis zwei Spieler, egal wie viele online sind, und eigene Meldungen gehen vor Antworten (#52). Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
 3. **Eigenes zählt sofort, überall** (16.10.2026). Was man selbst sichtet, zähmt oder erhebt, gilt im Addon sofort, nicht erst nach dem Import in die mitgelieferten Daten. Neue Stellen lesen nie nur `D.beasts`, `D.families` oder `a.teach`, sondern nehmen die Helfer, die Daten und eigene Funde zusammenführen ([§4](#zur-laufzeit-daten-und-eigene-funde-zusammen)).
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
@@ -48,6 +48,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 | **Melder, Kürzel** | wer etwas gemeldet hat, als Hash statt Name | `ns.MyRep`, `db.myReps` |
 | **Belegung** | wie sicher ein Lehrtier-Paar ist: belegt, unsicher, unbelegt, widerlegt | `conf`, `ns.CONF_*` |
 | **Status** | wie weit man selbst mit einem Tier in einer Zone ist (nur Entdeckermodus) | `ns.BeastStatus` |
+| **Lernstand: hast du / fehlt dir** | ob der Jäger einen Rang hat; „hat dein Pet“, wenn nur das aktive Pet ihn hat. Jeder Zustand nennt, wen er meint (#77); „bekannt“ heißt nur „Fähigkeiten bekannt“ beim Tier | `ns.IsKnown`, `ns.char.known` |
 | **Komplett-/Entdeckermodus** | was angezeigt wird (alles / nur Eigenes), je Charakter | `ns.Discovering()` |
 
 ## 4 Daten: woher, wohin
@@ -131,7 +132,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Was ein Tier lehrt, gilt zonenübergreifend:** Die Fähigkeiten hängen an der NPC-ID, nur der Rang an der Stufe. „Bekannt“ wird ein Tier in einer Zone trotzdem erst, wenn es dort gefunden ist.
 - **Wo lebt ein Tier?** (`ns.LivesIn`) Wo es einen echten Fundort hat: Daten, Zelle oder eigene Zähmung. Hat es nirgends einen, zählt seine Fährte, wo man es gesehen hat ([§9](#9-fährten)).
 - **Wörter:** Jäger-Sprache, als Zustand formuliert, ohne Icon. Verlauf: „Fährte“ mit Pfoten-Icon, dann „gesichtet / gefunden / bekannt“ – zu nah beieinander, der Unterschied war unklar. Im Code heißt der Status weiter `track`. Texte: `ns.StatusWord`, `ns.StatusText` (liefert im Komplettmodus `nil`).
-- **„lehrt nichts“** steht grau im Tooltip, wenn feststeht, dass ein Tier nichts lehrt (sonst fehlte jeder Hinweis); folgt der Einstellung „Bekannte Fähigkeiten anzeigen“. „Kein Lehrtier in den Daten“ heißt allein nie „lehrt nichts“ – das klärt erst eine Zähmung; bis dahin „? unklar“.
+- **„lehrt nichts“** steht grau im Tooltip, wenn feststeht, dass ein Tier nichts lehrt (sonst fehlte jeder Hinweis); folgt der Einstellung „Auch Ränge zeigen, die du hast“. „Kein Lehrtier in den Daten“ heißt allein nie „lehrt nichts“ – das klärt erst eine Zähmung; bis dahin „? unklar“.
 
 ## 7 Fortschritt
 
@@ -146,6 +147,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 - **Nur „Fähigkeiten bekannt“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
 - **Meldung „Entdeckt“** (20.10.2026, #51): Der Fortschritt wächst nur beim Zähmen, und genau dann sagt es der Chat – sonst bliebe der wichtigste Moment des Sammelspiels unbemerkt, bis man den Reiter öffnet. Nur im Entdeckermodus, eine Zeile unter „Beobachtet“, für die Zone, in der man zähmte: neue Rang-Kacheln („Entdeckt: Beißen Rang 3 – Dämmerwald: 5 von 12 Rängen“), sonst das Tier, das „Fähigkeiten bekannt“ wurde („… 4 von 9 Tieren“); nichts Neues, keine Zeile. Die Zahlen sind die des Reiters (`ns.ZoneProgress` vorher und nachher). Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten. Wird das Tier dadurch auch in einer anderen Zone bekannt, sagt das nur der Reiter. Fährten melden sich weiter nicht (sonst liefe der Chat voll).
+- **Neues ist eine gute Nachricht** (21.10.2026, #66): Y wächst auch durch andere (fremde Zellen und Zähmungen, neue Stammdaten), und aus „8 von 8“ wird still „8 von 9“. Damit das nicht wie ein Rückschritt wirkt, steht im Entdeckermodus über den Tieren einmal „+ Seit du zuletzt hier nachgesehen hast, haben andere Jäger 1 neues Tier entdeckt – die Jagd geht weiter.“ Gemerkt werden je Charakter und Zone die Tiere vom letzten Nachsehen (`ForeverHunterPetsCharDB.zoneSeen`), gezählt nur Tiere, die man selbst nicht gefunden hat (Status „unknown“); nur Tiere, keine Ränge, denn neue Ränge kommen auch aus eigenen Zähmungen. Beim ersten Besuch einer Zone wird nur gemerkt. Die Zeile bleibt, bis man eine andere Zone wählt oder das Fenster schließt. Ein Übergang: Wenn alle Tiere bekannt sind, kommt sie nicht mehr.
+- **Ein Erfolg bleibt erreicht** (21.10.2026, #66, für E8): Wird eine Zone später größer, bleibt „Alle Tiere aus Das Brachland gefunden“ erreicht. Die Zone zeigt dann „Neu in dieser Zone“ und es gibt etwas zu holen, aber nichts wird zurückgenommen.
 - **Immer „X von Y“** (18.10.2026, #19): Auch wenn alles bekannt ist, steht „8 von 8 …“, bei *Tiere* mit vollem Balken – für alle drei Zähler gleich. Vorher stand bei X = Y nur „8“; über den Kacheln wirkte das wie ein kaputter Umbruch. Im Komplettmodus zeigt der Tiere-Balken, wie weit das Datensammeln ist.
 - Ränge vom Tierausbilder und Ränge ohne Lehrtier in der Zone zählen nicht – die muss man dort nicht suchen.
 - **Komplettmodus: Es zählt, was gezeigt wird** (20.10.2026, #40). Die Zähler und Kacheln nehmen die Lehren aus `ns.TeachInfo`, wie Liste und Tooltip. Ist „Unsichere Angaben zeigen“ aus, zählen unsichere Lehren weder in X noch in Y; X wird nie größer als Y. Vorher zählten sie mit, auch wenn die Liste sie verschwieg, und eine einzelne fremde Zähmung zählte sofort. Der Entdeckermodus bleibt: Y ist das Grundgerüst aus allen Daten.
@@ -186,9 +189,9 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 ## 11 Lernstand
 
-- **Aus Sicht des Jägers.** „Verfügbar / nicht verfügbar / bereits bekannt“ meinen den Jäger, nicht das Pet. Was das aktive Pet lernen kann, zeigt nur „Ausbildung“.
+- **Aus Sicht des Jägers.** „fehlt dir, erreichbar / fehlt dir, außer Reichweite / hast du“ meinen den Jäger, nicht das Pet. Was das aktive Pet lernen kann, zeigt nur „Ausbildung“.
 - **Ränge einzeln:** Rang 3 schließt Rang 2 nicht ein (Korrektur vom 21.09.2026). Gespeichert je Zauber-ID.
-- **Was das Pet kann, ist nicht gelernt** (0.2.1). Ein verfrühter Haken ist gefährlicher als ein fehlender – man ließe das Tier zu früh frei. Angezeigt wird stattdessen „dein Pet kann es“.
+- **Was das Pet kann, ist nicht gelernt** (0.2.1). Ein verfrühter Haken ist gefährlicher als ein fehlender – man ließe das Tier zu früh frei. Angezeigt wird stattdessen „hat dein Pet“.
 - **Quellen:** Wildtierausbildung (Zauber-ID über den Tooltip der Zeile) und Lernmeldung (trägt die ID eines Jäger-Zaubers, zugeordnet über Name und den Rang, den das Pet schon hat).
 - **Gesammelt, nie von selbst entfernt:** Die Ausbildung zeigt nur die Familie des aktiven Pets; ein fehlender Eintrag heißt nichts.
 - **Von Hand nur mit „Manuelles Editieren“** (Standard aus) – das Kästchen war zu leicht aus Versehen gesetzt.
@@ -229,7 +232,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.
-- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– gelernt“ (grau) / „– neu“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
+- Status-Tag (nur Entdeckermodus), Angriffstempo, Ränge mit „– hast du“ (grau) / „– fehlt dir“ (grün), „lehrt nichts“ (grau). Im Komplettmodus, wenn weder Daten noch irgendeine Zähmung sagen, was das Tier lehrt: „Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!“ (gold, #23) – Lücken sind Aufgaben. Geprüft wird roh: ausgeblendete unsichere Angaben zählen nicht als fehlend. Im Entdeckermodus nicht, dort sagt der Status, was zu tun ist.
 - Im Komplettmodus, wenn es zum Tier Angaben unter der Schwelle gibt (unsicherer oder unbelegter Rang, fremde Zähmungen von weniger als 3 Meldern): „Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!“ (gold, einmal, #40). Auch roh geprüft, anders begründet als #23: Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne die Zeile bliebe ein Tier mit nur unsicheren Lehren bei ausgeschalteter Einstellung stumm. Nach einer eigenen Zähmung (jeder Charakter des Kontos) ist alles belegt, die Zeile fällt weg.
 - Nur für wilde Tiere (Familie, nicht vom Spieler kontrolliert) – sonst bekämen Wachen Fährten.
 - Neue Fährten melden sich nicht im Chat (liefe voll), sondern über den Status im Tooltip.
@@ -257,7 +260,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 - **Agil, ein Inkrement nach dem anderen**, jedes für sich im Spiel prüfbar; Commit erst nach dem Test im Spiel (macht der Maintainer).
 - **Erst proben, dann bauen:** Unklare API-Fragen klärt eine Probe (`/fhp …`, Protokoll in den SavedVariables), Ergebnisse in [api-befunde.md](../technik/api-befunde.md).
-- **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung.
+- **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung; Bugs zusätzlich nach Schwere (Skala in [arbeitsweise.md](arbeitsweise.md)).
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
 - **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>-beta` (vor 1.0.0); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>-beta`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
 - **Bekanntes, das nicht zum Auftrag gehört,** wird genannt, nicht ungefragt angefasst.
@@ -272,7 +275,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026) |
 
 Zum Release 1.0.0: **Beta-Hinweis im Startdialog entfernen** (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42).
 

@@ -187,6 +187,8 @@ local function petAhead(e)
   return e.a.source == "tame" and ns.Learnable(e.a) and not ns.IsKnown(e.r) and ns.PetKnows(e.r)
 end
 local PET_AHEAD = "|cffffa633%s|r"
+-- Lernstand in der Kopfzeile nur als Ganzes umbrechen, nicht „hast | du“ (#87): geschützte Leerzeichen (U+00A0)
+local function nobreak(s) return (s:gsub(" ", "\194\160")) end
 
 local function metaText(e)
   local a, r = e.a, e.r
@@ -307,7 +309,8 @@ function ns.BuildAbilities(parent)
 
   local title = W.Text(dc, "GameFontNormalLarge")
   title:SetPoint("TOPLEFT", iconBtn, "TOPRIGHT", 10, -3)
-  local sub = W.Text(dc, "GameFontHighlight")
+  -- die Kopfzeile darf umbrechen: mit allen Teilen ist sie im deutschen Client breiter als die Spalte (#87)
+  local sub = W.Text(dc, "GameFontHighlight", true)
   sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
   local desc = W.Text(dc, "GameFontHighlight", true)
   local fams = W.Text(dc, "GameFontHighlightSmall", true)
@@ -393,14 +396,16 @@ function ns.BuildAbilities(parent)
     local meta = metaText(e)
     if meta ~= "" then parts[#parts + 1] = meta end
     if ns.Learnable(a) and ns.IsKnown(r) then
-      parts[#parts + 1] = "|cff9fd45f" .. L["learned"] .. "|r"
+      parts[#parts + 1] = "|cff9fd45f" .. nobreak(L["you have it"]) .. "|r"
     elseif petAhead(e) then
-      -- kurz halten: die Zeile ist einzeilig, der Hinweis darunter erklärt den Rest
-      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(L["not learned yet"]))
+      -- kurz halten: der Hinweis darunter erklärt den Rest
+      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(nobreak(L["you lack it"])))
     end
+    sub:SetWidth(DW - 44 - 10)
     sub:SetText(table.concat(parts, " · "))
 
-    local y = 56
+    -- unter Icon und Kopfzeile; bricht die Kopfzeile um, rückt alles darunter mit
+    local y = math.max(56, 3 + title:GetStringHeight() + 6 + sub:GetStringHeight() + 10)
     y = place(desc, y, ns.Description(r))
     y = place(fams, y, (L["Learnable by: %s"]):format(familiesText(a)))
     y = place(hint, y + 4, hintText(e))
@@ -497,7 +502,7 @@ function ns.BuildAbilities(parent)
   v.rows = W.Pool(function()
     local b = CreateFrame("Button", nil, list.content)
     b:SetHeight(ROW_H)
-    b.sel = W.Fill(b, 0.62, 0.83, 0.37, 0.2)
+    b.sel = W.Selection(b)
     b.hl = b:CreateTexture(nil, "HIGHLIGHT")
     b.hl:SetAllPoints()
     b.hl:SetColorTexture(1, 1, 1, 0.06)
@@ -518,7 +523,7 @@ function ns.BuildAbilities(parent)
     b.box:SetScript("OnEnter", function(self)
       local e = self.row.entry
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText(L["Learned"], 1, 1, 1)
+      GameTooltip:SetText(L["You have it"], 1, 1, 1)
       GameTooltip:AddLine(ns.IsKnown(e.r) and L["You have learned this rank."] or L["You have not learned this rank yet."], 1, 0.82, 0)
       GameTooltip:AddLine(L["The tick shows which ranks you can teach your pets. The addon sets it on its own from the Beast Training window and when the game reports that you learned the spell. A tick counts for this rank only."], 0.8, 0.8, 0.8, true)
       if ns.db.ui.manualEdit then
@@ -554,7 +559,7 @@ function ns.BuildAbilities(parent)
       row.icon:SetTexture(ns.AbilityIcon(e.a))
       row.name:SetText(e.name)
       row.rank:SetText(ns.RankLabel(e.a, e.r))
-      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet knows it"])) or ""))
+      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet has it"])) or ""))
       row.sel:SetShown(e == self.selected)
       row.box:SetShown(ns.Learnable(e.a))
       row.box.check:SetShown(ns.IsKnown(e.r))
@@ -564,8 +569,14 @@ function ns.BuildAbilities(parent)
     count:SetText((L["%d rank entries from %d abilities"]):format(#self.entries, n))
   end
 
+  -- Gebaut wird nur, was zu sehen ist (#50): Im Hintergrund merkt sich die Ansicht nur, dass sie veraltet ist,
+  -- und baut beim nächsten Öffnen einmal neu (rebuild, unten) – wie „Ausbildung“ und „Gebiet“
+  local function whenVisible(fn)
+    if parent:IsVisible() then fn() else v.stale = true end
+  end
+
   -- Lernstand geändert (abgehakt oder vom Spiel erkannt): nur die Häkchen nachziehen, nicht scrollen
-  ns.OnKnownChanged(function()
+  ns.OnKnownChanged(function() whenVisible(function()
     -- blendet ein Status-Häkchen etwas aus, kann der Rang damit aus der Liste fallen oder dazukommen
     if not (v.show.available and v.show.unavailable and v.show.known) then
       v:ApplyFilter(true)
@@ -575,10 +586,10 @@ function ns.BuildAbilities(parent)
       local row = v.rows.items[i]
       local e = row.entry
       row.box.check:SetShown(ns.IsKnown(e.r))
-      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet knows it"])) or ""))
+      row.meta:SetText(metaText(e) .. (petAhead(e) and ("  " .. PET_AHEAD:format(L["your pet has it"])) or ""))
     end
     if v.selected and detail:IsShown() then v:RenderDetail() end
-  end)
+  end) end)
 
   -- Der Client lädt Zaubertexte nach; kommt die Beschreibung der gewählten Zeile, neu zeichnen
   ns.On("SPELL_TEXT_UPDATE", function(spellID)
@@ -636,12 +647,12 @@ function ns.BuildAbilities(parent)
   local DD_W = (RIGHT_W - DD_GAP) / 2
   local FILTERS = {
     { header = L["Status"] },
-    { key = "available", label = L["available"], tip = L["Not ticked yet, and you can learn it now: a beast up to your level teaches it, or the pet trainer does."] },
-    { key = "unavailable", label = L["unavailable"], tip = L["Not ticked yet, and out of reach for now: every beast that teaches it is above your level, or no source is known."] },
-    { key = "known", label = L["already known"], tip = L["Ranks you have ticked as learned."] },
+    { key = "available", label = L["you lack it, in reach"], tip = L["Not ticked yet, and you can learn it now: a beast up to your level teaches it, or the pet trainer does."] },
+    { key = "unavailable", label = L["you lack it, out of reach"], tip = L["Not ticked yet, and out of reach for now: every beast that teaches it is above your level, or no source is known."] },
+    { key = "known", label = L["you have it"], tip = L["Ranks you have: ticked because you learned them."] },
     { header = L["Source"] },
-    { key = "innate", label = L["innate"], tip = L["What a beast brings along when tamed and can never be taught, like its attack speed. Untick to hide it; whether it shows also depends on “available” and “unavailable”."] },
-    { key = "trainer", label = L["Pet trainer"], tip = L["Abilities you learn from the pet trainer, without finding and taming a beast. Untick to hide them; whether they show also depends on “available”, “unavailable” and “already known”."] },
+    { key = "innate", label = L["innate"], tip = L["What a beast brings along when tamed and can never be taught, like its attack speed. Untick to hide it; whether it shows also depends on “you lack it, in reach” and “you lack it, out of reach”."] },
+    { key = "trainer", label = L["Pet trainer"], tip = L["Abilities you learn from the pet trainer, without finding and taming a beast. Untick to hide them; whether they show also depends on “you lack it, in reach”, “you lack it, out of reach” and “you have it”."] },
   }
   local filterDD = W.MultiDropdown(parent, nil, L["Show"], FILTERS, function(key, on)
     v.show[key] = on
@@ -651,7 +662,7 @@ function ns.BuildAbilities(parent)
   filterDD:SetPoint("TOPLEFT")
   -- mit einer neuen Stufe werden weitere Tiere zähmbar; der Client nennt sie erst kurz danach
   ns.On("PLAYER_LEVEL_UP", function()
-    ns.After(0.5, function() v:ApplyFilter(true) end)
+    ns.After(0.5, function() whenVisible(function() v:ApplyFilter(true) end) end)
   end)
 
   -- „Aktuelle Zone“ folgt dem Spieler: die Zone wird bei jedem Zonenwechsel neu bestimmt
@@ -702,16 +713,17 @@ function ns.BuildAbilities(parent)
     if v.follow then followZone() end
     if v.followPet then followPet() end   -- nach dem Einloggen ist das Pet erst jetzt bekannt
   end
-  ns.On("ZONE_CHANGED_NEW_AREA", zoneChanged)
-  ns.On("PLAYER_ENTERING_WORLD", zoneChanged)
+  ns.On("ZONE_CHANGED_NEW_AREA", function() whenVisible(zoneChanged) end)
+  ns.On("PLAYER_ENTERING_WORLD", function() whenVisible(zoneChanged) end)
   -- „Aktuelle Familie“ folgt dem aktiven Pet. Ohne Pet gilt kein Familienfilter.
   local famDD
-  followPet = function()
+  -- noBuild: nur Beschriftung und Familie bestimmen, die Liste baut der Aufrufer
+  followPet = function(noBuild)
     local id, name = ns.PetFamily()
     famDD.label:SetText(L["Current family"] .. ": " .. (name or L["no pet"]))
     if v.fam == id then return end
     v.fam = id
-    v:ApplyFilter()
+    if not noBuild then v:ApplyFilter() end
   end
   local function selectFam(value)
     saved.fam = value
@@ -728,14 +740,23 @@ function ns.BuildAbilities(parent)
   famDD:SetPoint("TOPRIGHT")
   zoneDD:SetPoint("RIGHT", famDD, "LEFT", -DD_GAP, 0)
   ns.On("UNIT_PET", function(unit)
-    if v.followPet and ns.clean(unit) == "player" then followPet() end
+    if v.followPet and ns.clean(unit) == "player" then whenVisible(followPet) end
   end)
 
-  -- Neue Zähmung, neue Fähigkeit aus der Erhebung oder Angaben in den Einstellungen ein- oder ausgeschaltet:
-  -- Zonenauswahl und Liste neu bauen (#24: vorher nur die Liste, mit veralteter Zone)
-  ns.OnShowConfChanged(function()
+  -- Der eine Weg zum Neubauen: Zonenauswahl, Familie und Liste (#24: vorher nur die Liste, mit veralteter Zone)
+  local function rebuild()
     refreshZones()
+    if v.followPet then followPet(true) end
     if not (v.follow and followZone(true)) then v:ApplyFilter(true) end
+  end
+  -- Neue Zähmung (auch fremde, alle 5 s), neue Fähigkeit aus der Erhebung oder Angaben in den Einstellungen
+  -- ein- oder ausgeschaltet
+  ns.OnShowConfChanged(function() whenVisible(rebuild) end)
+  -- beim Öffnen des Fensters und beim Wechsel auf den Reiter einmal nachziehen, was im Hintergrund liegen blieb
+  parent:HookScript("OnShow", function()
+    if not v.stale then return end
+    v.stale = false
+    ns.SafeCall("abilities", rebuild)
   end)
 
   -- Stand der letzten Sitzung. Eine Zone oder Familie, die es in den Daten nicht mehr gibt,
