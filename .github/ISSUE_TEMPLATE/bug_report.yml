@@ -1,16 +1,16 @@
 name: Bug report
-description: Something in the addon does not work as expected.
+description: Something in the addon does not work as expected, or its data is wrong (a beast teaches something else, lives somewhere else, a cost or level is wrong).
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! Fill in what you can – a short description is enough. Please keep it friendly and on topic ([Code of Conduct](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/develop/CODE_OF_CONDUCT.md)).
+        Thanks for reporting! Fill in what you can – a short description is enough. For wrong data, please only report what you saw in the game yourself, not data from websites or other addons. Please keep it friendly and on topic ([Code of Conduct](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/develop/CODE_OF_CONDUCT.md)).
   - type: textarea
     id: what
     attributes:
       label: What happened?
-      description: What did you do, what did you expect, and what happened instead?
+      description: What did you do, what did you expect, and what happened instead? For wrong data, for example "the Grey Fox at level 22 taught me Cower rank 1" or "Swipe rank 1 costs 5 TP" – with the NPC ID if you know it.
   - type: input
     id: version
     attributes:
