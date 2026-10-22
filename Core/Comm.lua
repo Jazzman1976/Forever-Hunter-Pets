@@ -30,13 +30,14 @@ local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzu
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
 local MAX_REJECTS = 10        -- verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
+local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
 -- Je Art (O1 Zähmung, S1 Sichtung, F1 Zellen, H1 Gruß): gesendet, empfangen, davon neu gespeichert, und warum
 -- verworfen. Liegt auch in ForeverHunterPetsDB.shareStats, damit ein Test nach /reload nachlesbar bleibt.
 local KINDS = { "O1", "S1", "F1", "H1" }
-local stats = { sent = {}, recv = {}, new = {}, dropped = {}, last = nil, since = nil }
+local stats = { sent = {}, recv = {}, new = {}, dropped = {}, last = nil, since = nil, replied = 0, skipped = 0 }
 local function count(t, k, n) t[k] = (t[k] or 0) + (n or 1) end
 local perSender, greeted = {}, {}
 local selfName, selfRep
@@ -197,9 +198,31 @@ pump = function()
   ns.After(INTERVAL, pump)
 end
 
-local function enqueue(msg, kind, target, onSent)
-  if #msg > 250 or #queue >= MAX_QUEUE then return end
-  queue[#queue + 1] = { msg = msg, kind = kind, target = target, onSent = onSent }
+-- Eigenes zuerst (#52): Antworten auf Grüße (low) stehen hinten, eigene Meldungen kommen vor die erste Antwort.
+-- Ist die Schlange voll, verdrängt eine eigene Meldung die letzte Antwort; eine Antwort wird dann gar nicht erst
+-- eingereiht. Was so wegfällt, zählt als „Warteschlange voll“ (/fhp teilen).
+local function enqueue(msg, kind, target, onSent, low)
+  if #msg > 250 then return end
+  local item = { msg = msg, kind = kind, target = target, onSent = onSent, low = low }
+  if low then
+    if #queue >= MAX_QUEUE then count(stats.dropped, "Warteschlange voll"); return end
+    queue[#queue + 1] = item
+  else
+    if #queue >= MAX_QUEUE then
+      local last
+      for i = #queue, 1, -1 do
+        if queue[i].low then last = i; break end
+      end
+      count(stats.dropped, "Warteschlange voll")
+      if not last then return end
+      table.remove(queue, last)
+    end
+    local at = #queue + 1
+    for i, q in ipairs(queue) do
+      if q.low then at = i; break end
+    end
+    table.insert(queue, at, item)
+  end
   if not busy then pump() end
 end
 
@@ -339,15 +362,40 @@ end
 -- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen, und nichts, was
 -- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
 -- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
-local function reply(sender, target)
+--
+-- Damit die Antworten nicht mit der Zahl der Spieler wachsen (#52), gilt für Grüße aus dem Kanal (Gilde und Gruppe
+-- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
+-- der Grüße aus dem Kanal in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa gleich viele Spieler,
+-- egal wie viele online sind. Wer nicht antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
+local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße aus dem Kanal und der letzten Antwort darauf
+local function noteGreeting()
+  local now = GetTime()
+  for i = #heardAt, 1, -1 do
+    if now - heardAt[i] > REPLY_EVERY then table.remove(heardAt, i) end
+  end
+  heardAt[#heardAt + 1] = now
+end
+
+local function mayReply()
+  local now = GetTime()
+  if lastReply and now - lastReply < REPLY_EVERY then return false end
+  if math.random() >= 1 / #heardAt then return false end
+  lastReply = now
+  return true
+end
+
+local function reply(sender, target, fromChannel)
+  if fromChannel then noteGreeting() end
   if greeted[sender] then return end
+  if fromChannel and not mayReply() then stats.skipped = stats.skipped + 1; return end
   greeted[sender] = true
+  stats.replied = stats.replied + 1
   target = target or sender
   local theirs = hash((target:gsub(" ", "-")))
   local _, rep = me()
   if rep and ns.OwnCellBundles then
     for _, b in ipairs(ns.OwnCellBundles(CELL_REPLY)) do
-      enqueue(("F1;%d;%d;%s;%s"):format(b.npc, b.map, b.cells, rep), "WHISPER", target)
+      enqueue(("F1;%d;%d;%s;%s"):format(b.npc, b.map, b.cells, rep), "WHISPER", target, nil, true)
     end
   end
   local own, other = {}, {}
@@ -362,7 +410,7 @@ local function reply(sender, target)
     for i = #list, 1, -1 do
       if n >= REPLY_MAX then return end
       local msg = outgoing(list[i])
-      if msg then enqueue(msg, "WHISPER", target); n = n + 1 end
+      if msg then enqueue(msg, "WHISPER", target, nil, true); n = n + 1 end
     end
   end
 end
@@ -559,7 +607,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
-    reply(key, sender)   -- zurückgeflüstert wird an den Namen, den der Client nannte
+    reply(key, sender, ns.clean(kind) == "CHANNEL")   -- zurückgeflüstert wird an den Namen, den der Client nannte
   else
     return
   end
@@ -669,6 +717,7 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
+  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d"):format(stats.replied, stats.skipped))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
     ns.Print(("Verworfene Nachrichten roh aufgehoben: %d (ForeverHunterPetsDB.shareRejects)"):format(#rejects))

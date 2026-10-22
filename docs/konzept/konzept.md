@@ -25,7 +25,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 ## 2 Grundsätze (in dieser Rangfolge)
 
 1. **Nur eigene Daten und Client-Daten.** Keine fremden Datenquellen – nie im Repo, nie im Addon, auch nicht als Herkunftsangabe in Texten. Nichts aus fremden Addons (Code oder Tabellen). Lizenz: MIT für Code, erhobene Daten (auch von anderen Spielern geteilte) und Logo.
-2. **Wenig Kanal-Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Der verborgene Kanal darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
+2. **Wenig Kanal-Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Der verborgene Kanal darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Auf einen Gruß aus dem Kanal antworten deshalb im Schnitt nur ein bis zwei Spieler, egal wie viele online sind, und eigene Meldungen gehen vor Antworten (#52). Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
 3. **Eigenes zählt sofort, überall** (16.10.2026). Was man selbst sichtet, zähmt oder erhebt, gilt im Addon sofort, nicht erst nach dem Import in die mitgelieferten Daten. Neue Stellen lesen nie nur `D.beasts`, `D.families` oder `a.teach`, sondern nehmen die Helfer, die Daten und eigene Funde zusammenführen ([§4](#zur-laufzeit-daten-und-eigene-funde-zusammen)).
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
