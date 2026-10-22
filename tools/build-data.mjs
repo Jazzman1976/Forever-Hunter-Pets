@@ -34,7 +34,7 @@ const familiesIn = read('familien.json');
 // tiere.json: { NPC-ID: { de?, en?, fam?, min?, max?, cls?, beleg } }
 const beastsIn = read('tiere.json');
 // sichtungen.json: [{ npc, stufe, einstufung, familie, sprache, name, zeit, melder }] (tools/import-observations.mjs)
-const sightings = fs.existsSync(path.join(OWN, 'sichtungen.json')) ? read('sichtungen.json') : [];
+const sightingsAll = fs.existsSync(path.join(OWN, 'sichtungen.json')) ? read('sichtungen.json') : [];
 // beobachtungen.json: [{ npc, stufe, zauber: [IDs], tempo, zeit, melder }] (tools/import-observations.mjs)
 const observations = read('beobachtungen.json');
 // eigene-melder.json: Kürzel der eigenen Charaktere (ForeverHunterPetsDB.myReps), von import-observations.mjs
@@ -49,6 +49,10 @@ const cells = fs.existsSync(path.join(OWN, 'zellen.json')) ? read('zellen.json')
 const foreignCells = fs.existsSync(path.join(OWN, 'zellen-fremd.json')) ? read('zellen-fremd.json') : {};
 // melder-wege.json: { melder: [absender, …] }, über welche Absender ein Kürzel ankam (tools/import-observations.mjs, #15)
 const ways = fs.existsSync(path.join(OWN, 'melder-wege.json')) ? read('melder-wege.json') : {};
+// nicht-zaehmbar.json: [{ npc, name?, karten?: [uiMapID], stufen?: { min, max }, grund, quelle, datum }], Sperrliste (#90):
+// Begleiter von NPCs und andere Tiere, die sich nicht zähmen lassen. Ein Eintrag gilt, wenn alle Felder, die er hat,
+// zutreffen; ohne karten überall, ohne stufen auf jeder Stufe.
+const blockList = fs.existsSync(path.join(OWN, 'nicht-zaehmbar.json')) ? read('nicht-zaehmbar.json') : [];
 
 // Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei verschiedene Absender kamen – ein einzelner
 // Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe (vor diesem Stand
@@ -69,6 +73,26 @@ const enough = (reps) => {
 const problems = [];
 const need = (cond, msg) => { if (!cond) problems.push(msg); };
 const warnings = [];
+
+// ---- Sperrliste (#90) ----
+// Wie ns.Blocked im Addon (Core/Sightings.lua): Eine Bedingung ohne Wert (etwa die Karte einer Sichtung) trifft nicht zu.
+const blocks = new Map(); // NPC-ID → [Eintrag, …]
+for (const e of blockList) {
+  need(Number.isInteger(e.npc) && e.npc > 0, `Sperrliste: Eintrag ohne NPC-ID: ${JSON.stringify(e)}`);
+  need(e.quelle && e.datum, `Sperrliste: ${e.npc} ohne Quelle oder Datum`);
+  need(['besitzer', 'zähmen-scheitert', 'befund'].includes(e.grund), `Sperrliste: ${e.npc} mit unbekanntem Grund ${e.grund}`);
+  need(e.karten == null || (Array.isArray(e.karten) && e.karten.length && e.karten.every(Number.isInteger)),
+    `Sperrliste: ${e.npc} mit ungültigen Karten`);
+  need(e.stufen == null || Number.isInteger(e.stufen.min), `Sperrliste: ${e.npc} mit ungültigen Stufen`);
+  (blocks.get(e.npc) ?? blocks.set(e.npc, []).get(e.npc)).push(e);
+}
+const blocked = (npc, map, level) => (blocks.get(Number(npc)) || []).some((e) =>
+  (e.karten == null || (map != null && e.karten.includes(Number(map))))
+  && (e.stufen == null || (level != null && level >= e.stufen.min && level <= (e.stufen.max ?? e.stufen.min))));
+// Sichtungen kennen keine Karte: Hier fallen nur die heraus, die überall gesperrt sind. Gesperrte Tiere, von denen nach
+// den Fundorten nichts übrig bleibt, fallen unten ganz aus den Tieren (beastIds).
+const sightings = sightingsAll.filter((s) => !blocked(s.npc, null, s.stufe));
+let blockedOut = sightingsAll.length - sightings.length;
 
 // ---- Fähigkeiten aus der Erhebung ----
 // Regeln (Inkrement 2b, 16.10.2026):
@@ -338,6 +362,7 @@ const coords = {};
 for (const p of places) {
   need(p.quelle && p.datum, `Fundort zu ${p.npc} ohne Quelle oder Datum`);
   need(Number.isInteger(p.map), `Fundort zu ${p.npc} ohne uiMapID`);
+  if (blocked(p.npc, p.map)) { blockedOut++; continue; }
   const list = ((coords[p.npc] ??= {})[p.map] ??= []);
   for (const [x, y] of p.punkte) list.push(Math.round(x * 10), Math.round(y * 10));
 }
@@ -347,6 +372,7 @@ const CELL_ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn';
 const shipCells = new Map(); // "npc:map" → Set der Zellen
 for (const [npc, maps] of Object.entries(cells)) {
   for (const [map, s] of Object.entries(maps)) {
+    if (blocked(npc, map)) { blockedOut++; continue; }
     const set = shipCells.get(`${npc}:${map}`) ?? new Set();
     for (const c of s.match(/../g) || []) set.add(c);
     shipCells.set(`${npc}:${map}`, set);
@@ -355,6 +381,7 @@ for (const [npc, maps] of Object.entries(cells)) {
 let foreignShipped = 0;
 for (const [npc, maps] of Object.entries(foreignCells)) {
   for (const [map, byRep] of Object.entries(maps)) {
+    if (blocked(npc, map)) { blockedOut++; continue; }
     const reps = new Map(); // Zelle → Set der Melder
     for (const [rep, s] of Object.entries(byRep)) {
       for (const c of s.match(/../g) || []) (reps.get(c) ?? reps.set(c, new Set()).get(c)).add(rep);
@@ -454,11 +481,14 @@ const sightedNames = new Map(); // NPC-ID → { de, en }
 
 // Jedes Tier, das etwas beibringt, einen Fundort hat oder gesichtet wurde. Von Hand Gepflegtes geht vor,
 // dann die Sichtung; die Stufe umfasst Sichtungen und Zähmungen.
+// Ein gesperrtes Tier ohne Fundort und ohne Lehre fällt ganz heraus (#90): Von ihm weiß man nur, dass es nicht
+// zähmbar ist. Von Hand Gepflegtes bleibt.
+const teachers = new Set(abilities.flatMap((a) => a.teach.map((t) => t.id)));
 const beastIds = new Set([
   ...Object.keys(beastsIn).map(Number),
   ...Object.keys(coords).map(Number),
-  ...abilities.flatMap((a) => a.teach.map((t) => t.id)),
-  ...sighted.keys(),
+  ...teachers,
+  ...[...sighted.keys()].filter((id) => !(blocks.has(id) && !coords[id] && !teachers.has(id))),
 ]);
 const beasts = {};
 for (const id of [...beastIds].sort((x, y) => x - y)) {
@@ -479,7 +509,13 @@ const families = {};
 for (const [id, f] of Object.entries(survey.familien)) families[id] = { de: f.name.deDE || null, en: f.name.enUS || f.name.enGB || null, icon: f.icon ?? null };
 for (const [id, f] of Object.entries(familiesIn)) families[id] = { de: f.de || null, en: f.en || null, icon: f.icon || null };
 
-const data = { generatedAt: new Date().toISOString(), families, beasts, coords, abilities };
+// Sperrliste fürs Addon (ns.Data.notTameable): nur NPC, Karten und Stufen
+const nichtZaehmbar = blockList.map((e) => ({
+  npc: e.npc, karten: e.karten ?? null, stufen: e.stufen ?? null,
+})).sort((x, y) => x.npc - y.npc);
+if (blockedOut) console.log(`${blockedOut} gesperrte Einträge (Sichtungen, Fundorte, Zellen je Karte) nicht übernommen (Sperrliste)`);
+
+const data = { generatedAt: new Date().toISOString(), families, beasts, coords, abilities, nichtZaehmbar };
 
 // ---- Vergleich mit dem Stand in Git (#37) ----
 // Neue, weggefallene und umgezogene Fähigkeiten (Herkunft tame ↔ trainer) brechen ab, bis man sie geprüft hat und

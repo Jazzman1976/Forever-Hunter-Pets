@@ -54,6 +54,7 @@ end
 -- Für das Konto und für den Charakter; true, wenn die Zone für das Konto neu dazukam
 function ns.NoteSeenIn(npc, map)
   if not (ns.db and npc and map) then return false end
+  if ns.Blocked(npc, map) then return false end   -- nicht zähmbar auf dieser Karte (#90)
   local m = tostring(map)
   if ns.char then noteIn(ns.char, npc, m) end
   return noteIn(ns.db, npc, m)

@@ -30,6 +30,64 @@ ns.LOCALES = { deDE = true, enUS = true, enGB = true, frFR = true, esES = true, 
 -- tools/import-observations.mjs.
 ns.DEMON_FAMILY = { [15] = true, [16] = true, [17] = true, [19] = true, [23] = true }
 
+-- ---- Nicht zähmbare Tiere (#90) ----
+-- Begleiter von NPCs (etwa der Wolf der Grimmhauer) sehen für die API aus wie wilde Tiere. Nur der Tooltip nennt
+-- den Besitzer, als Zeile vom Typ Enum.TooltipDataLineType.UnitOwner (Besitzer-Probe, 21.10.2026). Zwei Wege:
+-- die Sperrliste aus den Daten (ns.Data.notTameable, aus tools/eigene/nicht-zaehmbar.json) und eigene Treffer am
+-- Tooltip, kontoweit in ForeverHunterPetsDB.owned[npc] = { name = Name, maps = { [uiMapID] = Zeit } }; der Import
+-- macht daraus Einträge der Sperrliste. Gesperrt ist ein Tier nur auf den Karten, auf denen es so gesehen wurde:
+-- Anderswo kann dieselbe NPC wild stehen.
+local notTameable = D.notTameable or {}
+
+-- Fällt ein Fund unter die Sperre? map und level dürfen fehlen; eine Bedingung ohne Wert trifft nicht zu.
+-- In den Daten je NPC true (überall) oder eine Liste von Bedingungen { maps = { [uiMapID] = true }, min, max }:
+-- Eine gilt, wenn alle Felder, die sie hat, zutreffen.
+function ns.Blocked(npc, map, level)
+  local list = notTameable[npc]
+  if list == true then return true end
+  for _, e in ipairs(type(list) == "table" and list or {}) do
+    local hit = true
+    if e.maps then hit = map ~= nil and e.maps[map] == true end
+    if hit and e.min then hit = level ~= nil and level >= e.min and level <= (e.max or e.min) end
+    if hit then return true end
+  end
+  local o = map and ns.db and ns.db.owned and ns.db.owned[npc]
+  return type(o) == "table" and type(o.maps) == "table" and o.maps[map] ~= nil
+end
+
+-- Eine Sichtung kennt keine Karte. Sie fällt heraus, wenn das Tier überall gesperrt ist, oder wenn es auf einer
+-- Karte gesperrt ist und die Daten es nicht als Tier führen: Dann weiß man von ihm nur, dass es nicht zähmbar ist.
+function ns.BlockedSighting(npc, level)
+  if ns.Blocked(npc, nil, level) then return true end
+  if D.beasts[npc] then return false end
+  if ns.db and ns.db.owned and ns.db.owned[npc] then return true end
+  local list = notTameable[npc]
+  for _, e in ipairs(type(list) == "table" and list or {}) do
+    if e.maps then return true end
+  end
+  return false
+end
+
+-- Hat die Einheit einen Besitzer? Einmal je GUID und Sitzung; was der Client geheim hält, wird nicht gemerkt.
+local OWNER_LINE = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.UnitOwner
+local owners, ownerCount = {}, 0   -- owners[guid] = true/false
+function ns.HasOwner(unit, guid)
+  if not (OWNER_LINE and guid and C_TooltipInfo and C_TooltipInfo.GetUnit) then return false end
+  local v = owners[guid]
+  if v ~= nil then return v end
+  local ok, d = pcall(C_TooltipInfo.GetUnit, unit)
+  d = ok and ns.clean(d)
+  local lines = type(d) == "table" and ns.clean(d.lines)
+  if type(lines) ~= "table" then return false end
+  v = false
+  for _, l in ipairs(lines) do
+    if type(l) == "table" and ns.clean(l.type) == OWNER_LINE then v = true; break end
+  end
+  if ownerCount >= 2000 then owners, ownerCount = {}, 0 end
+  owners[guid], ownerCount = v, ownerCount + 1
+  return v
+end
+
 -- ---- Ablage ----
 function ns.ParseSighting(s)
   if type(s) ~= "string" then return nil end
@@ -261,6 +319,7 @@ local function beast(unit)
   guid = okG and ns.clean(guid)
   local npc = guid and ns.NpcFromGuid(guid)
   if not npc then return nil end
+  if ns.Excluded(unit, npc, guid) then return nil end   -- Begleiter von NPCs, Sperrliste (#90)
   return guid, npc, fam, famName
 end
 
@@ -364,20 +423,88 @@ end
 -- Die Proben (Entfernung, Inkrement 4; Angriffstempo, 16.10.2026) haben ihre Fragen beantwortet
 ns.On("ADDON_LOADED", function() if ns.db then ns.db.sightProbe, ns.db.speedProbe = nil, nil end end)
 
--- ---- Dämonen aus dem Bestand (#80) ----
--- Bis 0.10.x kamen Dämonen mit Familie als Tiere in die Ablage. Beim Laden fliegen sie heraus: aus Sichtungen,
--- Fernnamen, Fährten und Fundort-Zellen (Konto und dieser Charakter), ihre Familien aus der Erhebung. Ohne
--- Merker, damit auch verschwindet, was ältere Versionen anderer Spieler später noch teilen.
+-- ---- Dämonen (#80) und nicht zähmbare Tiere (#90) aus dem Bestand ----
+-- Bis 0.10.x kamen Dämonen mit Familie als Tiere in die Ablage, bis 0.11.x auch Begleiter von NPCs. Beim Laden
+-- fliegen sie heraus: aus Sichtungen, Fernnamen, Fährten und Fundort-Zellen (Konto und dieser Charakter), die
+-- Familien der Dämonen aus der Erhebung. Gesperrte Tiere nur auf den Karten, für die die Sperre gilt (dropMap).
+-- Ohne Merker, damit auch verschwindet, was ältere Versionen anderer Spieler später noch teilen.
+
+-- Fährte und Zellen eines Tiers auf einer Karte entfernen, beim Konto und bei diesem Charakter
+local function dropMap(npc, map)
+  local m = tostring(map)
+  for _, store in ipairs({ ns.db or {}, ns.char or {} }) do
+    local list = store.seenIn and store.seenIn[npc]
+    if list then
+      local rest = {}
+      for x in list:gmatch("%d+") do
+        if x ~= m then rest[#rest + 1] = x end
+      end
+      store.seenIn[npc] = #rest > 0 and table.concat(rest, ",") or nil
+    end
+    for _, key in ipairs({ "loc", "locIn" }) do
+      local maps = store[key] and store[key][npc]
+      if maps then
+        maps[map] = nil
+        if not next(maps) then store[key][npc] = nil end
+      end
+    end
+  end
+end
+
+-- Ein eigener Treffer am Tooltip: merken und gleich aufräumen, was schon gesammelt war
+local function noteOwned(unit, npc, map)
+  local db = ns.db
+  if not (db and map) then return end
+  db.owned = db.owned or {}
+  local o = db.owned[npc]
+  if type(o) ~= "table" then
+    o = { maps = {} }
+    db.owned[npc] = o
+  end
+  if not o.name then
+    local okN, name = pcall(UnitName, unit)
+    name = okN and ns.clean(name)
+    if type(name) == "string" and name ~= "" and #name <= 60 then o.name = name end
+  end
+  o.maps = o.maps or {}
+  if o.maps[map] then return end
+  o.maps[map] = time and time() or 0
+  dropMap(npc, map)
+  if ns.BlockedSighting(npc) then
+    local kept, dropped = {}, false
+    for _, s in ipairs(db.sights or {}) do
+      local x = ns.ParseSighting(s)
+      if x and x.npc == npc then dropped = true else kept[#kept + 1] = s end
+    end
+    if dropped then
+      db.sights = kept
+      ns.SightingsChanged()
+    end
+    if db.trackNames then db.trackNames[npc] = nil end
+  end
+end
+
+-- Gehört die Einheit nicht in die Daten, weil sie einen Besitzer hat oder gesperrt ist? Für Sichtung und Tooltip.
+function ns.Excluded(unit, npc, guid)
+  local map = ns.CellHere and ns.CellHere()
+  if ns.HasOwner(unit, guid) then
+    noteOwned(unit, npc, map)
+    return true
+  end
+  local okL, level = pcall(UnitLevel, unit)
+  return ns.Blocked(npc, map, okL and tonumber(ns.clean(level)) or nil)
+end
+
 local cleaned = false
-local function dropDemons()
+local function dropUnwanted()
   local db = ns.db
   if cleaned or not db then return end
   cleaned = true
-  local demons, kept, dropped = {}, {}, false
+  local gone, kept, dropped = {}, {}, false
   for _, s in ipairs(db.sights or {}) do
     local o = ns.ParseSighting(s)
-    if o and ns.DEMON_FAMILY[o.fam] then
-      demons[o.npc], dropped = true, true
+    if o and (ns.DEMON_FAMILY[o.fam] or ns.BlockedSighting(o.npc, o.level)) then
+      gone[o.npc], dropped = true, true
     else
       kept[#kept + 1] = s
     end
@@ -387,15 +514,32 @@ local function dropDemons()
     ns.SightingsChanged()
   end
   for npc, v in pairs(db.trackNames or {}) do
-    if ns.DEMON_FAMILY[type(v) == "string" and tonumber(v:match("^(%d+);")) or 0] then demons[npc] = true end
+    if ns.DEMON_FAMILY[type(v) == "string" and tonumber(v:match("^(%d+);")) or 0] or ns.BlockedSighting(npc) then
+      gone[npc] = true
+    end
   end
-  for npc in pairs(demons) do
+  for npc in pairs(gone) do
     if db.trackNames then db.trackNames[npc] = nil end
     for _, store in ipairs({ db, ns.char or {} }) do
       for _, key in ipairs({ "seenIn", "loc", "locIn" }) do
         if store[key] then store[key][npc] = nil end
       end
     end
+  end
+  -- gesperrte Tiere je Karte: Fährten und Zellen auf den gesperrten Karten
+  local maps = {}   -- ["npc:map"] = { npc, map }
+  for _, store in ipairs({ db, ns.char or {} }) do
+    for npc, list in pairs(store.seenIn or {}) do
+      for x in list:gmatch("%d+") do maps[npc .. ":" .. x] = { npc, tonumber(x) } end
+    end
+    for _, key in ipairs({ "loc", "locIn" }) do
+      for npc, byMap in pairs(store[key] or {}) do
+        for map in pairs(byMap) do maps[npc .. ":" .. map] = { npc, map } end
+      end
+    end
+  end
+  for _, p in pairs(maps) do
+    if ns.Blocked(p[1], p[2]) then dropMap(p[1], p[2]) end
   end
   -- Was ein Charakter in seenIn und loc hat, steht immer auch beim Konto (ns.NoteSeenIn, ns.AddCells, Übernahme).
   -- Fehlt eine NPC dort, war sie ein Dämon, den schon ein anderer Charakter aus dem Konto entfernt hat.
@@ -415,7 +559,7 @@ local function dropDemons()
     end
   end
 end
-ns.On("ADDON_LOADED", function() ns.SafeCall("sight", dropDemons) end)
+ns.On("ADDON_LOADED", function() ns.SafeCall("sight", dropUnwanted) end)
 
 ns.On("PLAYER_TARGET_CHANGED", function() ns.SafeCall("sight", track, "target", true) end)
 ns.On("UPDATE_MOUSEOVER_UNIT", function() ns.SafeCall("sight", track, "mouseover", true) end)

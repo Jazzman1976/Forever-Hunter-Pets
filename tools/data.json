@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-20T13:50:50.748Z",
+ "generatedAt": "2026-10-21T16:32:13.778Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -4767,6 +4767,15 @@
      "conf": 1
     }
    ]
+  }
+ ],
+ "nichtZaehmbar": [
+  {
+   "npc": 3939,
+   "karten": [
+    1413
+   ],
+   "stufen": null
   }
  ]
 }
