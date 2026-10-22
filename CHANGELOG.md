@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta – 2026-10-22
+
+- **Companions of NPCs are no longer beasts:** a beast whose tooltip names an owner can't be tamed, so it no longer shows up in the *Zone* tab, in tracks or in the beast tooltip, and shared reports about it are ignored. Coming from 0.11.0: a wolf in the Barrens that belongs to an NPC hunter disappears from your lists.
+- **New beasts found by others are good news:** when other hunters discovered new beasts in a zone since you last looked, the *Zone* tab tells you so once – instead of your progress quietly dropping from "8 of 8" to "8 of 9".
+- **Clearer words for what you know:** tooltip, filters, headers and settings now say whom they mean – *you have it*, *you lack it*, *your pet has it* – instead of "learned" or "new".
+- **Not only by colour:** the active tab has a bar below it, and the selected row has a stripe on its left.
+- **Sharing explained in the game:** with sharing on, the first-start window and the setting tell you that confirmed observations become part of the addon's data under the MIT license. The first-start window now points to the *Zone* tab instead of a "book" that doesn't exist.
+- **Less work in the background:** the *Abilities* list only rebuilds when you open it, not while the window is closed.
+- **Calmer hidden channel:** with many players online, only a few answer each greeting, and your own finds are always sent before answers to others. `/fhp share` shows how many answers were sent or skipped.
+- **Fixed:** the header of an ability in *Abilities* wraps instead of running past the right edge.
+- **More data from the game:** 169 beasts (was 162), 107 teaching beasts (was 105), 695 spawn points (was 626).
+
+No game restart needed – `/reload` is enough.
+
 ## 0.11.0-beta – 2026-10-20
 
 - **Every character discovers on its own:** in explorer mode, what your other characters found no longer counts for this one. Prefer the old way? Switch on *Show finds of my other characters* below *Explorer mode* in the settings. Coming from 0.10.0: your main character (most sightings and tamings) keeps its finds, the others start from scratch.
