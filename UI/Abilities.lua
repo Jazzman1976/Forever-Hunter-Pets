@@ -187,6 +187,8 @@ local function petAhead(e)
   return e.a.source == "tame" and ns.Learnable(e.a) and not ns.IsKnown(e.r) and ns.PetKnows(e.r)
 end
 local PET_AHEAD = "|cffffa633%s|r"
+-- Lernstand in der Kopfzeile nur als Ganzes umbrechen, nicht „hast | du“ (#87): geschützte Leerzeichen (U+00A0)
+local function nobreak(s) return (s:gsub(" ", "\194\160")) end
 
 local function metaText(e)
   local a, r = e.a, e.r
@@ -394,10 +396,10 @@ function ns.BuildAbilities(parent)
     local meta = metaText(e)
     if meta ~= "" then parts[#parts + 1] = meta end
     if ns.Learnable(a) and ns.IsKnown(r) then
-      parts[#parts + 1] = "|cff9fd45f" .. L["you have it"] .. "|r"
+      parts[#parts + 1] = "|cff9fd45f" .. nobreak(L["you have it"]) .. "|r"
     elseif petAhead(e) then
       -- kurz halten: der Hinweis darunter erklärt den Rest
-      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(L["you lack it"]))
+      table.insert(parts, rank ~= "" and 2 or 1, PET_AHEAD:format(nobreak(L["you lack it"])))
     end
     sub:SetWidth(DW - 44 - 10)
     sub:SetText(table.concat(parts, " · "))
