@@ -11,6 +11,24 @@ function W.Fill(frame, r, g, b, a, layer)
   return t
 end
 
+-- Markierung der gewählten Zeile, in allen Reitern gleich: Füllung und links ein Strich, damit die Wahl
+-- nicht nur an der Farbe hängt (#59). Das Ergebnis schaltet mit SetShown beides zusammen.
+function W.Selection(frame)
+  local fill = W.Fill(frame, 0.62, 0.83, 0.37, 0.2)
+  local bar = frame:CreateTexture(nil, "ARTWORK")
+  bar:SetColorTexture(0.62, 0.83, 0.37, 1)
+  bar:SetWidth(3)
+  bar:SetPoint("TOPLEFT")
+  bar:SetPoint("BOTTOMLEFT")
+  local sel = {}
+  function sel:SetShown(on)
+    fill:SetShown(on)
+    bar:SetShown(on)
+  end
+  sel:SetShown(false)
+  return sel
+end
+
 function W.Text(parent, font, wrap)
   local fs = parent:CreateFontString(nil, "ARTWORK", font or "GameFontHighlight")
   fs:SetJustifyH("LEFT")

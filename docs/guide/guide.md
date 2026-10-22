@@ -107,6 +107,8 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
   | **abilities known** | found, and you have tamed it – you know what it teaches | ticked |
 
   Sorted by status: known first, undiscovered last. Undiscovered beasts can't be selected.
+
+  When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
 - **Complete mode:** every beast with its name, no status. The checkbox is ticked when it is known what the beast teaches. Beasts with known abilities come first.
 
 **The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points. Click another beast to switch.

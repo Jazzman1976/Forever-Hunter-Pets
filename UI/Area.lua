@@ -116,11 +116,17 @@ function ns.BuildArea(parent)
   none:SetPoint("TOPLEFT", 4, -8)
   none:SetWidth(list.contentWidth - 8)
   none:SetText(L["No beasts known in this zone yet."])
+  -- „Neu in dieser Zone“ (#66) steht über den Tieren; unter den Zählern ist kein Platz mehr
+  local news = W.Text(list.content, "GameFontHighlightSmall", true)
+  news:SetPoint("TOPLEFT", 8, -6)
+  news:SetWidth(list.contentWidth - 16)
+  news:SetTextColor(0.62, 0.83, 0.37)
+  news:Hide()
   local LW = list.contentWidth
   local rows = W.Pool(function()
     local b = CreateFrame("Button", nil, list.content)
     b:SetSize(LW, ROW_H)
-    b.sel = W.Fill(b, 0.62, 0.83, 0.37, 0.2)
+    b.sel = W.Selection(b)
     b.hl = b:CreateTexture(nil, "HIGHLIGHT")
     b.hl:SetAllPoints()
     b.hl:SetColorTexture(1, 1, 1, 0.06)
@@ -359,6 +365,35 @@ function ns.BuildArea(parent)
     drawTiles(rankTiles, p.rankList, top - 22, fillRank)
   end
 
+  -- ---- Neu in dieser Zone (#66) ----
+  -- Wächst eine Zone, weil andere Jäger dort ein Tier entdeckt haben (fremde Zellen und Zähmungen über den Kanal
+  -- oder neue Stammdaten), soll das wie eine gute Nachricht wirken, nicht wie ein Rückschritt von „8 von 8“ auf
+  -- „8 von 9“. Gemerkt werden je Charakter die Tiere, die man zuletzt in der Zone sah:
+  -- ForeverHunterPetsCharDB.zoneSeen[uiMapID] = "npc,npc,…". Neu durch andere ist, was jetzt dasteht, beim letzten
+  -- Mal nicht, und was man selbst nicht gefunden hat (Status „unknown“). Nur Entdeckermodus; beim ersten Besuch
+  -- einer Zone wird nur gemerkt. Die Zeile bleibt, bis man eine andere Zone wählt oder das Fenster schließt.
+  local newsFor, newsN = nil, 0
+  local function checkNews()
+    if newsFor == zone then return end
+    newsFor, newsN = zone, 0
+    if not ns.Discovering() then return end
+    ns.char.zoneSeen = ns.char.zoneSeen or {}
+    local before = ns.char.zoneSeen[zone]
+    local ids = {}
+    for npc in pairs(ns.BeastsIn(zone)) do ids[#ids + 1] = tostring(npc) end
+    table.sort(ids)
+    ns.char.zoneSeen[zone] = table.concat(ids, ",")
+    if not before then return end
+    local old = {}
+    for id in before:gmatch("%d+") do old[id] = true end
+    for _, id in ipairs(ids) do
+      if not old[id] and ns.BeastStatus(tonumber(id), zone) == "unknown" then newsN = newsN + 1 end
+    end
+  end
+  -- am Inhaltsbereich des Fensters, nicht am Reiter: ein Wechsel des Reiters lässt die Zeile stehen
+  parent:GetParent():HookScript("OnHide", function() newsFor = nil end)
+  ns.OnModeChanged(function() newsFor = nil end)
+
   -- ---- Zeichnen ----
   local function drawList()
     rows:Reset()
@@ -393,6 +428,12 @@ function ns.BuildArea(parent)
     if not keep then selected = entries[1] and entries[1].pick and entries[1].npc or nil end
     none:SetShown(#entries == 0)
     local ry = 0
+    news:SetShown(newsN > 0)
+    if newsN > 0 then
+      news:SetText(newsN == 1 and L["+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on."]
+        or (L["+ Since you last looked here, other hunters have discovered %d new beasts – the hunt goes on."]):format(newsN))
+      ry = news:GetStringHeight() + 12
+    end
     for _, e in ipairs(entries) do
       local r = rows:Get()
       r:ClearAllPoints()
@@ -454,6 +495,7 @@ function ns.BuildArea(parent)
   function v:Render()
     followZone()
     if not zone then return end
+    checkNews()
     drawList()
     drawMap()
     local p = ns.ZoneProgress(zone)
