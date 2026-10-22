@@ -43,6 +43,14 @@ local function wildBeastUnderMouse(guid)
   return fam ~= nil, fam
 end
 
+-- Begleiter eines NPCs oder auf dieser Karte gesperrt (#90)? Dann gar keine Zeilen. Den Besitzer zeigt nur der
+-- Tooltip der Einheit; ist es nicht die unter der Maus, zählt allein die Sperre.
+local function excluded(id, guid)
+  local okG, g = pcall(UnitGUID, "mouseover")
+  if okG and guid and ns.clean(g) == ns.clean(guid) then return ns.Excluded("mouseover", id, ns.clean(guid)) end
+  return ns.Blocked(id, (ns.CellHere()))
+end
+
 local function statusLine(id, guid)
   local wild, fam = wildBeastUnderMouse(guid)
   if not wild then return nil end
@@ -61,6 +69,7 @@ local function addLines(tooltip, guid)
   if not (ns.db and ns.db.ui.tooltip) then return end
   if not ns.ModeChosen() then return end   -- vor der Wahl des Modus nichts verraten
   local id = npcIdFromGuid(guid)
+  if id and excluded(id, guid) then return end
   local status = id and statusLine(id, guid)
   local list
   if ns.Discovering() then

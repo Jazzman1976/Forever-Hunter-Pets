@@ -81,6 +81,17 @@ Gezähmt wurde ein Großer Fleischreißer (NPC 154) auf Stufe 17.
   - Beißen 3 und Klaue 3, die für dieses Tier vermutet worden waren, fehlten, obwohl Stufe 17 für beide reicht. Beide stehen als „widerlegt“ in `tools/korrekturen.json`.
   - Sturzflug 1 (Pet-Stufe 30) lässt sich auf Stufe 17 weder bestätigen noch widerlegen.
 
+## Begleiter von NPCs (Besitzer-Probe `/fhp besitzer`, 21.10.2026, Build 70450, #90)
+
+Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer), an zwei wilden Tieren (Großer Ebenenschreiter, Savannenjägerin) und am Pet eines anderen Jägers.
+
+- **Die Abfragen unterscheiden einen NPC-Begleiter nicht von einem wilden Tier:** `UnitPlayerControlled`, `UnitIsOtherPlayersPet` und `UnitIsCharmed` sind `false`, Kreaturtyp Wildtier, die GUID ist `Creature-…-3939-…` wie bei wilden Tieren.
+- **Der Tooltip unterscheidet sie:** `C_TooltipInfo.GetUnit(unit)` liefert beim Begleiter eine Zeile vom Typ `Enum.TooltipDataLineType.UnitOwner` (16) mit „Begleiter von Jäger der Grimmhauer“. Wilde Tiere haben keine solche Zeile. Der Zeilentyp hängt nicht von der Sprache ab.
+- **Auch bei Namensplaketten:** Die Zeile kommt für `nameplateN` genauso wie für Ziel und Maus. Der versteckte Tooltip (`SetUnit`) zeigt dieselben Zeilen, nur ohne Typ.
+- **Vorlagen:** Der Text der Zeile folgt `UNITNAME_SUMMON_TITLE1` („Begleiter von %s“); `UNITNAME_TITLE_*` gibt es in Forever nicht. Mit dem Zeilentyp ist kein Textvergleich nötig.
+- **Pet eines Spielers:** GUID `Pet-…`, `UnitPlayerControlled` = `true`, dieselbe Zeile vom Typ 16. Es wird schon über `UnitPlayerControlled` ausgeschlossen.
+- **Zähmen eines NPC-Begleiters:** `UI_ERROR_MESSAGE` mit der Fehler-ID **306** und „Kreatur wird bereits kontrolliert..“; keine Konstante in `_G` hat genau diesen Text, und `UNIT_SPELLCAST_FAILED` kommt dabei nicht. Das Ziel ist in dem Moment noch das Tier. Beim Pet eines Spielers kommt dagegen `UNIT_SPELLCAST_FAILED` (1515) und `UI_ERROR_MESSAGE` 57 „Ungültiges Ziel“ (`SPELL_FAILED_BAD_TARGETS`).
+
 ## Addon-Nachrichten (Selbsttest `/fhp teilen test`, 14.10.2026)
 
 - **Senden geht:** `C_ChatInfo.SendAddonMessage` liefert über Gilde, den eigenen Kanal (`JoinTemporaryChannel`) und Flüstern an sich selbst `0` (Erfolg). `RegisterAddonMessagePrefix` wirkt, und `IsAddonMessagePrefixRegistered` meldet `true`.
