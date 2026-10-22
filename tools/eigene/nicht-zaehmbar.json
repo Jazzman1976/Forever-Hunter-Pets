@@ -1,3 +1,4 @@
 [
-  {"npc": 3939, "name": "Wolf der Grimmhauer", "karten": [1413], "grund": "zähmen-scheitert", "quelle": "Zähmen scheitert mit „Kreatur wird bereits kontrolliert“, Begleiter des Jägers der Grimmhauer; Tooltip nennt den Besitzer (#90)", "datum": "2026-10-21"}
+  {"npc":3939,"name":"Wolf der Grimmhauer","karten":[1413],"grund":"zähmen-scheitert","quelle":"Zähmen scheitert mit „Kreatur wird bereits kontrolliert“, Begleiter des Jägers der Grimmhauer; Tooltip nennt den Besitzer (#90)","datum":"2026-10-21"},
+  {"npc":5919,"name":"Totem der Steinhaut II","karten":[1413],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-10-22"}
 ]

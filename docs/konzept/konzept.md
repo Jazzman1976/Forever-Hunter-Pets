@@ -275,7 +275,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026) |
 
 Zum Release 1.0.0: **Beta-Hinweis im Startdialog entfernen** (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42).
 
