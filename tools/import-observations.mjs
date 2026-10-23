@@ -43,13 +43,35 @@ function hash(s) {
   return h.toString(16).padStart(8, '0');
 }
 
+// Schalter (vor dem Pfad). Ein unbekannter bricht ab, damit ein Tippfehler nicht als Pfad gilt.
+// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
+// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
+// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
+// --neues-salz: fehlt das Salz, ein neues anlegen (#108), statt abzubrechen.
+const FLAGS = ['--ohne-tierausbilder', '--neues-salz'];
+const USAGE = `Aufruf: node tools/import-observations.mjs [${FLAGS.join('] [')}] <SavedVariables-Datei oder WoW-Ordner> […]`;
+const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+for (const a of flags) {
+  if (!FLAGS.includes(a)) { console.error(`Unbekannter Schalter: ${a}\n${USAGE}`); process.exit(1); }
+}
+const NO_TRAINER = flags.includes('--ohne-tierausbilder');
+if (!args.length) { console.error(USAGE); process.exit(1); }
+
 // Salz für fremde Kürzel: privat in .ignore/, nie im Repo. Geht es verloren, bekommen dieselben Melder beim
-// nächsten Import neue Kürzel und zählen doppelt – deshalb sichern.
+// nächsten Import neue Kürzel und zählen doppelt – deshalb sichern. Fehlt es, bricht der Import ab (#108):
+// frischer Klon, Worktree oder anderer Rechner haben kein .ignore/, ein still neu angelegtes Salz fiele nicht auf.
 const SALT_FILE = path.join(HERE, '..', '.ignore', 'melder-salz.txt');
 if (!fs.existsSync(SALT_FILE)) {
+  if (!flags.includes('--neues-salz')) {
+    console.error(`Salz fehlt: ${SALT_FILE}\n` +
+      'Die Datei aus der Sicherung dorthin legen. Ohne dasselbe Salz bekommen alle bekannten fremden Melder ' +
+      'neue Kürzel und zählen doppelt. Nur wenn es wirklich verloren ist: --neues-salz.');
+    process.exit(1);
+  }
   fs.mkdirSync(path.dirname(SALT_FILE), { recursive: true });
   fs.writeFileSync(SALT_FILE, crypto.randomBytes(32).toString('hex') + '\n');
-  console.log(`Neues Salz angelegt: ${SALT_FILE} – bitte sichern`);
+  console.log(`Neues Salz angelegt: ${SALT_FILE} – bitte sichern. Bekannte fremde Melder zählen ab jetzt doppelt.`);
 }
 const SALT = fs.readFileSync(SALT_FILE, 'utf8').trim();
 
@@ -105,15 +127,6 @@ function record(s, ownRep) {
   return r;
 }
 
-// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
-// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
-// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
-const NO_TRAINER = process.argv.includes('--ohne-tierausbilder');
-const args = process.argv.slice(2).filter((a) => a !== '--ohne-tierausbilder');
-if (!args.length) {
-  console.error('Aufruf: node tools/import-observations.mjs [--ohne-tierausbilder] <SavedVariables-Datei oder WoW-Ordner> […]');
-  process.exit(1);
-}
 const files = [...new Set(args.flatMap((a) => findFiles(path.resolve(a))))]
   .filter((f) => /[\\/]Account[\\/][^\\/]+[\\/]SavedVariables[\\/]/i.test(f));
 if (!files.length) {
