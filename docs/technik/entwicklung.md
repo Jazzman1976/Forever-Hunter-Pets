@@ -82,6 +82,8 @@ node tools/build-addon.mjs     # erzeugt Data/Data.lua
 
 `--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig war das für Erhebungen bis Version 8, in denen das Addon die Wildtierausbildung manchmal als Tierausbilder erhob (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Seit #32 ordnet das Addon das Fenster richtig ein, bereinigt die SavedVariables beim Wechsel auf Version 9, und der Import liest ältere Erhebungen nicht mehr (seit #34 erst ab Version 10, weil Version 9 Jägerzauber enthalten kann); der Schalter bleibt als Vorsicht.
 
+**Nur eigene SavedVariables (#104):** Der Import liest nur Dateien aus eigenen Kontoordnern; deren Kürzel (`konto:<Ordner>`, gehasht) stehen in `tools/eigene/eigene-melder.json`. Liegt eine Datei unter einem anderen Kontoordner, bricht er ab, bevor er etwas schreibt: Die Spieler darin gälten sonst als eigene Melder, ihre Daten sofort als belegt und ungesalzen im Repo. Fremde Daten kommen über die Kanäle im Addon herein. Ein weiteres eigenes Konto (etwa eine zweite Installation) nimmt `--neues-konto` (vor dem Pfad) einmal auf; danach steht es in `eigene-melder.json`. Unbekannte Schalter brechen ebenfalls ab.
+
 Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüche zwischen Zähmungen derselben NPC-ID oder TP, die nicht zueinander passen. Ein Lauf ohne Änderung an Code oder Daten darf `tools/data.json` nur im Feld `generatedAt` verändern. `tools/lua-table.mjs` liest SavedVariables-Dateien und wird vom Import benutzt.
 
 ## Paket bauen

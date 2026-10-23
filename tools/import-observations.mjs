@@ -5,8 +5,9 @@
 // fremder Melder nach tools/eigene/melder-wege.json und die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
 // nach tools/eigene/erhebung.json.
-// In der Datei eines Spielers steht, was er selbst gesehen hat, und alles, was andere im Spiel geteilt haben.
-// Aufruf: node tools/import-observations.mjs <Pfad> [<Pfad> …]
+// Eingelesen werden nur die eigenen SavedVariables (#104): Darin steht, was man selbst gesehen hat, und alles, was
+// andere im Spiel geteilt haben. Fremde Daten kommen über die Kanäle im Addon herein, nicht als fremde Datei.
+// Aufruf: node tools/import-observations.mjs [Schalter] <Pfad> [<Pfad> …]
 //   Ein Pfad ist eine Forever-Hunter-Pets.lua (früher ForeverHunterPets.lua) oder ein Ordner, unter dem sie
 //   gesucht wird (etwa der WoW-Ordner).
 // Gespeichert werden keine Namen: fremde Beobachtungen tragen schon ein Kürzel; eigene (Melder leer) bekommen
@@ -48,7 +49,8 @@ function hash(s) {
 // übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
 // als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
 // --neues-salz: fehlt das Salz, ein neues anlegen (#108), statt abzubrechen.
-const FLAGS = ['--ohne-tierausbilder', '--neues-salz'];
+// --neues-konto: Dateien aus einem Kontoordner, der noch nicht als eigener bekannt ist, als eigene aufnehmen (#104).
+const FLAGS = ['--ohne-tierausbilder', '--neues-salz', '--neues-konto'];
 const USAGE = `Aufruf: node tools/import-observations.mjs [${FLAGS.join('] [')}] <SavedVariables-Datei oder WoW-Ordner> […]`;
 const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
@@ -138,6 +140,14 @@ if (!files.length) {
 // Eigene Kürzel: Beobachtungen damit gelten im Generator schon mit einem Melder als belegt. Vor allem anderen
 // aus allen Dateien gesammelt, damit pseudo() kein eigenes Kürzel salzt.
 const own = new Set(fs.existsSync(OWN_OUT) ? JSON.parse(fs.readFileSync(OWN_OUT, 'utf8')) : []);
+// Nur eigene Konten (#104): Das Kürzel jedes eigenen Kontoordners steht schon in eigene-melder.json. Eine Datei aus
+// einem anderen Konto machte dessen Spieler zu eigenen Meldern: sofort belegt und nicht entschärft (#48).
+const foreign = files.filter((f) => !own.has(hash('konto:' + accountOf(f))));
+if (foreign.length && !flags.includes('--neues-konto')) {
+  console.error('Nicht aus einem eigenen Konto, Import abgebrochen:\n' + foreign.map((f) => '  ' + f).join('\n') +
+    '\nEingelesen werden nur die eigenen SavedVariables. Ist es ein weiteres eigenes Konto: --neues-konto.');
+  process.exit(1);
+}
 for (const f of files) {
   own.add(hash('konto:' + accountOf(f)));
   for (const rep of parseMyReps(fs.readFileSync(f, 'utf8'))) own.add(rep);
