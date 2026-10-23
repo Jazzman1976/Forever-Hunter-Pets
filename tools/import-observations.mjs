@@ -109,8 +109,9 @@ function parseMyReps(text) {
   return m ? [...m[1].matchAll(/\["([0-9a-f]{8})"\]/g)].map((x) => x[1]) : [];
 }
 
+// Felder, die neuere Versionen hinten anhängen, werden übergangen (Protokollregel #12, #57).
 function record(s, ownRep) {
-  const m = s.match(/^(\d+);(\d+);([\d,]*);([\d.]*);(\d*);([0-9a-f]*)$/);
+  const m = s.match(/^(\d+);(\d+);([\d,]*);([\d.]*);(\d*);([0-9a-f]*)(?:;.*)?$/);
   if (!m) return null;
   const r = {
     npc: +m[1], stufe: +m[2],
@@ -225,7 +226,7 @@ let sightsRead = 0;
 for (const f of files) {
   const m = fs.readFileSync(f, 'utf8').match(/\["sights"\]\s*=\s*\{([^}]*)\}/);
   for (const [, s] of m ? m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g) : []) {
-    const x = s.match(/^(\d+);(\d+);(\d);(\d+);([a-z]{2}[A-Z]{2});([^;|]+);(\d+);([0-9a-f]{8});?([\d.]*)$/);
+    const x = s.match(/^(\d+);(\d+);(\d);(\d+);([a-z]{2}[A-Z]{2});([^;|]+);(\d+);([0-9a-f]{8});?([\d.]*)(?:;.*)?$/);
     if (!x) continue;
     sightsRead++;
     let r = { npc: +x[1], stufe: +x[2], einstufung: +x[3], familie: +x[4], sprache: x[5], name: x[6].replace(/\\(.)/g, '$1'),
