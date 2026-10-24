@@ -29,7 +29,7 @@ local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
-local MAX_REJECTS = 10        -- verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
+local MAX_REJECTS = 20        -- verschiedene verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
 
 local queue, busy = {}, false
@@ -637,12 +637,23 @@ end)
 
 -- Verworfene Nachrichten mit einem echten Fehlergrund roh aufheben, die letzten MAX_REJECTS über alle
 -- Sitzungen (#12): nach /reload aus den SavedVariables lesbar. Ohne Absendernamen, wie überall nur Kürzel.
+-- Dieselbe Nachricht mit demselben Grund steht nur einmal da: n zählt die Empfänge, at ist der letzte, und sie
+-- rückt ans Ende (#107). Ältere Einträge ohne n gelten als einer.
 local EXPECTED = { ["eigene"] = true, ["schon bekannt"] = true, ["Obergrenze je Absender"] = true, ["Speicher voll"] = true }
 local function keepReject(text, why, kind)
   if not ns.db then return end
   local list = ns.db.shareRejects or {}
   ns.db.shareRejects = list
-  list[#list + 1] = { at = time and time() or 0, why = tostring(why), way = tostring(ns.clean(kind)), msg = text:sub(1, 255) }
+  local msg, n = text:sub(1, 255), 1
+  why = tostring(why)
+  for i = #list, 1, -1 do
+    local e = list[i]
+    if type(e) == "table" and e.msg == msg and e.why == why then
+      n = n + (tonumber(e.n) or 1)
+      table.remove(list, i)
+    end
+  end
+  list[#list + 1] = { at = time and time() or 0, why = why, way = tostring(ns.clean(kind)), msg = msg, n = n }
   while #list > MAX_REJECTS do table.remove(list, 1) end
 end
 
@@ -785,7 +796,10 @@ function ns.ShareStatus()
   ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d"):format(stats.replied, stats.skipped))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
-    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d (ForeverHunterPetsDB.shareRejects)"):format(#rejects))
+    local total = 0
+    for _, e in ipairs(rejects) do total = total + (type(e) == "table" and tonumber(e.n) or 1) end
+    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d verschiedene, %d Empfänge (ForeverHunterPetsDB.shareRejects)")
+      :format(#rejects, total))
   end
   if stats.last then
     local ago = (time and time() or 0) - stats.last.at
