@@ -215,11 +215,15 @@ function traitsFromObservations() {
   const book = survey.zauberbuch || {};
   const isTempoSpell = (id) => book[id]?.passiv && book[id].rang == null && !survey.raenge[id];
   const speedsOf = new Map();   // Zauber-ID → Set(Tempo × 10)
-  const observed = new Set();   // Tempo × 10
+  const observed = new Map();   // Tempo × 10 → { own, reps }: eigene Fundstelle, fremde Melder (#106)
+  const see = (k, rep) => {
+    const e = observed.get(k) ?? observed.set(k, { own: false, reps: new Set() }).get(k);
+    if (ownReps.has(rep)) e.own = true; else e.reps.add(rep);
+  };
   for (const o of observations) {
     if (o.tempo == null) continue;
     const k = Math.round(o.tempo * 10);
-    if (Math.abs(o.tempo - NORMAL_SPEED) >= 0.05) observed.add(k);
+    if (Math.abs(o.tempo - NORMAL_SPEED) >= 0.05) see(k, o.melder);
     for (const id of o.zauber || []) {
       if (!isTempoSpell(id)) continue;
       if (!speedsOf.has(id)) speedsOf.set(id, new Set());
@@ -228,7 +232,7 @@ function traitsFromObservations() {
   }
   // auch das Tempo gesichteter wilder Tiere: es ist das, das sie gezähmt haben
   for (const s of sightings) {
-    if (s.tempo != null && Math.abs(s.tempo - NORMAL_SPEED) >= 0.05) observed.add(Math.round(s.tempo * 10));
+    if (s.tempo != null && Math.abs(s.tempo - NORMAL_SPEED) >= 0.05) see(Math.round(s.tempo * 10), s.melder);
   }
   const out = [];
   const bySpeed = new Map();
@@ -247,8 +251,11 @@ function traitsFromObservations() {
       beleg: `passiver Zauber im Zauberbuch, Tempo aus den Zähmungen, seit ${z.datum}`,
     });
   }
-  for (const k of observed) {
+  // Ein Tempo ohne gesehenen Zauber wird nur zur Fähigkeit, wenn eigene Daten es zeigen oder die Melder-Regel
+  // greift (ab 3 fremden Meldern über 2 Absender, #106); unsichere Fähigkeiten gibt es nicht.
+  for (const [k, e] of observed) {
     if (have.has(k) || bySpeed.has(k)) continue;
+    if (!e.own && !enough(e.reps)) continue;
     out.push({
       de: 'Angriffstempo', en: 'Attack speed', icon: 'INV_Misc_PocketWatch_01',
       kind: 'trait', source: 'tame', speed: k / 10, families: [],

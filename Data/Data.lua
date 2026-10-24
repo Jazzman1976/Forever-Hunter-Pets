@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-10-22T15:59:16.412Z",
+  generatedAt = "2026-10-24T06:43:15.033Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -134,8 +134,6 @@ ns.Data = {
     [2321] = { de = "Waldschreiterjunges", fam = 12, min = 11, max = 13, cls = 0, zones = { 1439 } },
     [2322] = { de = "Waldschreiter", fam = 12, min = 14, max = 16, cls = 0, zones = { 1439 } },
     [2323] = { de = "Riesiger Waldschreiter", fam = 12, min = 17, max = 19, cls = 0, zones = { 1439 } },
-    [2384] = { cls = 0, zones = {  } },
-    [2385] = { cls = 0, zones = {  } },
     [2406] = { cls = 0, zones = {  } },
     [2956] = { de = "Erwachsener Ebenenschreiter", fam = 12, min = 6, max = 7, cls = 0, zones = { 1412 } },
     [2957] = { de = "Alter Ebenenschreiter", fam = 12, min = 8, max = 9, cls = 0, zones = { 1412 } },
@@ -609,14 +607,6 @@ ns.Data = {
         { id = 1310612, rank = 1, level = 20 },
       },
       teach = { { 277645, 1 } },
-    },
-    {
-      de = "Angriffstempo", en = "Attack speed", icon = "INV_Misc_PocketWatch_01", kind = "trait", source = "tame", speed = 1.2,
-      families = {  },
-      ranks = {
-        { id = -120, rank = 1 },
-      },
-      teach = { { 2384, 1, 2 }, { 2385, 1, 2 } },
     },
     {
       de = "Schnellerer Angriff V", kind = "trait", source = "tame", speed = 1.3,
