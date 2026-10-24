@@ -12,6 +12,7 @@ Die Wurzel des Repos ist der Addon-Ordner: Sie wird als `Interface/AddOns/Foreve
 | --- | --- |
 | `Core/`, `UI/`, `Locales/`, `Data/`, `Forever-Hunter-Pets.toc` | das Addon (Lua, keine Fremdbibliotheken) |
 | `tools/` | Node-Skripte ohne Abhängigkeiten |
+| `tools/test/` | Prüfung ohne Spiel: nachgebildete WoW-API, Szenarien; einzige Abhängigkeiten `fengari` und `luaparse` (einmal dort `npm install`) |
 | `tools/eigene/` | die selbst erhobenen Daten (JSON), die einzige Datenquelle |
 | `docs/guide/` | Anleitung für Spieler (englisch) |
 | `docs/konzept/` | Konzept, Entscheidungen, Arbeitsweise (deutsch) |
@@ -31,9 +32,10 @@ node tools/build-data.mjs            # tools/data.json aus tools/eigene/ (bricht
 node tools/build-addon.mjs           # Data/Data.lua aus tools/data.json
 node tools/import-observations.mjs [--ohne-tierausbilder] <WoW-Ordner>   # Erhebung, Sichtungen, Zähmungen, Zellen, Herkunft und eigene Kürzel aus den SavedVariables nach tools/eigene/ (Schalter: docs/technik/entwicklung.md)
 node tools/package.mjs               # Addon-Paket (ZIP) nach .ignore/dist/  (Veröffentlichen macht die Action beim Tag)
+node tools/test/run.mjs [t<Nr> …]    # Prüfung ohne Spiel: Syntax aller Lua-Dateien, Szenarien aus tools/test/szenarien/ (docs/technik/entwicklung.md)
 ```
 
-Es gibt keinen Build, keine Tests und keinen Linter im Repo.
+Es gibt keinen Build, keinen Linter und noch keine CI im Repo.
 
 ## Regeln
 
@@ -43,7 +45,7 @@ Es gibt keinen Build, keine Tests und keinen Linter im Repo.
 - **Öffentliches Repo:** Alles hier ist öffentlich. Keine Namen fremder Datenquellen, keine Anleitungen oder Zahlen zum Scraping, keine unbewiesenen Behauptungen über andere Projekte, nichts, was man uns später vorwerfen kann – im Zweifel weglassen.
 - **Sprache:** Doku, Konzepte, Kommentare, Commit-Meldungen deutsch. Nur `README.md`, `NOTICE.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, die Vorlagen in `.github/` und die Anleitung `docs/guide/guide.md` sind englisch. **Sprache der Issues** (Regel des Nutzers, 17.10.2026): Issues, die wir selbst anlegen, sind deutsch und werden deutsch bearbeitet – Titel, Beschreibung, Kommentare, Testaufträge, Branch-Name, Commit-Titel und PR. Ein Issue, das jemand anderes in einer anderen Sprache anlegt, wird auf Englisch bearbeitet (Kommentare, PR). Mit dem Nutzer wird immer deutsch gesprochen, auch wenn das Issue englisch ist. Addon-Texte: englischer Text ist der Schlüssel in `L[]`, die Übersetzung steht in `Locales/deDE.lua`.
 - **Barrierefreiheit:** Kein Zustand wird nur durch Farbe unterschieden, immer auch durch ein Symbol oder ein Wort.
-- **Testen:** Auf dem Entwicklungsrechner ist kein Lua installiert, und das Spiel lässt sich nicht automatisch starten. Syntax über `luaparse`, Logik über `fengari` mit nachgebildeter WoW-API; den Test im Spiel macht ein Mensch. Bei jeder UI-Änderung dazusagen, dass die Optik ungeprüft ist.
+- **Testen:** Auf dem Entwicklungsrechner ist kein Lua installiert, und das Spiel lässt sich nicht automatisch starten. Syntax über `luaparse`, Logik über `fengari` mit nachgebildeter WoW-API, beides mit `node tools/test/run.mjs`; neue Logik bekommt ein Szenario in `tools/test/szenarien/`. Den Test im Spiel macht ein Mensch. Bei jeder UI-Änderung dazusagen, dass die Optik ungeprüft ist.
 - **Status folgt dem Stand:** Steht ein PR, kommt das Issue direkt nach *In pull request*.
 - **Ablauf je Issue (Regel des Nutzers, 17.10.2026):** Maintainer gibt frei (*Approved*) → Umsetzungsplan als Kommentar ins Issue (*Ready*) → Maintainer gibt den Plan frei (*Ready for development*) → umsetzen (*In Progress*) → Maintainer testet (*Testing*; fehlgeschlagen: *Test failed*, nachbessern; bestanden: *Test passed*) → PR (*In pull request*) → Maintainer mergt (*Done*). Nichts ohne Freigabe planen oder umsetzen; den Status im Project setzt, wer gerade handelt. **Nur der Maintainer setzt *Test passed*** (Regel des Nutzers, 22.10.2026): Claude setzt diesen Status nie und bietet es nicht an, außer auf ausdrückliche Bitte. Jeder (erneute) Testauftrag: Issue nach *Testing*, Kommentar beschreibt Schritt für Schritt, was zu tun und zurückzumelden ist. Tabelle in docs/technik/entwicklung.md.
 - **Issue, Branch, PR (Regel des Nutzers, 17.10.2026):** Jede Änderung hat ein GitHub-Issue (sonst eins anlegen) und einen eigenen Branch `feature/<Nr>-<issue-titel-als-slug>` von `develop`, etwa `feature/3-tiernamen-in-der-sprache-des-clients` (Git erlaubt in Branch-Namen weder Leerzeichen noch eckige Klammern; Umlaute als ae, oe, ue, ss). Commit-Meldungen: `#<Nr> <Issue-Titel> => <was im Commit passiert ist>`. Nach `develop` kommt nichts direkt, nur per PR, und der PR erklärt genau, **was** geändert wurde, **warum** und **welche Folgen** es hat. Der PR-Text beginnt mit `Closes #<Nr>`, auch wenn er deutsch ist: GitHub versteht nur englische Schlüsselwörter, und nur so schließt der Merge nach `develop` (Standard-Branch) das Issue und setzt es im Project auf *Done* (Regel des Nutzers, 20.10.2026; Release-PRs nach `main` ohne `Closes`). **Definition of Done:** dokumentiert, lokal im Spiel getestet, nach `develop` gemergt. Gemergt wird erst nach dem Test im Spiel. **Was der Nutzer testen soll, steht als Kommentar im Issue** (als Checkliste, in der Sprache des Issues), nicht nur im Chat – dort findet er es sitzungsübergreifend wieder. Ausnahmen (kein Issue, mehrere Issues in einem Branch, direkt auf `develop`) sind erlaubt, wenn sie vorher mit dem Nutzer abgesprochen sind – die Regel soll Überblick und ruhiges Review ermöglichen, nicht verbieten.
