@@ -80,8 +80,38 @@ end
 -- stehen einmalig in ForeverHunterPetsDB.viaLegacy und gelten als „Herkunft unbekannt“: Sie zählen wie bisher.
 -- Jedes andere Kürzel ohne Angabe zählt nicht, auch wenn via voll ist (#60). Dieselbe Regel steht in
 -- tools/build-data.mjs.
-local VIA_MAX, VIA_REPS = 4, 5000
+local VIA_MAX, VIA_REPS, VIA_PRUNE = 4, 5000, 600
 local viaCount, viaOf   -- Zahl der Kürzel in der Tabelle viaOf
+local prunedAt
+
+-- via voll (#61): Kürzel entfernen, die in keinem Speicher mehr vorkommen (verdrängt), höchstens alle VIA_PRUNE s.
+-- Dasselbe für viaLegacy. Was danach keinen Platz findet, bleibt ohne Herkunft und zählt nicht (#60).
+local function pruneVia(via)
+  local now = GetTime()
+  if prunedAt and now - prunedAt < VIA_PRUNE then return end
+  prunedAt = now
+  local present = {}
+  for _, s in ipairs(ns.db.obs or {}) do
+    local o = ns.ParseObservation(s)
+    if o then present[o.rep] = true end
+  end
+  for _, s in ipairs(ns.db.sights or {}) do
+    local o = ns.ParseSighting(s)
+    if o then present[o.rep] = true end
+  end
+  for _, maps in pairs(ns.db.locIn or {}) do
+    for _, byRep in pairs(maps) do
+      for rep in pairs(byRep) do present[rep] = true end
+    end
+  end
+  viaCount = 0
+  for rep in pairs(via) do
+    if present[rep] then viaCount = viaCount + 1 else via[rep] = nil end
+  end
+  for rep in pairs(type(ns.db.viaLegacy) == "table" and ns.db.viaLegacy or {}) do
+    if not present[rep] then ns.db.viaLegacy[rep] = nil end
+  end
+end
 
 local function noteVia(rep, sender)
   if type(rep) ~= "string" or not rep:find("^%x%x%x%x%x%x%x%x$") then return end
@@ -93,6 +123,7 @@ local function noteVia(rep, sender)
       viaOf, viaCount = via, 0
       for _ in pairs(via) do viaCount = viaCount + 1 end
     end
+    if viaCount >= VIA_REPS then pruneVia(via) end
     if viaCount >= VIA_REPS then return end
     have = ""
     viaCount = viaCount + 1
@@ -325,7 +356,8 @@ local function receiveObservation(body, sender)
   if not ok then return false, why end
   perSender[sender] = (perSender[sender] or 0) + 1
   if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
+  -- voll: die ältesten fremden verdrängen, ein Zwanzigstel auf einmal (#61); nur ohne fremde bleibt es voll
+  if ns.ObservationCount() >= MAX_STORED and ns.DropOldObservations(MAX_STORED / 20) == 0 then return false, "Speicher voll" end
   if not ns.AddObservation(s) then return false, "schon bekannt", o.rep end
   ns.receivedNew = (ns.receivedNew or 0) + 1
   if not ns.refreshPending then

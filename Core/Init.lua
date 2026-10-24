@@ -37,6 +37,18 @@ function ns.SafeCall(where, fn, ...)
   return ok
 end
 
+-- Bei vollem Speicher (#61): die ersten n fremden Einträge einer Liste entfernen, die nach Eingang geordnet ist
+-- (ForeverHunterPetsDB.obs, .sights). Eigene und unlesbare bleiben. Liefert die Zahl der entfernten.
+function ns.DropOldestForeign(list, parse, n)
+  local keep, dropped = {}, 0
+  for _, s in ipairs(list) do
+    local o = dropped < n and parse(s)
+    if o and not o.own then dropped = dropped + 1 else keep[#keep + 1] = s end
+  end
+  for i = 1, math.max(#list, #keep) do list[i] = keep[i] end
+  return dropped
+end
+
 local function applyDefaults(db, def)
   for k, v in pairs(def) do
     if type(v) == "table" then

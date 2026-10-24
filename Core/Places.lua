@@ -130,6 +130,45 @@ end
 -- Fremde Zellen insgesamt (für /fhp teilen)
 function ns.ForeignCellCount() return countForeign() end
 
+-- Reihenfolge des Eingangs fremder Einträge (#61): ForeverHunterPetsDB.locInOrder = { "npc:uiMapID:melder", … },
+-- ältester vorn. Was vorher schon da war, kommt beim ersten Bedarf einmal davor, in beliebiger Folge.
+local function order()
+  local list = ns.db.locInOrder
+  if type(list) == "table" then return list end
+  list = {}
+  for npc, maps in pairs(store(true)) do
+    for map, byRep in pairs(maps) do
+      for rep in pairs(byRep) do list[#list + 1] = npc .. ":" .. map .. ":" .. rep end
+    end
+  end
+  ns.db.locInOrder = list
+  return list
+end
+
+-- Speicher voll (#61): die ältesten fremden Einträge (Tier, Karte, Melder) ganz verdrängen, bis ein Zwanzigstel
+-- frei ist. Liefert true, wenn etwas frei wurde.
+local function dropOldCells()
+  local s, list = store(true), order()
+  local target, i = MAX_FOREIGN - MAX_FOREIGN / 20, 1
+  while countForeign() > target and i <= #list do
+    local npc, map, rep = list[i]:match("^(%d+):(%d+):(.+)$")
+    npc, map = tonumber(npc), tonumber(map)
+    local byRep = npc and s[npc] and s[npc][map]
+    if byRep and byRep[rep] then
+      foreignCount = foreignCount - #byRep[rep] / 2
+      byRep[rep] = nil
+      if next(byRep) == nil then s[npc][map] = nil end
+      if next(s[npc]) == nil then s[npc] = nil end
+    end
+    i = i + 1
+  end
+  if i == 1 then return false end
+  local rest = {}
+  for j = i, #list do rest[#rest + 1] = list[j] end
+  ns.db.locInOrder = rest
+  return true
+end
+
 local pending, flushing = {}, false   -- neue eigene Zellen bis zum nächsten Teilen: ["npc:map"] = Zellen
 local function flush()
   flushing = false
@@ -194,6 +233,7 @@ function ns.AddCells(npc, map, cells, foreign)
   if not (s and npc and map and ns.ValidCells(cells)) then return 0 end
   if ns.Blocked(npc, map) then return 0 end   -- nicht zähmbar auf dieser Karte (#90)
   local charNew = not foreign and addOwnChar(npc, map, cells)
+  local dropped = foreign and countForeign() >= MAX_FOREIGN and dropOldCells()
   s[npc] = s[npc] or {}
   local byRep = foreign and (s[npc][map] or {})
   local have = (foreign and byRep[foreign]) or (not foreign and s[npc][map]) or ""
@@ -211,10 +251,11 @@ function ns.AddCells(npc, map, cells, foreign)
     end
   end
   if added == "" then
-    if charNew then changed() end
+    if charNew or dropped then changed() end
     return 0
   end
   if foreign then
+    if byRep[foreign] == nil then local list = order(); list[#list + 1] = npc .. ":" .. map .. ":" .. foreign end
     byRep[foreign] = have
     s[npc][map] = byRep
   else
