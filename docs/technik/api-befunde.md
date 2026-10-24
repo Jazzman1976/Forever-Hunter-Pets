@@ -67,7 +67,8 @@ Gezähmt wurde ein Großer Fleischreißer (NPC 154) auf Stufe 17.
 - **Ablauf:**
   - `UNIT_SPELLCAST_CHANNEL_START` und gleichzeitig `UNIT_SPELLCAST_SUCCEEDED` (player, Zauber 1515) kommen gleich zu Beginn. Zu diesem Zeitpunkt ist das Ziel noch das Tier.
   - Nach 20 s folgt `UNIT_SPELLCAST_CHANNEL_STOP`, 0,1 s später **zweimal** `UNIT_PET` (player), dazu `SPELLS_CHANGED`.
-  - Ob das Zähmen gelungen ist, sagt nur das neue Pet; der Stopp des Kanals sagt es nicht.
+  - Ob das Zähmen gelungen ist, sagt nur das neue Pet; der Stopp des Kanals sagt es nicht. Das Addon nimmt deshalb nur ein Pet, das höchstens 10 s nach dem Stopp kommt (#105).
+  - Nicht geprüft: welche Ereignisse ein misslungenes Zähmen liefert (etwa wenn das Tier während des Kanals stirbt).
 - **Die GUID des Pets trägt nicht die NPC-ID:** Sie lautet `Pet-0-…-165189-…`, auch beim Fleischreißer. Die NPC-ID muss deshalb beim Beginn des Zähmens aus der GUID des Ziels kommen (`Creature-…-154-…`).
 - **Zauberbuch:**
   - Beim ersten `UNIT_PET` ist es noch leer: `C_SpellBook.HasPetSpells()` liefert `nil`, und `UnitAttackSpeed("pet")` ist geheim.

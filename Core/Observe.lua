@@ -12,7 +12,11 @@ local L = ns.L
 local D = ns.Data
 
 local TAME_BEAST = 1515
-local WAIT = 45          -- Sekunden ab Zauberbeginn, in denen ein neues Pet als gezähmt gilt (Kanal 20 s)
+-- Ein neues Pet gilt nur als gezähmt, wenn es kurz nach dem Ende des Kanals da ist (#105, bis 0.12.0-beta 45 s ab
+-- Beginn): Laut Zähm-Probe kommt es 0,1 s danach, 10 s reichen für Latenz und Last, aber nicht, um ein anderes Pet
+-- zu holen. Kommt das Ende nie, verfällt die Zähmung 30 s nach Beginn (Kanal 20 s plus Puffer).
+local WAIT_STOP = 10
+local WAIT_START = 30
 local WAIT_RANK = 5      -- Sekunden, die die Chatzeile höchstens auf nachgeladene Ränge wartet (#17)
 local RETRY = 0.5
 
@@ -300,7 +304,11 @@ end
 
 local function record()
   if not pending then return end
-  if GetTime() - pending.started > WAIT then pending = nil; return end
+  local now = GetTime()
+  if pending.stopped and now - pending.stopped > WAIT_STOP or not pending.stopped and now - pending.started > WAIT_START then
+    pending = nil
+    return
+  end
   if not pending.stopped then return end
   local ok, exists = pcall(UnitExists, "pet")
   if not (ok and ns.clean(exists)) then return end
@@ -397,7 +405,7 @@ ns.On("UNIT_SPELLCAST_CHANNEL_START", function(unit, _, spellID)
 end)
 
 ns.On("UNIT_SPELLCAST_CHANNEL_STOP", function(unit, _, spellID)
-  if pending and ns.clean(unit) == "player" and ns.clean(spellID) == TAME_BEAST then pending.stopped = true end
+  if pending and ns.clean(unit) == "player" and ns.clean(spellID) == TAME_BEAST then pending.stopped = GetTime() end
 end)
 
 local function cancel(unit, _, spellID)
