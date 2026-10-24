@@ -316,21 +316,14 @@ function ns.ShareOwn(s)
 end
 
 -- ---- Empfangen und prüfen ----
-local validSpell
-ns.OnAbilitiesChanged(function() validSpell = nil end)
-local function spellOk(id)
-  if not validSpell then
-    validSpell = {}
-    for _, a in ipairs(D.abilities) do
-      for _, r in ipairs(a.ranks) do validSpell[r.id] = true end
-    end
-  end
-  return validSpell[id]
-end
+local MAX_SPELLS = 20   -- Zauber-IDs je Zähmung; ein Pet-Zauberbuch hat weit weniger
 
--- Nur, was eine echte Zähmung ergeben kann: Stufe 1–63, bekannte Pet-Zauber, plausibles Tempo und
+-- Nur, was eine echte Zähmung ergeben kann: Stufe 1–63, plausible Zauber-IDs, plausibles Tempo und
 -- eine Zeit zwischen September 2026 und morgen. Liefert sonst false und den Grund – je Prüfung ein eigener,
 -- damit /fhp teilen zeigt, was zuschlägt (#12: eigene Zähmungen, die andere zurückschicken, liefen als „ungültig“).
+-- Zauber, die hier noch keine Fähigkeit kennt, werden angenommen (#114, bis 0.12.0-beta verworfen): Gerade höhere
+-- Ränge und neue Fähigkeiten fehlen in den Daten. Sie werden gespeichert und weitergereicht, widerlegen aber
+-- nichts (ns.HasUnknownSpell in Core/Observe.lua).
 local function valid(s)
   local o = ns.ParseObservation(s)
   if not o then return false, "unlesbar" end
@@ -338,9 +331,10 @@ local function valid(s)
   if o.own or o.rep == rep then return false, "eigene" end   -- eigene, auch von Twinks, zurückgeschickt
   if #o.rep ~= 8 then return false, "Melder" end
   if o.level < 1 or o.level > 63 or o.npc < 1 or o.npc > 9999999 then return false, "Stufe oder NPC" end
+  local n = 0
   for id in pairs(o.spells) do
-    -- ein Zauber, den hier noch niemand kennt: zählen, damit man es im Test sieht
-    if not spellOk(id) then return false, "unbekannter Zauber" end
+    n = n + 1
+    if id < 1 or id > 9999999 or n > MAX_SPELLS then return false, "Zauber unplausibel" end
   end
   if o.speed and (o.speed < 0.5 or o.speed > 4) then return false, "Tempo" end
   local now = time and time() or 0
@@ -740,10 +734,13 @@ end)
 -- Fremde Bestände: Zähmungen, Sichtungen und Zellen anderer Spieler, mit der Zahl der Melder
 -- (ältere Zellen ohne Melder zählen bei den Meldern nicht mit)
 local function foreignStock()
-  local tames, sights, reps = 0, 0, {}
+  local tames, unknown, sights, reps = 0, 0, 0, {}
   for _, s in ipairs((ns.db and ns.db.obs) or {}) do
     local o = ns.ParseObservation(s)
-    if o and not o.own then tames = tames + 1; reps[o.rep] = true end
+    if o and not o.own then
+      tames = tames + 1; reps[o.rep] = true
+      if ns.HasUnknownSpell(o) then unknown = unknown + 1 end
+    end
   end
   for _, s in ipairs((ns.db and ns.db.sights) or {}) do
     local o = ns.ParseSighting(s)
@@ -759,7 +756,7 @@ local function foreignStock()
   end
   local n = 0
   for _ in pairs(reps) do n = n + 1 end
-  return tames, sights, cells, n
+  return tames, sights, cells, n, unknown
 end
 
 local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", H1 = "Grüße" }
@@ -780,9 +777,9 @@ function ns.ShareStatus()
   ns.Print(("Teilen %s · eigene Beobachtungen %d · Kanal %s · Warteschlange %d · dein Kürzel %s")
     :format(enabled() and "an" or "aus", own, channelIndex() and ("Nr. " .. channelIndex()) or "nicht beigetreten",
       #queue, rep or "?"))
-  local tames, sights, cells, nReps = foreignStock()
-  ns.Print(("Fremd gespeichert: Zähmungen %d · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
-    :format(tames, sights, cells, nReps))
+  local tames, sights, cells, nReps, unknown = foreignStock()
+  ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
+    :format(tames, unknown, sights, cells, nReps))
   local via = 0
   for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
   ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))

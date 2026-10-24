@@ -33,11 +33,24 @@ local function spellIndex()
 end
 
 -- Steht der Zauber als Rang irgendeiner Fähigkeit in der Liste (auch Knurren und Co.)?
+local allSpells
+ns.OnAbilitiesChanged(function() allSpells = nil end)
 local function knownSpell(id)
-  for _, a in ipairs(D.abilities) do
-    for _, r in ipairs(a.ranks) do
-      if r.id == id then return true end
+  if not allSpells then
+    allSpells = {}
+    for _, a in ipairs(D.abilities) do
+      for _, r in ipairs(a.ranks) do allSpells[r.id] = true end
     end
+  end
+  return allSpells[id] == true
+end
+
+-- Zeigt die Zähmung einen Zauber, den hier noch keine Fähigkeit kennt (#114)? Etwa ein höherer Rang oder eine
+-- Fähigkeit, die noch niemand erhoben hat. Solche Zähmungen werden gespeichert und geteilt, aber sie widerlegen
+-- nichts und zählen nicht als „lehrt nichts“: Der unbekannte Zauber kann genau der fehlende Rang sein.
+function ns.HasUnknownSpell(o)
+  for id in pairs(o.spells) do
+    if not knownSpell(id) then return true end
   end
   return false
 end
@@ -122,8 +135,9 @@ local function verdict(o, a, r)
     if x.rank > r.rank and o.spells[x.id] then return nil end
   end
   -- Kein oder nur ein niedrigerer Rang, obwohl die Stufe reicht: widerlegt. Die Fähigkeiten hängen an der
-  -- NPC-ID, nur der Rang an der Stufe (Classic; in Forever bisher bestätigt).
-  if o.level >= (r.level or 0) then return "refuted" end
+  -- NPC-ID, nur der Rang an der Stufe (Classic; in Forever bisher bestätigt). Ein unbekannter Zauber kann ein
+  -- höherer Rang dieser Fähigkeit sein, dann sagt die Zähmung nichts (#114).
+  if o.level >= (r.level or 0) and not ns.HasUnknownSpell(o) then return "refuted" end
   return nil
 end
 

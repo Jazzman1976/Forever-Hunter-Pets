@@ -305,7 +305,8 @@ function ns.TeachInfo(npc, discover)
       clear = true
       for _, e in ipairs(seen) do add(e.a, e.r, ns.CONF_SURE) end
     elseif not discover then
-      if #seen == 0 and not empty[o.rep] then
+      -- mit einem unbekannten Zauber zeigte sie vielleicht doch etwas (#114)
+      if #seen == 0 and not empty[o.rep] and not ns.HasUnknownSpell(o) then
         empty[o.rep] = true
         nEmpty = nEmpty + 1
       end

@@ -347,13 +347,15 @@ for (const c of corrections) {
 // die Stufe reichte und weder dieser noch ein höherer Rang da war (das Zauberbuch zeigt nur den höchsten).
 // Eigene Zähmungen gelten als bewiesen: Widerlegt eine eigene ein Paar, das kein eigener Charakter gesehen
 // hat, fällt es heraus. Unter Fremden geht gesehen vor. Jeder Widerspruch wird gemeldet – dann wackelt
-// die Annahme, dass die NPC-ID die Fähigkeiten festlegt.
+// die Annahme, dass die NPC-ID die Fähigkeiten festlegt. Eine Zähmung mit einer Zauber-ID, die zu keiner
+// erhobenen Fähigkeit gehört, widerlegt nichts: Die ID kann ein höherer Rang sein (#114, wie ns.HasUnknownSpell).
+const hasUnknown = (o) => (o.zauber || []).some((id) => !spellRank.has(id));
 for (const [a, pairs] of seen) {
   if (a.kind === 'trait') continue;
   for (const e of pairs.values()) {
     const r = a.ranks.find((x) => x.rank === e.rank);
     const higher = a.ranks.filter((x) => x.rank > e.rank).map((x) => x.id);
-    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0)
+    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0) && !hasUnknown(o)
       && !(o.zauber || []).includes(r.id) && !higher.some((id) => (o.zauber || []).includes(id)));
     if (!against.length) continue;
     const ownAgainst = !e.own && against.some((o) => ownReps.has(o.melder));
