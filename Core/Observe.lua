@@ -12,7 +12,11 @@ local L = ns.L
 local D = ns.Data
 
 local TAME_BEAST = 1515
-local WAIT = 45          -- Sekunden ab Zauberbeginn, in denen ein neues Pet als gezähmt gilt (Kanal 20 s)
+-- Ein neues Pet gilt nur als gezähmt, wenn es kurz nach dem Ende des Kanals da ist (#105, bis 0.12.0-beta 45 s ab
+-- Beginn): Laut Zähm-Probe kommt es 0,1 s danach, 10 s reichen für Latenz und Last, aber nicht, um ein anderes Pet
+-- zu holen. Kommt das Ende nie, verfällt die Zähmung 30 s nach Beginn (Kanal 20 s plus Puffer).
+local WAIT_STOP = 10
+local WAIT_START = 30
 local WAIT_RANK = 5      -- Sekunden, die die Chatzeile höchstens auf nachgeladene Ränge wartet (#17)
 local RETRY = 0.5
 
@@ -33,11 +37,24 @@ local function spellIndex()
 end
 
 -- Steht der Zauber als Rang irgendeiner Fähigkeit in der Liste (auch Knurren und Co.)?
+local allSpells
+ns.OnAbilitiesChanged(function() allSpells = nil end)
 local function knownSpell(id)
-  for _, a in ipairs(D.abilities) do
-    for _, r in ipairs(a.ranks) do
-      if r.id == id then return true end
+  if not allSpells then
+    allSpells = {}
+    for _, a in ipairs(D.abilities) do
+      for _, r in ipairs(a.ranks) do allSpells[r.id] = true end
     end
+  end
+  return allSpells[id] == true
+end
+
+-- Zeigt die Zähmung einen Zauber, den hier noch keine Fähigkeit kennt (#114)? Etwa ein höherer Rang oder eine
+-- Fähigkeit, die noch niemand erhoben hat. Solche Zähmungen werden gespeichert und geteilt, aber sie widerlegen
+-- nichts und zählen nicht als „lehrt nichts“: Der unbekannte Zauber kann genau der fehlende Rang sein.
+function ns.HasUnknownSpell(o)
+  for id in pairs(o.spells) do
+    if not knownSpell(id) then return true end
   end
   return false
 end
@@ -122,8 +139,9 @@ local function verdict(o, a, r)
     if x.rank > r.rank and o.spells[x.id] then return nil end
   end
   -- Kein oder nur ein niedrigerer Rang, obwohl die Stufe reicht: widerlegt. Die Fähigkeiten hängen an der
-  -- NPC-ID, nur der Rang an der Stufe (Classic; in Forever bisher bestätigt).
-  if o.level >= (r.level or 0) then return "refuted" end
+  -- NPC-ID, nur der Rang an der Stufe (Classic; in Forever bisher bestätigt). Ein unbekannter Zauber kann ein
+  -- höherer Rang dieser Fähigkeit sein, dann sagt die Zähmung nichts (#114).
+  if o.level >= (r.level or 0) and not ns.HasUnknownSpell(o) then return "refuted" end
   return nil
 end
 
@@ -286,7 +304,11 @@ end
 
 local function record()
   if not pending then return end
-  if GetTime() - pending.started > WAIT then pending = nil; return end
+  local now = GetTime()
+  if pending.stopped and now - pending.stopped > WAIT_STOP or not pending.stopped and now - pending.started > WAIT_START then
+    pending = nil
+    return
+  end
   if not pending.stopped then return end
   local ok, exists = pcall(UnitExists, "pet")
   if not (ok and ns.clean(exists)) then return end
@@ -383,7 +405,7 @@ ns.On("UNIT_SPELLCAST_CHANNEL_START", function(unit, _, spellID)
 end)
 
 ns.On("UNIT_SPELLCAST_CHANNEL_STOP", function(unit, _, spellID)
-  if pending and ns.clean(unit) == "player" and ns.clean(spellID) == TAME_BEAST then pending.stopped = true end
+  if pending and ns.clean(unit) == "player" and ns.clean(spellID) == TAME_BEAST then pending.stopped = GetTime() end
 end)
 
 local function cancel(unit, _, spellID)

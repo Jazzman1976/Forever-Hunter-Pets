@@ -4,7 +4,7 @@ Einrichten, prüfen, Ablauf. Für alle, die am Addon oder an den Skripten mitarb
 
 ## Was man braucht
 
-- **Node 18 oder neuer** – nur für die Skripte in `tools/`. Keine Abhängigkeiten, kein `npm install`.
+- **Node 18 oder neuer** – nur für die Skripte in `tools/`. Sie haben keine Abhängigkeiten. Nur die Prüfung ohne Spiel in `tools/test/` braucht zwei npm-Pakete (siehe dort).
 - **Einen WoW-Forever-Client**, um das Addon zu testen.
 
 Lua muss nicht installiert sein (siehe „Prüfen ohne Spiel“).
@@ -18,6 +18,7 @@ Die Wurzel des Repos ist der Addon-Ordner.
 | Wurzel: `Core/`, `UI/`, `Locales/`, `Data/`, `Forever-Hunter-Pets.toc` | das Addon |
 | `tools/` | Skripte: Beobachtungen importieren, Daten und `Data.lua` bauen |
 | `tools/eigene/` | die selbst erhobenen Daten, jede Angabe mit Beleg |
+| `tools/test/` | Prüfung ohne Spiel: nachgebildete WoW-API, Szenarien, ein Befehl |
 | `docs/guide/` | Anleitung für Spieler (englisch) |
 | `docs/konzept/` | Konzept, Entscheidungen, Arbeitsweise |
 | `docs/technik/` | technische Dokumentation: Addon, Datenformat, Quellen, API-Befunde, Entwicklung |
@@ -59,12 +60,30 @@ Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die 
 
 ## Prüfen ohne Spiel
 
-Zwei npm-Pakete, in einem Ordner außerhalb des Repos installiert:
+Der Aufbau liegt in `tools/test/` (seit #55). Einmal vorher im Ordner `tools/test` `npm install` aufrufen. Das holt zwei Pakete nach `tools/test/node_modules/` (nicht im Repo):
 
 - **`luaparse`** (Lua 5.1) prüft die Syntax.
-- **`fengari`** führt das Addon gegen eine nachgebildete WoW-API aus: alle Dateien der TOC laden, `ADDON_LOADED` und `PLAYER_LOGIN` auslösen, Fenster und Ansichten öffnen. Achtung: fengari rechnet mit 32-Bit-Ganzzahlen. Rechnungen über 2^31 (etwa das Melder-Kürzel mit `("%08x"):format(h)`) melden dort Fehler, die es im Client nicht gibt; die Nachbildung sollte `string.format` für `%08x` deshalb über die beiden Hälften rechnen.
+- **`fengari`** führt das Addon gegen eine nachgebildete WoW-API aus (`tools/test/mock.lua`).
 
-`luaparse` übersieht ungültige Escapes wie `"Interface\Icons"` – die findet erst `fengari`. Aussehen und echte Client-Aufrufe zeigt nur der Test im Spiel.
+Dann prüft ein Befehl alles:
+
+```
+node tools/test/run.mjs              # Syntax aller Lua-Dateien, dann alle Szenarien
+node tools/test/run.mjs t114 t105    # nur Szenarien, deren Dateiname so beginnt (Syntax immer)
+```
+
+- **Syntax:** alle `.lua` in `Core/`, `UI/`, `Locales/` und `Data/`.
+- **Szenarien:** jede Datei in `tools/test/szenarien/` läuft in einem frischen Lua. Geladen werden der Mock und die Dateien der TOC aus `Core/`, `Locales/` und `Data/`; `UI/` wird nur auf Syntax geprüft.
+- Ein Szenario schlägt fehl, wenn eine Prüfung `ok(bedingung, text)` nicht hält oder das Addon über `ns.SafeCall` einen Fehler meldet.
+- Am Ende steht „x Szenarien, y Prüfungen, alles ok“. Der Rückgabewert ist sonst 1.
+
+**Ein Szenario schreiben:** `Login(db)` setzt `ForeverHunterPetsDB` und löst `ADDON_LOADED` und `PLAYER_LOGIN` aus. `NS` ist die Namenstabelle des Addons (`ns`). Ereignisse kommen über `FireEvent(name, …)`, etwa `CHAT_MSG_ADDON` für eine geteilte Nachricht. Uhr und Zeit stellt das Szenario selbst: `CLOCK` für `GetTime()`, `NOW` für `time()`. Timer (`C_Timer.After`) laufen erst mit `RunTimers()`. Was das Addon in den Chat schreibt, steht in `PRINTED`. Fehlt dem Mock eine Funktion, kommt sie in `mock.lua`, so knapp wie möglich. Der Dateiname beginnt mit `t<Issue-Nr>`.
+
+**Grenzen:**
+- fengari rechnet mit 32-Bit-Ganzzahlen. Rechnungen über 2^31 (etwa das Melder-Kürzel mit `("%08x"):format(h)`) melden dort Fehler, die es im Client nicht gibt. Der Mock rechnet `%08x` deshalb über die beiden Hälften.
+- `luaparse` übersieht ungültige Escapes wie `"Interface\Icons"`, die findet erst fengari.
+- Aussehen und echte Client-Aufrufe zeigt nur der Test im Spiel.
+- Eine Action, die das bei jedem PR prüft, folgt später (#55).
 
 ## Daten bauen
 

@@ -1,2 +1,5 @@
 # Persönliche Ablage (Screenshots aus dem Spiel, Arbeitsnotizen, Pakete) – gehört nicht ins Repo
 .ignore/
+
+# Abhängigkeiten der Prüfung ohne Spiel (tools/test/package.json)
+node_modules/

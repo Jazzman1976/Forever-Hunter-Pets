@@ -1,0 +1,13 @@
+{
+  "name": "forever-hunter-pets-test",
+  "private": true,
+  "description": "Prüfung ohne Spiel: Syntax (luaparse) und Szenarien (fengari) mit nachgebildeter WoW-API",
+  "license": "MIT",
+  "scripts": {
+    "test": "node run.mjs"
+  },
+  "devDependencies": {
+    "fengari": "0.1.5",
+    "luaparse": "0.3.1"
+  }
+}
