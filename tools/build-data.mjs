@@ -55,14 +55,14 @@ const ways = fs.existsSync(path.join(OWN, 'melder-wege.json')) ? read('melder-we
 const blockList = fs.existsSync(path.join(OWN, 'nicht-zaehmbar.json')) ? read('nicht-zaehmbar.json') : [];
 
 // Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei verschiedene Absender kamen – ein einzelner
-// Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe (vor diesem Stand
-// empfangen) gilt als „Herkunft unbekannt“ und zählt wie bisher; ohne melder-wege.json bleibt alles wie bisher.
+// Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe trägt nichts bei, und
+// ohne melder-wege.json zählt kein fremder Melder (#60: im Zweifel nicht, alle Melder in tools/eigene/ haben eine Angabe).
 const enough = (reps) => {
   if (reps.size < FOREIGN_NEEDED) return false;
   let first = null;
   for (const rep of reps) {
     const l = ways[rep];
-    if (!Array.isArray(l) || !l.length) return true;
+    if (!Array.isArray(l)) continue;
     for (const from of l) {
       if (first == null) first = from; else if (from !== first) return true;
     }
