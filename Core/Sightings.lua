@@ -163,7 +163,12 @@ function ns.AddSighting(s)
     add(o, at)
     return true
   end
-  if not o.own and ns.SightingCount() >= MAX_STORED then return false end
+  -- voll: die ältesten fremden verdrängen, ein Zwanzigstel auf einmal (#61); die Indizes hängen an der Stelle
+  if not o.own and ns.SightingCount() >= MAX_STORED then
+    if ns.DropOldestForeign(ns.db.sights, ns.ParseSighting, MAX_STORED / 20) == 0 then return false end
+    byNpc = nil
+    index()
+  end
   ns.db.sights = ns.db.sights or {}
   table.insert(ns.db.sights, s)
   add(o, #ns.db.sights)

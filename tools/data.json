@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-22T15:59:16.412Z",
+ "generatedAt": "2026-10-24T06:43:15.033Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -833,22 +833,6 @@
    "fam": 12,
    "min": 17,
    "max": 19,
-   "cls": 0
-  },
-  "2384": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": null,
-   "max": null,
-   "cls": 0
-  },
-  "2385": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": null,
-   "max": null,
    "cls": 0
   },
   "2406": {
@@ -4739,35 +4723,6 @@
      "id": 277645,
      "rank": 1,
      "conf": 1
-    }
-   ]
-  },
-  {
-   "en": "Attack speed",
-   "de": "Angriffstempo",
-   "icon": "INV_Misc_PocketWatch_01",
-   "kind": "trait",
-   "source": "tame",
-   "speed": 1.2,
-   "families": [],
-   "ranks": [
-    {
-     "id": -120,
-     "rank": 1,
-     "level": null,
-     "tp": null
-    }
-   ],
-   "teach": [
-    {
-     "id": 2384,
-     "rank": 1,
-     "conf": 2
-    },
-    {
-     "id": 2385,
-     "rank": 1,
-     "conf": 2
     }
    ]
   },

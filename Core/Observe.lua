@@ -85,6 +85,13 @@ function ns.ObservationCount()
   return #((ns.db and ns.db.obs) or {})
 end
 
+-- Speicher voll (#61): die n ältesten fremden Zähmungen verdrängen; liefert, wie viele es waren
+function ns.DropOldObservations(n)
+  local dropped = ns.DropOldestForeign((ns.db and ns.db.obs) or {}, parse, n)
+  if dropped > 0 then ns.ObservationsChanged() end
+  return dropped
+end
+
 -- Nimmt eine fremde Beobachtung auf (vom Teilen im Spiel). Doppelte – gleicher Melder, gleiches Tier,
 -- gleiche Zeit – fallen weg. Liefert true, wenn sie neu war.
 function ns.AddObservation(s)

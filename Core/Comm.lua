@@ -29,7 +29,7 @@ local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
-local MAX_REJECTS = 10        -- verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
+local MAX_REJECTS = 20        -- verschiedene verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
 
 local queue, busy = {}, false
@@ -76,10 +76,42 @@ end
 -- ForeverHunterPetsDB.via[melder] = „abs1abs2…“ (Kürzel der Absender, keine Namen). Kommt eine Meldung direkt,
 -- ist der Absender das Kürzel selbst. Mehr als VIA_MAX Absender braucht die Regel nicht.
 -- Regel: Fremde Melder zählen für „ab 3 Meldern“ nur, wenn sie zusammen über mindestens zwei verschiedene
--- Absender kamen – ein einzelner Absender genügt nie. Kürzel ohne Angabe (alles vor diesem Stand empfangene)
--- gelten als „Herkunft unbekannt“ und zählen wie bisher. Dieselbe Regel steht in tools/build-data.mjs.
-local VIA_MAX, VIA_REPS = 4, 5000
+-- Absender kamen – ein einzelner Absender genügt nie. Kürzel, die schon vor diesem Stand gespeichert waren,
+-- stehen einmalig in ForeverHunterPetsDB.viaLegacy und gelten als „Herkunft unbekannt“: Sie zählen wie bisher.
+-- Jedes andere Kürzel ohne Angabe zählt nicht, auch wenn via voll ist (#60). Dieselbe Regel steht in
+-- tools/build-data.mjs.
+local VIA_MAX, VIA_REPS, VIA_PRUNE = 4, 5000, 600
 local viaCount, viaOf   -- Zahl der Kürzel in der Tabelle viaOf
+local prunedAt
+
+-- via voll (#61): Kürzel entfernen, die in keinem Speicher mehr vorkommen (verdrängt), höchstens alle VIA_PRUNE s.
+-- Dasselbe für viaLegacy. Was danach keinen Platz findet, bleibt ohne Herkunft und zählt nicht (#60).
+local function pruneVia(via)
+  local now = GetTime()
+  if prunedAt and now - prunedAt < VIA_PRUNE then return end
+  prunedAt = now
+  local present = {}
+  for _, s in ipairs(ns.db.obs or {}) do
+    local o = ns.ParseObservation(s)
+    if o then present[o.rep] = true end
+  end
+  for _, s in ipairs(ns.db.sights or {}) do
+    local o = ns.ParseSighting(s)
+    if o then present[o.rep] = true end
+  end
+  for _, maps in pairs(ns.db.locIn or {}) do
+    for _, byRep in pairs(maps) do
+      for rep in pairs(byRep) do present[rep] = true end
+    end
+  end
+  viaCount = 0
+  for rep in pairs(via) do
+    if present[rep] then viaCount = viaCount + 1 else via[rep] = nil end
+  end
+  for rep in pairs(type(ns.db.viaLegacy) == "table" and ns.db.viaLegacy or {}) do
+    if not present[rep] then ns.db.viaLegacy[rep] = nil end
+  end
+end
 
 local function noteVia(rep, sender)
   if type(rep) ~= "string" or not rep:find("^%x%x%x%x%x%x%x%x$") then return end
@@ -91,6 +123,7 @@ local function noteVia(rep, sender)
       viaOf, viaCount = via, 0
       for _ in pairs(via) do viaCount = viaCount + 1 end
     end
+    if viaCount >= VIA_REPS then pruneVia(via) end
     if viaCount >= VIA_REPS then return end
     have = ""
     viaCount = viaCount + 1
@@ -104,14 +137,18 @@ local function noteVia(rep, sender)
 end
 
 -- Kamen diese fremden Kürzel ({ [Kürzel] = true }) über mindestens zwei verschiedene Absender – oder ist bei
--- einem die Herkunft unbekannt? Dann zählen sie für die Schwelle. Im Zweifel (kaputter Speicher) wie bisher.
+-- einem die Herkunft unbekannt (viaLegacy)? Dann zählen sie für die Schwelle. Kürzel ohne Angabe tragen nichts
+-- bei; im Zweifel (kaputter Speicher) zählen sie nicht (#60).
 function ns.ViaDistinct(reps)
   local via = ns.db and ns.db.via
-  if type(via) ~= "table" then return true end
+  local legacy = ns.db and ns.db.viaLegacy
+  if type(via) ~= "table" then via = {} end
+  if type(legacy) ~= "table" then legacy = {} end
   local first
   for rep in pairs(reps) do
+    if legacy[rep] then return true end
     local have = via[rep]
-    if type(have) ~= "string" or #have < 8 then return true end
+    if type(have) ~= "string" then have = "" end
     for i = 1, #have - 7, 8 do
       local from = have:sub(i, i + 7)
       if not first then first = from elseif from ~= first then return true end
@@ -139,6 +176,32 @@ local function claimOwn()
     if type(s) == "string" and s:sub(-1) == ";" then ns.db.obs[i] = s .. rep; changed = true end
   end
   if changed then ns.ObservationsChanged() end
+end
+
+-- Einmalig (#60): Fremde Kürzel, die schon gespeichert sind, aber keine Herkunft haben, stammen von vor #15 und
+-- kommen nach viaLegacy. Danach gibt es die Tabelle, auch leer, und die Markierung läuft nie wieder.
+local function markLegacy()
+  if not ns.db or type(ns.db.viaLegacy) == "table" then return end
+  local via = type(ns.db.via) == "table" and ns.db.via or {}
+  local mine = ns.db.myReps or {}
+  local legacy = {}
+  local function note(rep)
+    if type(rep) == "string" and #rep == 8 and not mine[rep] and via[rep] == nil then legacy[rep] = true end
+  end
+  for _, s in ipairs(ns.db.obs or {}) do
+    local o = ns.ParseObservation(s)
+    if o and not o.own then note(o.rep) end
+  end
+  for _, s in ipairs(ns.db.sights or {}) do
+    local o = ns.ParseSighting and ns.ParseSighting(s)
+    if o and not o.own then note(o.rep) end
+  end
+  for _, maps in pairs(ns.db.locIn or {}) do
+    for _, byRep in pairs(type(maps) == "table" and maps or {}) do
+      for rep in pairs(type(byRep) == "table" and byRep or {}) do note(rep) end
+    end
+  end
+  ns.db.viaLegacy = legacy
 end
 
 local function enabled()
@@ -293,7 +356,8 @@ local function receiveObservation(body, sender)
   if not ok then return false, why end
   perSender[sender] = (perSender[sender] or 0) + 1
   if perSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
-  if ns.ObservationCount() >= MAX_STORED then return false, "Speicher voll" end
+  -- voll: die ältesten fremden verdrängen, ein Zwanzigstel auf einmal (#61); nur ohne fremde bleibt es voll
+  if ns.ObservationCount() >= MAX_STORED and ns.DropOldObservations(MAX_STORED / 20) == 0 then return false, "Speicher voll" end
   if not ns.AddObservation(s) then return false, "schon bekannt", o.rep end
   ns.receivedNew = (ns.receivedNew or 0) + 1
   if not ns.refreshPending then
@@ -573,12 +637,23 @@ end)
 
 -- Verworfene Nachrichten mit einem echten Fehlergrund roh aufheben, die letzten MAX_REJECTS über alle
 -- Sitzungen (#12): nach /reload aus den SavedVariables lesbar. Ohne Absendernamen, wie überall nur Kürzel.
+-- Dieselbe Nachricht mit demselben Grund steht nur einmal da: n zählt die Empfänge, at ist der letzte, und sie
+-- rückt ans Ende (#107). Ältere Einträge ohne n gelten als einer.
 local EXPECTED = { ["eigene"] = true, ["schon bekannt"] = true, ["Obergrenze je Absender"] = true, ["Speicher voll"] = true }
 local function keepReject(text, why, kind)
   if not ns.db then return end
   local list = ns.db.shareRejects or {}
   ns.db.shareRejects = list
-  list[#list + 1] = { at = time and time() or 0, why = tostring(why), way = tostring(ns.clean(kind)), msg = text:sub(1, 255) }
+  local msg, n = text:sub(1, 255), 1
+  why = tostring(why)
+  for i = #list, 1, -1 do
+    local e = list[i]
+    if type(e) == "table" and e.msg == msg and e.why == why then
+      n = n + (tonumber(e.n) or 1)
+      table.remove(list, i)
+    end
+  end
+  list[#list + 1] = { at = time and time() or 0, why = why, way = tostring(ns.clean(kind)), msg = msg, n = n }
   while #list > MAX_REJECTS do table.remove(list, 1) end
 end
 
@@ -658,6 +733,7 @@ end
 
 ns.On("PLAYER_LOGIN", function()
   ns.SafeCall("share", claimOwn)
+  ns.SafeCall("share", markLegacy)
   ns.SafeCall("share", start)
 end)
 
@@ -720,7 +796,10 @@ function ns.ShareStatus()
   ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d"):format(stats.replied, stats.skipped))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
-    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d (ForeverHunterPetsDB.shareRejects)"):format(#rejects))
+    local total = 0
+    for _, e in ipairs(rejects) do total = total + (type(e) == "table" and tonumber(e.n) or 1) end
+    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d verschiedene, %d Empfänge (ForeverHunterPetsDB.shareRejects)")
+      :format(#rejects, total))
   end
   if stats.last then
     local ago = (time and time() or 0) - stats.last.at
