@@ -26,13 +26,13 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 - **With the CurseForge app** (easiest): pick WoW Forever and install [Forever Hunter Pets](https://www.curseforge.com/wow/addons/forever-hunter-pets). The app picks the right folder and keeps the addon up to date.
 - **With git** (easy to update with `git pull`):
   ```
-  cd "<World of Warcraft>\_classic_beta_\Interface\AddOns"
+  cd "<World of Warcraft>\_forever_\Interface\AddOns"
   git clone https://github.com/Jazzman1976/Forever-Hunter-Pets Forever-Hunter-Pets
   ```
 - **Without git:** download the ZIP, unpack it into `AddOns` and rename the folder (for example `Forever-Hunter-Pets-main`) to `Forever-Hunter-Pets`. This file must exist afterwards:
-  `<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets\Forever-Hunter-Pets.toc`
+  `<World of Warcraft>\_forever_\Interface\AddOns\Forever-Hunter-Pets\Forever-Hunter-Pets.toc`
 
-`_classic_beta_` is the client folder during the beta; use the folder of the client you play WoW Forever with. Start the game (a new addon needs a full restart, `/reload` is not enough) and make sure **Forever Hunter Pets** is ticked under **AddOns** on the character selection screen.
+`_forever_` is the folder of the WoW Forever client inside your World of Warcraft folder. Start the game (a new addon needs a full restart, `/reload` is not enough) and make sure **Forever Hunter Pets** is ticked under **AddOns** on the character selection screen.
 
 **Updating:** the CurseForge app, `git pull`, or replace the folder. Your progress and collected data live in the client's `WTF` folder and survive the update. After an update that adds new files, restart the game once.
 
@@ -200,7 +200,7 @@ Switch **Share observations** off and nothing is sent or received.
 - **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. That also goes for *teaches nothing*. Until then it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
-- **WoW Forever is in beta** and changes weekly. Where nothing is known, the addon says so instead of guessing.
+- **WoW Forever is new** and still changes. Where nothing is known, the addon says so instead of guessing.
 
 ## Settings
 

@@ -4,7 +4,7 @@ Einrichten, prüfen, Ablauf. Für alle, die am Addon oder an den Skripten mitarb
 
 ## Was man braucht
 
-- **Node 18 oder neuer** – nur für die Skripte in `tools/`. Keine Abhängigkeiten, kein `npm install`.
+- **Node 18 oder neuer** – nur für die Skripte in `tools/`. Sie haben keine Abhängigkeiten. Nur die Prüfung ohne Spiel in `tools/test/` braucht zwei npm-Pakete (siehe dort).
 - **Einen WoW-Forever-Client**, um das Addon zu testen.
 
 Lua muss nicht installiert sein (siehe „Prüfen ohne Spiel“).
@@ -18,6 +18,7 @@ Die Wurzel des Repos ist der Addon-Ordner.
 | Wurzel: `Core/`, `UI/`, `Locales/`, `Data/`, `Forever-Hunter-Pets.toc` | das Addon |
 | `tools/` | Skripte: Beobachtungen importieren, Daten und `Data.lua` bauen |
 | `tools/eigene/` | die selbst erhobenen Daten, jede Angabe mit Beleg |
+| `tools/test/` | Prüfung ohne Spiel: nachgebildete WoW-API, Szenarien, ein Befehl |
 | `docs/guide/` | Anleitung für Spieler (englisch) |
 | `docs/konzept/` | Konzept, Entscheidungen, Arbeitsweise |
 | `docs/technik/` | technische Dokumentation: Addon, Datenformat, Quellen, API-Befunde, Entwicklung |
@@ -35,20 +36,20 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 Der Ordner im Client muss wie die TOC heißen: `Forever-Hunter-Pets`. Wer nur spielt, klont das Repo direkt dorthin und aktualisiert mit `git pull`:
 
 ```
-cd "<World of Warcraft>\_classic_beta_\Interface\AddOns"
+cd "<World of Warcraft>\_forever_\Interface\AddOns"
 git clone <Repo-URL> Forever-Hunter-Pets
 ```
 
 Zum Entwickeln das Repo verknüpfen – dann wirkt jede Änderung nach `/reload`. Unter Windows als Junction (braucht keine Administratorrechte):
 
 ```
-mklink /J "<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets" "<Repo>"
+mklink /J "<World of Warcraft>\_forever_\Interface\AddOns\Forever-Hunter-Pets" "<Repo>"
 ```
 
 Die gespeicherten Daten des Addons liegen nach `/reload` oder Logout hier:
 
 ```
-<World of Warcraft>\_classic_beta_\WTF\Account\<Account>\SavedVariables\Forever-Hunter-Pets.lua
+<World of Warcraft>\_forever_\WTF\Account\<Account>\SavedVariables\Forever-Hunter-Pets.lua
 ```
 
 Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die Dateien `ForeverHunterPets.lua` (im Konto und je Charakter) einmal in `Forever-Hunter-Pets.lua` um. Die Variablen darin heißen weiter `ForeverHunterPetsDB`.
@@ -59,12 +60,30 @@ Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die 
 
 ## Prüfen ohne Spiel
 
-Zwei npm-Pakete, in einem Ordner außerhalb des Repos installiert:
+Der Aufbau liegt in `tools/test/` (seit #55). Einmal vorher im Ordner `tools/test` `npm install` aufrufen. Das holt zwei Pakete nach `tools/test/node_modules/` (nicht im Repo):
 
 - **`luaparse`** (Lua 5.1) prüft die Syntax.
-- **`fengari`** führt das Addon gegen eine nachgebildete WoW-API aus: alle Dateien der TOC laden, `ADDON_LOADED` und `PLAYER_LOGIN` auslösen, Fenster und Ansichten öffnen. Achtung: fengari rechnet mit 32-Bit-Ganzzahlen. Rechnungen über 2^31 (etwa das Melder-Kürzel mit `("%08x"):format(h)`) melden dort Fehler, die es im Client nicht gibt; die Nachbildung sollte `string.format` für `%08x` deshalb über die beiden Hälften rechnen.
+- **`fengari`** führt das Addon gegen eine nachgebildete WoW-API aus (`tools/test/mock.lua`).
 
-`luaparse` übersieht ungültige Escapes wie `"Interface\Icons"` – die findet erst `fengari`. Aussehen und echte Client-Aufrufe zeigt nur der Test im Spiel.
+Dann prüft ein Befehl alles:
+
+```
+node tools/test/run.mjs              # Syntax aller Lua-Dateien, dann alle Szenarien
+node tools/test/run.mjs t114 t105    # nur Szenarien, deren Dateiname so beginnt (Syntax immer)
+```
+
+- **Syntax:** alle `.lua` in `Core/`, `UI/`, `Locales/` und `Data/`.
+- **Szenarien:** jede Datei in `tools/test/szenarien/` läuft in einem frischen Lua. Geladen werden der Mock und die Dateien der TOC aus `Core/`, `Locales/` und `Data/`; `UI/` wird nur auf Syntax geprüft.
+- Ein Szenario schlägt fehl, wenn eine Prüfung `ok(bedingung, text)` nicht hält oder das Addon über `ns.SafeCall` einen Fehler meldet.
+- Am Ende steht „x Szenarien, y Prüfungen, alles ok“. Der Rückgabewert ist sonst 1.
+
+**Ein Szenario schreiben:** `Login(db)` setzt `ForeverHunterPetsDB` und löst `ADDON_LOADED` und `PLAYER_LOGIN` aus. `NS` ist die Namenstabelle des Addons (`ns`). Ereignisse kommen über `FireEvent(name, …)`, etwa `CHAT_MSG_ADDON` für eine geteilte Nachricht. Uhr und Zeit stellt das Szenario selbst: `CLOCK` für `GetTime()`, `NOW` für `time()`. Timer (`C_Timer.After`) laufen erst mit `RunTimers()`. Was das Addon in den Chat schreibt, steht in `PRINTED`. Fehlt dem Mock eine Funktion, kommt sie in `mock.lua`, so knapp wie möglich. Der Dateiname beginnt mit `t<Issue-Nr>`.
+
+**Grenzen:**
+- fengari rechnet mit 32-Bit-Ganzzahlen. Rechnungen über 2^31 (etwa das Melder-Kürzel mit `("%08x"):format(h)`) melden dort Fehler, die es im Client nicht gibt. Der Mock rechnet `%08x` deshalb über die beiden Hälften.
+- `luaparse` übersieht ungültige Escapes wie `"Interface\Icons"`, die findet erst fengari.
+- Aussehen und echte Client-Aufrufe zeigt nur der Test im Spiel.
+- Eine Action, die das bei jedem PR prüft, folgt später (#55).
 
 ## Daten bauen
 
@@ -74,13 +93,15 @@ node tools/build-data.mjs      # tools/data.json; bricht ab, wenn einer Angabe d
 node tools/build-addon.mjs     # erzeugt Data/Data.lua
 ```
 
-**Salz für fremde Kürzel (#48):** Der Import rechnet fremde Kürzel mit dem Salz aus `.ignore/melder-salz.txt` neu und rundet die Zeit fremder Einträge auf den Tag (Format in [datenformat.md](datenformat.md)). Fehlt die Datei, legt der Import ein neues Salz an und sagt das. **Die Datei sichern:** Mit einem neuen Salz bekommen dieselben Melder neue Kürzel und zählen doppelt, Daten könnten zu früh als belegt gelten. Wer sonst importiert, braucht dieselbe Datei (privat weitergeben, nie ins Repo).
+**Salz für fremde Kürzel (#48):** Der Import rechnet fremde Kürzel mit dem Salz aus `.ignore/melder-salz.txt` neu und rundet die Zeit fremder Einträge auf den Tag (Format in [datenformat.md](datenformat.md)). **Die Datei sichern:** Mit einem neuen Salz bekommen dieselben Melder neue Kürzel und zählen doppelt, Daten könnten zu früh als belegt gelten. Fehlt die Datei (frischer Klon, Worktree, anderer Rechner), bricht der Import ab, bevor er etwas schreibt (#108): erst die Datei aus der Sicherung zurücklegen. Bis 0.12.0-beta legte er still ein neues Salz an. Nur wenn das Salz wirklich verloren ist, legt `--neues-salz` (vor dem Pfad) ein neues an; die bekannten fremden Melder zählen danach doppelt. Wer sonst importiert, braucht dieselbe Datei (privat weitergeben, nie ins Repo).
 
 **Vergleich mit dem Stand in Git (#37):** `build-data.mjs` vergleicht das Ergebnis mit `tools/data.json` in `HEAD` (nicht mit der Datei auf der Platte, sonst meldete ein zweiter Lauf nichts mehr) und gibt eine Übersicht alt → neu aus: Fähigkeiten, Ränge, Lehrtier-Paare, Tiere, Fundorte, dazu neue Ränge bekannter Fähigkeiten. Kommt eine Fähigkeit dazu, fällt eine weg oder wechselt eine die Herkunft (von Tieren ↔ beim Tierausbilder), bricht es ab, ohne `tools/data.json` zu schreiben, und listet sie mit Rängen, Familien und Zahl der Lehrtiere auf. Erst prüfen – so sahen die Jägerzauber aus #34 aus: von Tieren, mit Familien, aber ohne ein einziges Lehrtier –, dann mit `node tools/build-data.mjs --neue-faehigkeiten` bestätigen. Fähigkeiten gelten als dieselben, wenn sie einen Rang (Zauber-ID) teilen. Der Vergleich von Hand nach jedem Import entfällt damit; beim Release liest man die Übersicht des Imports im Release-Branch.
 
 **Import bei jedem Release (Regel des Nutzers, 22.10.2026, #100):** Die Stammdaten wachsen nur durch einen Import. Er kommt bei jedem Release direkt in den Release-Branch, ohne eigenes Issue und ohne eigenen PR – der Release-PR nach `main` deckt ihn ab: im Spiel `/reload` oder Logout, Import, `build-data.mjs` (Übersicht alt → neu und neue Fähigkeiten im Release-Issue auflisten, neue Fähigkeiten vom Maintainer bestätigen lassen), `build-addon.mjs`, eigener Commit. Aufgenommen wird alles, was wir als gültig und sicher erkannt haben; Zweifelhaftes wird im Issue genannt und vorher geklärt. Bis 0.11.0-beta lief der Import als eigenes Issue vor dem Release-Branch (#39).
 
 `--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig war das für Erhebungen bis Version 8, in denen das Addon die Wildtierausbildung manchmal als Tierausbilder erhob (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Seit #32 ordnet das Addon das Fenster richtig ein, bereinigt die SavedVariables beim Wechsel auf Version 9, und der Import liest ältere Erhebungen nicht mehr (seit #34 erst ab Version 10, weil Version 9 Jägerzauber enthalten kann); der Schalter bleibt als Vorsicht.
+
+**Nur eigene SavedVariables (#104):** Der Import liest nur Dateien aus eigenen Kontoordnern; deren Kürzel (`konto:<Ordner>`, gehasht) stehen in `tools/eigene/eigene-melder.json`. Liegt eine Datei unter einem anderen Kontoordner, bricht er ab, bevor er etwas schreibt: Die Spieler darin gälten sonst als eigene Melder, ihre Daten sofort als belegt und ungesalzen im Repo. Fremde Daten kommen über die Kanäle im Addon herein. Ein weiteres eigenes Konto (etwa eine zweite Installation) nimmt `--neues-konto` (vor dem Pfad) einmal auf; danach steht es in `eigene-melder.json`. Das gilt auch, wenn der Client einen neuen Kontoordner anlegt: Seit dem Start von WoW Forever (Client `_forever_` statt `_classic_beta_`, 29.10.2026) heißt der Kontoordner anders, und der erste Import daraus braucht einmal `--neues-konto`. Die Daten aus der Beta liegen weiter im alten Ordner. Unbekannte Schalter brechen ebenfalls ab.
 
 Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüche zwischen Zähmungen derselben NPC-ID oder TP, die nicht zueinander passen. Ein Lauf ohne Änderung an Code oder Daten darf `tools/data.json` nur im Feld `generatedAt` verändern. `tools/lua-table.mjs` liest SavedVariables-Dateien und wird vom Import benutzt.
 
@@ -109,7 +130,7 @@ Das Paket enthält alle von git verfolgten Dateien ohne das, was `.pkgmeta` ausn
     - **Immer ein eigener Branch** (Nutzer, 18.10.2026): Das Release liegt bis zum Abschluss auf `release/<version>-beta`, damit auf `develop` parallel weiterentwickelt werden kann, während das Release gründlich getestet wird. Neue Features gehen in dieser Zeit ganz normal nach `develop`, nicht in den Release-Branch; dort landen nur die neuen Stammdaten und Korrekturen aus dem Abschlusstest. Da das Spiel über die Junction nur das Arbeitsverzeichnis sieht, liegt der Stand, der gerade getestet wird, im Arbeitsverzeichnis und die parallele Arbeit in einem Git-Worktree daneben (`git worktree add ../Forever-Hunter-Pets-<Nr> <branch>`).
     1. Issue „Release <version>“ mit Plan, Freigabe wie bei jedem Issue.
     2. `git switch -c release/<version> develop`; Version im TOC, Abschnitt in `CHANGELOG.md`, Stand in `CLAUDE.md` und `konzept.md`. **Datum des Releases** ist der Tag, an dem der Release-Branch angelegt wird, unabhängig von der Veröffentlichung (Regel des Nutzers, 18.10.2026).
-    3. **Stammdaten und verworfene Nachrichten** (Regel des Nutzers, 22.10.2026, #100): Import im Release-Branch (siehe „Import bei jedem Release“), Übersicht alt → neu ins Release-Issue, die Zahlen in die Release Notes. Dazu werden die verworfenen Nachrichten (`ForeverHunterPetsDB.shareRejects`) durchgesehen: nach Grund ordnen und je Grund festhalten, ob es eine Lücke in unseren Daten ist, ein Fehler im Addon oder Altlast; das Ergebnis kommt als Kommentar ins Release-Issue. Neue Issues daraus nur nach Rückfrage.
+    3. **Stammdaten und verworfene Nachrichten** (Regel des Nutzers, 22.10.2026, #100): Import im Release-Branch (siehe „Import bei jedem Release“), Übersicht alt → neu ins Release-Issue, die Zahlen in die Release Notes. Dazu werden die verworfenen Nachrichten (`ForeverHunterPetsDB.shareRejects`, je Nachricht eine Zeile mit der Zahl der Empfänge `n`, #107) durchgesehen: nach Grund ordnen und je Grund festhalten, ob es eine Lücke in unseren Daten ist, ein Fehler im Addon oder Altlast; das Ergebnis kommt als Kommentar ins Release-Issue. Neue Issues daraus nur nach Rückfrage.
     4. Probelauf der Action auf dem Release-Branch (Actions → Release → *Run workflow*, ohne Upload) und das ZIP daraus prüfen.
     5. Status *Testing*: Abschlusstest des Maintainers am lokalen Release-Branch, Schritt für Schritt im Issue – **nur, was im Release neu ist** (Version, Release Notes, neue Stammdaten, Korrekturen im Release-Branch, Paket); die einzelnen Issues sind schon getestet und werden nicht noch einmal geprüft. Korrekturen im Release-Branch.
     6. **Erst nach *Test passed*:** PR `release/<version>` → `main`, Status *In pull request*. Der PR listet alles auf, was im Release steckt, und verweist auf jedes Issue und jeden PR (Zusammenfassung zur Abnahme). Der Maintainer mergt.

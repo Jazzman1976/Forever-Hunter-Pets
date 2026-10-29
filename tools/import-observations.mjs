@@ -5,8 +5,9 @@
 // fremder Melder nach tools/eigene/melder-wege.json und die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
 // nach tools/eigene/erhebung.json.
-// In der Datei eines Spielers steht, was er selbst gesehen hat, und alles, was andere im Spiel geteilt haben.
-// Aufruf: node tools/import-observations.mjs <Pfad> [<Pfad> …]
+// Eingelesen werden nur die eigenen SavedVariables (#104): Darin steht, was man selbst gesehen hat, und alles, was
+// andere im Spiel geteilt haben. Fremde Daten kommen über die Kanäle im Addon herein, nicht als fremde Datei.
+// Aufruf: node tools/import-observations.mjs [Schalter] <Pfad> [<Pfad> …]
 //   Ein Pfad ist eine Forever-Hunter-Pets.lua (früher ForeverHunterPets.lua) oder ein Ordner, unter dem sie
 //   gesucht wird (etwa der WoW-Ordner).
 // Gespeichert werden keine Namen: fremde Beobachtungen tragen schon ein Kürzel; eigene (Melder leer) bekommen
@@ -43,13 +44,36 @@ function hash(s) {
   return h.toString(16).padStart(8, '0');
 }
 
+// Schalter (vor dem Pfad). Ein unbekannter bricht ab, damit ein Tippfehler nicht als Pfad gilt.
+// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
+// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
+// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
+// --neues-salz: fehlt das Salz, ein neues anlegen (#108), statt abzubrechen.
+// --neues-konto: Dateien aus einem Kontoordner, der noch nicht als eigener bekannt ist, als eigene aufnehmen (#104).
+const FLAGS = ['--ohne-tierausbilder', '--neues-salz', '--neues-konto'];
+const USAGE = `Aufruf: node tools/import-observations.mjs [${FLAGS.join('] [')}] <SavedVariables-Datei oder WoW-Ordner> […]`;
+const flags = process.argv.slice(2).filter((a) => a.startsWith('--'));
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+for (const a of flags) {
+  if (!FLAGS.includes(a)) { console.error(`Unbekannter Schalter: ${a}\n${USAGE}`); process.exit(1); }
+}
+const NO_TRAINER = flags.includes('--ohne-tierausbilder');
+if (!args.length) { console.error(USAGE); process.exit(1); }
+
 // Salz für fremde Kürzel: privat in .ignore/, nie im Repo. Geht es verloren, bekommen dieselben Melder beim
-// nächsten Import neue Kürzel und zählen doppelt – deshalb sichern.
+// nächsten Import neue Kürzel und zählen doppelt – deshalb sichern. Fehlt es, bricht der Import ab (#108):
+// frischer Klon, Worktree oder anderer Rechner haben kein .ignore/, ein still neu angelegtes Salz fiele nicht auf.
 const SALT_FILE = path.join(HERE, '..', '.ignore', 'melder-salz.txt');
 if (!fs.existsSync(SALT_FILE)) {
+  if (!flags.includes('--neues-salz')) {
+    console.error(`Salz fehlt: ${SALT_FILE}\n` +
+      'Die Datei aus der Sicherung dorthin legen. Ohne dasselbe Salz bekommen alle bekannten fremden Melder ' +
+      'neue Kürzel und zählen doppelt. Nur wenn es wirklich verloren ist: --neues-salz.');
+    process.exit(1);
+  }
   fs.mkdirSync(path.dirname(SALT_FILE), { recursive: true });
   fs.writeFileSync(SALT_FILE, crypto.randomBytes(32).toString('hex') + '\n');
-  console.log(`Neues Salz angelegt: ${SALT_FILE} – bitte sichern`);
+  console.log(`Neues Salz angelegt: ${SALT_FILE} – bitte sichern. Bekannte fremde Melder zählen ab jetzt doppelt.`);
 }
 const SALT = fs.readFileSync(SALT_FILE, 'utf8').trim();
 
@@ -87,8 +111,9 @@ function parseMyReps(text) {
   return m ? [...m[1].matchAll(/\["([0-9a-f]{8})"\]/g)].map((x) => x[1]) : [];
 }
 
+// Felder, die neuere Versionen hinten anhängen, werden übergangen (Protokollregel #12, #57).
 function record(s, ownRep) {
-  const m = s.match(/^(\d+);(\d+);([\d,]*);([\d.]*);(\d*);([0-9a-f]*)$/);
+  const m = s.match(/^(\d+);(\d+);([\d,]*);([\d.]*);(\d*);([0-9a-f]*)(?:;.*)?$/);
   if (!m) return null;
   const r = {
     npc: +m[1], stufe: +m[2],
@@ -105,15 +130,6 @@ function record(s, ownRep) {
   return r;
 }
 
-// --ohne-tierausbilder: aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis
-// übernehmen; was erhebung.json schon hat, bleibt. Für Dateien, in denen das Addon die Wildtierausbildung
-// als Tierausbilder erhoben hat (#30: Pet-Stufen als Jägerstufe, TP als Preis).
-const NO_TRAINER = process.argv.includes('--ohne-tierausbilder');
-const args = process.argv.slice(2).filter((a) => a !== '--ohne-tierausbilder');
-if (!args.length) {
-  console.error('Aufruf: node tools/import-observations.mjs [--ohne-tierausbilder] <SavedVariables-Datei oder WoW-Ordner> […]');
-  process.exit(1);
-}
 const files = [...new Set(args.flatMap((a) => findFiles(path.resolve(a))))]
   .filter((f) => /[\\/]Account[\\/][^\\/]+[\\/]SavedVariables[\\/]/i.test(f));
 if (!files.length) {
@@ -124,6 +140,14 @@ if (!files.length) {
 // Eigene Kürzel: Beobachtungen damit gelten im Generator schon mit einem Melder als belegt. Vor allem anderen
 // aus allen Dateien gesammelt, damit pseudo() kein eigenes Kürzel salzt.
 const own = new Set(fs.existsSync(OWN_OUT) ? JSON.parse(fs.readFileSync(OWN_OUT, 'utf8')) : []);
+// Nur eigene Konten (#104): Das Kürzel jedes eigenen Kontoordners steht schon in eigene-melder.json. Eine Datei aus
+// einem anderen Konto machte dessen Spieler zu eigenen Meldern: sofort belegt und nicht entschärft (#48).
+const foreign = files.filter((f) => !own.has(hash('konto:' + accountOf(f))));
+if (foreign.length && !flags.includes('--neues-konto')) {
+  console.error('Nicht aus einem eigenen Konto, Import abgebrochen:\n' + foreign.map((f) => '  ' + f).join('\n') +
+    '\nEingelesen werden nur die eigenen SavedVariables. Ist es ein weiteres eigenes Konto: --neues-konto.');
+  process.exit(1);
+}
 for (const f of files) {
   own.add(hash('konto:' + accountOf(f)));
   for (const rep of parseMyReps(fs.readFileSync(f, 'utf8'))) own.add(rep);
@@ -212,7 +236,7 @@ let sightsRead = 0;
 for (const f of files) {
   const m = fs.readFileSync(f, 'utf8').match(/\["sights"\]\s*=\s*\{([^}]*)\}/);
   for (const [, s] of m ? m[1].matchAll(/"((?:[^"\\]|\\.)*)"/g) : []) {
-    const x = s.match(/^(\d+);(\d+);(\d);(\d+);([a-z]{2}[A-Z]{2});([^;|]+);(\d+);([0-9a-f]{8});?([\d.]*)$/);
+    const x = s.match(/^(\d+);(\d+);(\d);(\d+);([a-z]{2}[A-Z]{2});([^;|]+);(\d+);([0-9a-f]{8});?([\d.]*)(?:;.*)?$/);
     if (!x) continue;
     sightsRead++;
     let r = { npc: +x[1], stufe: +x[2], einstufung: +x[3], familie: +x[4], sprache: x[5], name: x[6].replace(/\\(.)/g, '$1'),

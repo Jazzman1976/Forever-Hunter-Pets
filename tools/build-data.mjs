@@ -55,14 +55,14 @@ const ways = fs.existsSync(path.join(OWN, 'melder-wege.json')) ? read('melder-we
 const blockList = fs.existsSync(path.join(OWN, 'nicht-zaehmbar.json')) ? read('nicht-zaehmbar.json') : [];
 
 // Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei verschiedene Absender kamen – ein einzelner
-// Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe (vor diesem Stand
-// empfangen) gilt als „Herkunft unbekannt“ und zählt wie bisher; ohne melder-wege.json bleibt alles wie bisher.
+// Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe trägt nichts bei, und
+// ohne melder-wege.json zählt kein fremder Melder (#60: im Zweifel nicht, alle Melder in tools/eigene/ haben eine Angabe).
 const enough = (reps) => {
   if (reps.size < FOREIGN_NEEDED) return false;
   let first = null;
   for (const rep of reps) {
     const l = ways[rep];
-    if (!Array.isArray(l) || !l.length) return true;
+    if (!Array.isArray(l)) continue;
     for (const from of l) {
       if (first == null) first = from; else if (from !== first) return true;
     }
@@ -215,11 +215,15 @@ function traitsFromObservations() {
   const book = survey.zauberbuch || {};
   const isTempoSpell = (id) => book[id]?.passiv && book[id].rang == null && !survey.raenge[id];
   const speedsOf = new Map();   // Zauber-ID → Set(Tempo × 10)
-  const observed = new Set();   // Tempo × 10
+  const observed = new Map();   // Tempo × 10 → { own, reps }: eigene Fundstelle, fremde Melder (#106)
+  const see = (k, rep) => {
+    const e = observed.get(k) ?? observed.set(k, { own: false, reps: new Set() }).get(k);
+    if (ownReps.has(rep)) e.own = true; else e.reps.add(rep);
+  };
   for (const o of observations) {
     if (o.tempo == null) continue;
     const k = Math.round(o.tempo * 10);
-    if (Math.abs(o.tempo - NORMAL_SPEED) >= 0.05) observed.add(k);
+    if (Math.abs(o.tempo - NORMAL_SPEED) >= 0.05) see(k, o.melder);
     for (const id of o.zauber || []) {
       if (!isTempoSpell(id)) continue;
       if (!speedsOf.has(id)) speedsOf.set(id, new Set());
@@ -228,7 +232,7 @@ function traitsFromObservations() {
   }
   // auch das Tempo gesichteter wilder Tiere: es ist das, das sie gezähmt haben
   for (const s of sightings) {
-    if (s.tempo != null && Math.abs(s.tempo - NORMAL_SPEED) >= 0.05) observed.add(Math.round(s.tempo * 10));
+    if (s.tempo != null && Math.abs(s.tempo - NORMAL_SPEED) >= 0.05) see(Math.round(s.tempo * 10), s.melder);
   }
   const out = [];
   const bySpeed = new Map();
@@ -247,8 +251,11 @@ function traitsFromObservations() {
       beleg: `passiver Zauber im Zauberbuch, Tempo aus den Zähmungen, seit ${z.datum}`,
     });
   }
-  for (const k of observed) {
+  // Ein Tempo ohne gesehenen Zauber wird nur zur Fähigkeit, wenn eigene Daten es zeigen oder die Melder-Regel
+  // greift (ab 3 fremden Meldern über 2 Absender, #106); unsichere Fähigkeiten gibt es nicht.
+  for (const [k, e] of observed) {
     if (have.has(k) || bySpeed.has(k)) continue;
+    if (!e.own && !enough(e.reps)) continue;
     out.push({
       de: 'Angriffstempo', en: 'Attack speed', icon: 'INV_Misc_PocketWatch_01',
       kind: 'trait', source: 'tame', speed: k / 10, families: [],
@@ -340,13 +347,15 @@ for (const c of corrections) {
 // die Stufe reichte und weder dieser noch ein höherer Rang da war (das Zauberbuch zeigt nur den höchsten).
 // Eigene Zähmungen gelten als bewiesen: Widerlegt eine eigene ein Paar, das kein eigener Charakter gesehen
 // hat, fällt es heraus. Unter Fremden geht gesehen vor. Jeder Widerspruch wird gemeldet – dann wackelt
-// die Annahme, dass die NPC-ID die Fähigkeiten festlegt.
+// die Annahme, dass die NPC-ID die Fähigkeiten festlegt. Eine Zähmung mit einer Zauber-ID, die zu keiner
+// erhobenen Fähigkeit gehört, widerlegt nichts: Die ID kann ein höherer Rang sein (#114, wie ns.HasUnknownSpell).
+const hasUnknown = (o) => (o.zauber || []).some((id) => !spellRank.has(id));
 for (const [a, pairs] of seen) {
   if (a.kind === 'trait') continue;
   for (const e of pairs.values()) {
     const r = a.ranks.find((x) => x.rank === e.rank);
     const higher = a.ranks.filter((x) => x.rank > e.rank).map((x) => x.id);
-    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0)
+    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0) && !hasUnknown(o)
       && !(o.zauber || []).includes(r.id) && !higher.some((id) => (o.zauber || []).includes(id)));
     if (!against.length) continue;
     const ownAgainst = !e.own && against.some((o) => ownReps.has(o.melder));
