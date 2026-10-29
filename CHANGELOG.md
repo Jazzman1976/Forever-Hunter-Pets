@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.0-beta – 2026-10-29
+
+Ready for the launch of WoW Forever on November 5. This version is about collecting: from day one, what hunters find reaches the addon in full.
+
+- **New abilities and ranks found by others are kept:** a taming shared by another player used to be thrown away when it showed a spell the addon doesn't know yet – exactly the finds that are missing most. Now it is kept, and with enough players reporting it, it can become part of the addon's data. Until then it doesn't disprove anything you see. `/fhp share` tells you how many of the tamings from others contain unknown spells.
+- **Tamings are matched more carefully:** a new pet only counts as the tamed beast if it shows up within 10 seconds after taming ends. A pet you summon later no longer gets mixed up with the beast you just tamed.
+- **Stricter rules for what others report:** a report that reached you without knowing who sent it no longer helps to confirm anything, and an attack speed seen by others only counts once 3 players report it, like everything else.
+- **Storage never stops collecting:** when the storage for other players' finds is full, the oldest entries make room for new ones, instead of nothing new being kept.
+- **Clearer `/fhp share`:** rejected messages are listed once each, with how often they arrived.
+- **More data from the game:** 172 beasts (was 169), 106 teaching beasts (was 107: two uncertain attack speed teachers dropped under the stricter rule, one new), 798 spawn points (was 695).
+
+No game restart needed – `/reload` is enough.
+
 ## 0.12.0-beta – 2026-10-22
 
 - **Companions of NPCs are no longer beasts:** a beast whose tooltip names an owner can't be tamed, so it no longer shows up in the *Zone* tab, in tracks or in the beast tooltip, and shared reports about it are ignored. Coming from 0.11.0: a wolf in the Barrens that belongs to an NPC hunter disappears from your lists.

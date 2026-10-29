@@ -24,7 +24,7 @@ More screenshots in the [User Guide](https://github.com/Jazzman1976/Forever-Hunt
 
 ## Installation
 
-Install it from [CurseForge](https://www.curseforge.com/wow/addons/forever-hunter-pets) (the CurseForge app does everything for you), or clone or unpack into `<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets` (the folder name must match the `.toc` file). Start the game and type `/fhp`. Details in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md#installation).
+Install it from [CurseForge](https://www.curseforge.com/wow/addons/forever-hunter-pets) (the CurseForge app does everything for you), or clone or unpack into `<World of Warcraft>\_forever_\Interface\AddOns\Forever-Hunter-Pets` (the folder name must match the `.toc` file). Start the game and type `/fhp`. Details in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md#installation).
 
 ## Data and license
 

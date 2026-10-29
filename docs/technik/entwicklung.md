@@ -36,20 +36,20 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 Der Ordner im Client muss wie die TOC heißen: `Forever-Hunter-Pets`. Wer nur spielt, klont das Repo direkt dorthin und aktualisiert mit `git pull`:
 
 ```
-cd "<World of Warcraft>\_classic_beta_\Interface\AddOns"
+cd "<World of Warcraft>\_forever_\Interface\AddOns"
 git clone <Repo-URL> Forever-Hunter-Pets
 ```
 
 Zum Entwickeln das Repo verknüpfen – dann wirkt jede Änderung nach `/reload`. Unter Windows als Junction (braucht keine Administratorrechte):
 
 ```
-mklink /J "<World of Warcraft>\_classic_beta_\Interface\AddOns\Forever-Hunter-Pets" "<Repo>"
+mklink /J "<World of Warcraft>\_forever_\Interface\AddOns\Forever-Hunter-Pets" "<Repo>"
 ```
 
 Die gespeicherten Daten des Addons liegen nach `/reload` oder Logout hier:
 
 ```
-<World of Warcraft>\_classic_beta_\WTF\Account\<Account>\SavedVariables\Forever-Hunter-Pets.lua
+<World of Warcraft>\_forever_\WTF\Account\<Account>\SavedVariables\Forever-Hunter-Pets.lua
 ```
 
 Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die Dateien `ForeverHunterPets.lua` (im Konto und je Charakter) einmal in `Forever-Hunter-Pets.lua` um. Die Variablen darin heißen weiter `ForeverHunterPetsDB`.
@@ -101,7 +101,7 @@ node tools/build-addon.mjs     # erzeugt Data/Data.lua
 
 `--ohne-tierausbilder` (vor dem Pfad) übernimmt aus den SavedVariables weder das Kennzeichen „Tierausbilder“ noch Jägerstufe und Goldpreis; was `erhebung.json` schon hat, bleibt. Nötig war das für Erhebungen bis Version 8, in denen das Addon die Wildtierausbildung manchmal als Tierausbilder erhob (#30: Pet-Stufen standen als Jägerstufe, TP als Preis da, und Beißen, Ducken, Sturmangriff und Gespinst hätten als „beim Tierausbilder, jede Familie“ alle Lehrtiere verloren). Seit #32 ordnet das Addon das Fenster richtig ein, bereinigt die SavedVariables beim Wechsel auf Version 9, und der Import liest ältere Erhebungen nicht mehr (seit #34 erst ab Version 10, weil Version 9 Jägerzauber enthalten kann); der Schalter bleibt als Vorsicht.
 
-**Nur eigene SavedVariables (#104):** Der Import liest nur Dateien aus eigenen Kontoordnern; deren Kürzel (`konto:<Ordner>`, gehasht) stehen in `tools/eigene/eigene-melder.json`. Liegt eine Datei unter einem anderen Kontoordner, bricht er ab, bevor er etwas schreibt: Die Spieler darin gälten sonst als eigene Melder, ihre Daten sofort als belegt und ungesalzen im Repo. Fremde Daten kommen über die Kanäle im Addon herein. Ein weiteres eigenes Konto (etwa eine zweite Installation) nimmt `--neues-konto` (vor dem Pfad) einmal auf; danach steht es in `eigene-melder.json`. Unbekannte Schalter brechen ebenfalls ab.
+**Nur eigene SavedVariables (#104):** Der Import liest nur Dateien aus eigenen Kontoordnern; deren Kürzel (`konto:<Ordner>`, gehasht) stehen in `tools/eigene/eigene-melder.json`. Liegt eine Datei unter einem anderen Kontoordner, bricht er ab, bevor er etwas schreibt: Die Spieler darin gälten sonst als eigene Melder, ihre Daten sofort als belegt und ungesalzen im Repo. Fremde Daten kommen über die Kanäle im Addon herein. Ein weiteres eigenes Konto (etwa eine zweite Installation) nimmt `--neues-konto` (vor dem Pfad) einmal auf; danach steht es in `eigene-melder.json`. Das gilt auch, wenn der Client einen neuen Kontoordner anlegt: Seit dem Start von WoW Forever (Client `_forever_` statt `_classic_beta_`, 29.10.2026) heißt der Kontoordner anders, und der erste Import daraus braucht einmal `--neues-konto`. Die Daten aus der Beta liegen weiter im alten Ordner. Unbekannte Schalter brechen ebenfalls ab.
 
 Die Skripte melden am Ende, was auffällt – `build-data.mjs` etwa Widersprüche zwischen Zähmungen derselben NPC-ID oder TP, die nicht zueinander passen. Ein Lauf ohne Änderung an Code oder Daten darf `tools/data.json` nur im Feld `generatedAt` verändern. `tools/lua-table.mjs` liest SavedVariables-Dateien und wird vom Import benutzt.
 

@@ -264,7 +264,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
 - **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>-beta` (vor 1.0.0); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>-beta`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
 - **Bekanntes, das nicht zum Auftrag gehört,** wird genannt, nicht ungefragt angefasst.
-- **Forever ändert sich wöchentlich**, solange die Beta läuft; erhobene Daten können veralten.
+- **Forever ändert sich noch**, auch nach dem Start am 5.11.2026 (in der Beta wöchentlich); erhobene Daten können veralten.
 - Doku, Kommentare, Commits deutsch; README, NOTICE, CONTRIBUTING und die Anleitung `docs/guide/guide.md` englisch.
 
 ## 16 Meilensteine und Stand
@@ -275,7 +275,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026), Release 0.13.0-beta mit #55–#114 (29.10.2026, vor dem Start von WoW Forever ohne Test im Spiel; Test am Starttag 5.11.2026, danach 1.0.0) |
 
 Zum Release 1.0.0: **Beta-Hinweis im Startdialog entfernen** (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42).
 
