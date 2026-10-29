@@ -221,5 +221,9 @@
   {"npc":3126,"stufe":8,"zauber":[],"tempo":2,"zeit":1792680205,"melder":"ff55c3ff"},
   {"npc":3122,"stufe":8,"zauber":[],"tempo":2,"zeit":1792680294,"melder":"ff55c3ff"},
   {"npc":3244,"stufe":11,"zauber":[],"tempo":2,"zeit":1792680830,"melder":"ff55c3ff"},
-  {"npc":3254,"stufe":11,"zauber":[],"tempo":2,"zeit":1792680943,"melder":"ff55c3ff"}
+  {"npc":3254,"stufe":11,"zauber":[],"tempo":2,"zeit":1792680943,"melder":"ff55c3ff"},
+  {"npc":1020,"stufe":23,"zauber":[],"tempo":2,"zeit":1792698463,"melder":"758ea066"},
+  {"npc":1021,"stufe":24,"zauber":[1265066],"tempo":2,"zeit":1792699092,"melder":"758ea066"},
+  {"npc":1125,"stufe":5,"zauber":[7371],"tempo":2,"zeit":1792701268,"melder":"758ea066"},
+  {"npc":1201,"stufe":7,"zauber":[],"tempo":2,"zeit":1792701366,"melder":"758ea066"}
 ]
