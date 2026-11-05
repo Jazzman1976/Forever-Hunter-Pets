@@ -37,7 +37,19 @@ ns.DEMON_FAMILY = { [15] = true, [16] = true, [17] = true, [19] = true, [23] = t
 -- Tooltip, kontoweit in ForeverHunterPetsDB.owned[npc] = { name = Name, maps = { [uiMapID] = Zeit } }; der Import
 -- macht daraus Einträge der Sperrliste. Gesperrt ist ein Tier nur auf den Karten, auf denen es so gesehen wurde:
 -- Anderswo kann dieselbe NPC wild stehen.
+-- Die Stammdaten dominieren (#124): Führen sie ein Tier auf einer Karte, gilt dort kein eigener Treffer. Gescannte
+-- Daten dürfen die Stammdaten nur erweitern, nie überstimmen oder entfernen.
 local notTameable = D.notTameable or {}
+
+-- Führen die Stammdaten das Tier auf dieser Karte?
+local function inData(npc, map)
+  local b = map and D.beasts[npc]
+  for _, z in ipairs(b and b.zones or {}) do
+    if z == map then return true end
+  end
+  return false
+end
+ns.BeastInData = inData
 
 -- Fällt ein Fund unter die Sperre? map und level dürfen fehlen; eine Bedingung ohne Wert trifft nicht zu.
 -- In den Daten je NPC true (überall) oder eine Liste von Bedingungen { maps = { [uiMapID] = true }, min, max }:
@@ -52,7 +64,7 @@ function ns.Blocked(npc, map, level)
     if hit then return true end
   end
   local o = map and ns.db and ns.db.owned and ns.db.owned[npc]
-  return type(o) == "table" and type(o.maps) == "table" and o.maps[map] ~= nil
+  return type(o) == "table" and type(o.maps) == "table" and o.maps[map] ~= nil and not inData(npc, map)
 end
 
 -- Eine Sichtung kennt keine Karte. Sie fällt heraus, wenn das Tier überall gesperrt ist, oder wenn es auf einer
@@ -456,10 +468,11 @@ local function dropMap(npc, map)
   end
 end
 
--- Ein eigener Treffer am Tooltip: merken und gleich aufräumen, was schon gesammelt war
+-- Ein eigener Treffer am Tooltip: merken und gleich aufräumen, was schon gesammelt war. Nicht für Tiere, die die
+-- Stammdaten auf dieser Karte führen (#124).
 local function noteOwned(unit, npc, map)
   local db = ns.db
-  if not (db and map) then return end
+  if not (db and map) or inData(npc, map) then return end
   db.owned = db.owned or {}
   local o = db.owned[npc]
   if type(o) ~= "table" then
@@ -489,11 +502,23 @@ local function noteOwned(unit, npc, map)
   end
 end
 
+-- Steuert ein Spieler die Einheit? Etwa das Tier, das ein Jäger in der Klassenquest mit dem Zähmstab vorübergehend
+-- zähmt: Creature-GUID und Besitzerzeile wie ein NPC-Begleiter (#124). Nur ein klares false bei beiden Abfragen
+-- heißt „nein“; ein geheimer Wert oder ein Fehler zählt als „ja“, dann wird lieber nichts gesperrt.
+local function byPlayer(unit)
+  for _, f in ipairs({ UnitPlayerControlled, UnitIsCharmed }) do
+    local ok, v = pcall(f, unit)
+    if not ok or ns.clean(v) ~= false then return true end
+  end
+  return false
+end
+
 -- Gehört die Einheit nicht in die Daten, weil sie einen Besitzer hat oder gesperrt ist? Für Sichtung und Tooltip.
+-- Gemerkt werden nur Begleiter von NPCs, nie Tiere, die ein Spieler steuert (#124).
 function ns.Excluded(unit, npc, guid)
   local map = ns.CellHere and ns.CellHere()
   if ns.HasOwner(unit, guid) then
-    noteOwned(unit, npc, map)
+    if not byPlayer(unit) then noteOwned(unit, npc, map) end
     return true
   end
   local okL, level = pcall(UnitLevel, unit)
