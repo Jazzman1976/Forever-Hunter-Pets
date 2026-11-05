@@ -73,15 +73,6 @@ local function create()
   -- Die Höhe folgt den Texten (je nach Sprache verschieden lang): y läuft von oben nach unten mit
   local y = -16 - math.max(96, 4 + title:GetStringHeight() + 10 + intro:GetStringHeight()) - 14
 
-  -- Hinweis zur Beta, „Beta“ als Wort in Gold. Bis 1.0.0 – zum Release 1.0.0 entfernen
-  -- (docs/konzept/konzept.md, Meilensteine und Stand)
-  local beta = W.Text(f, "GameFontHighlightSmall", true)
-  beta:SetPoint("TOPLEFT", 16, y)
-  beta:SetWidth(DW - 32)
-  beta:SetText("|cffffd100" .. L["Beta"] .. "|r – "
-    .. L["Forever Hunter Pets is still young, and hunters are gathering its knowledge right now. Some beasts, ranks or spawn points may still be missing or incomplete. That isn't broken – it's just waiting to be discovered. Every time you play with the addon, you help fill the gaps for everyone. Thank you, and happy hunting!"])
-  y = y - beta:GetStringHeight() - 16
-
   -- zwei Wahlmöglichkeiten untereinander, der Entdeckermodus zuerst: Knopf, daneben die Erklärung
   for _, c in ipairs({
     { true, L["Explorer mode"], L["Recommended. Track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for."] },
