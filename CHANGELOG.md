@@ -2,10 +2,10 @@
 
 ## 1.0.0 – 2026-11-05
 
-The first full release, now that WoW Forever is live. Thank you to everyone who hunted with the beta versions – what you found is in this version.
+The first full release, now that WoW Forever is live. Thank you to everyone who hunted with the beta versions so far – what you found is in this version. New features will keep coming as beta versions first, until they are ready for the next full release.
 
 - **Known beasts stay visible:** a beast the addon knows in a zone is no longer hidden there just because a single tooltip named an owner – for example the beasts hunters tame with the taming rod in their class quest. Beasts a player controls or has charmed are never taken as NPC companions, and taming a beast yourself proves it can be tamed on that map. What the addon's data says about a beast is never overruled by a single scan, only extended.
-- **No more beta note:** the first-start window no longer says the addon is in beta.
+- **First-start window:** the note that the addon is in beta is gone, since this version is a full release.
 - **More data from the game:** 175 beasts (was 172), 898 spawn points (was 798) – the first finds from the live servers.
 
 No game restart needed – `/reload` is enough.
