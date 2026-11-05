@@ -199,6 +199,12 @@ const blocked = (npc, map, level) => blockList.some((e) => e.npc === Number(npc)
   && (e.karten == null || (map != null && e.karten.includes(Number(map))))
   && (e.stufen == null || (level != null && level >= e.stufen.min && level <= (e.stufen.max ?? e.stufen.min))));
 let blockNew = 0;
+// Die Stammdaten dominieren (#124): Führen sie ein Tier auf einer Karte, wird es dort nicht gesperrt, gleiche Regel
+// wie ns.Blocked im Addon. Die Karten eines Tiers sind die seiner Fundorte (wie zones in tools/build-addon.mjs).
+const DATA_FILE = path.join(HERE, 'data.json');
+const stamm = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : { beasts: {}, coords: {} };
+const inData = (npc, map) => stamm.beasts?.[npc] != null && stamm.coords?.[npc]?.[map] != null;
+let blockSkipped = 0;
 for (const f of files) {
   let owned;
   try {
@@ -210,6 +216,7 @@ for (const f of files) {
     for (const [mapRaw, t] of Object.entries(o.maps)) {
       const map = Number(mapRaw);
       if (!Number.isInteger(map) || map < 1 || typeof t !== 'number' || t < MIN_TIME || blocked(npc, map)) continue;
+      if (inData(npc, map)) { blockSkipped++; continue; }
       const datum = day(t);
       let e = blockList.find((x) => x.npc === npc && x.grund === 'besitzer' && x.karten && x.stufen == null);
       if (!e) {
@@ -225,7 +232,8 @@ for (const f of files) {
 }
 blockList.sort((x, y) => x.npc - y.npc);
 fs.writeFileSync(BLOCK_OUT, '[\n' + blockList.map((e) => '  ' + JSON.stringify(e)).join(',\n') + '\n]\n');
-console.log(`${blockNew} neue Karten nicht zähmbarer Tiere → tools/eigene/nicht-zaehmbar.json (${blockList.length} Einträge)`);
+console.log(`${blockNew} neue Karten nicht zähmbarer Tiere → tools/eigene/nicht-zaehmbar.json (${blockList.length} Einträge)`
+  + (blockSkipped ? `, ${blockSkipped} übergangen: Tier steht auf der Karte in den Stammdaten` : ''));
 
 // ---- Sichtungen (Core/Sightings.lua) → tools/eigene/sichtungen.json ----
 // „npc;stufe;einstufung;familie;sprache;name;zeit;melder[;tempo]“, je Tier, Stufe, Sprache und Melder eine

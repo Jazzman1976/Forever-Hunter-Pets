@@ -321,6 +321,13 @@ local function record()
   local p = pending
   pending = nil
   local before = discoverState(p.npc, p.seenMap)   -- vor Zelle, Zone und Zähmung (#51)
+  -- Ein Tier mit Besitzer lässt sich nicht zähmen: Die Zähmung hebt einen eigenen Treffer am Tooltip
+  -- (ForeverHunterPetsDB.owned) auf dieser Karte auf, bevor Zelle und Zone gespeichert werden (#124)
+  local owned = p.map and ns.db.owned and ns.db.owned[p.npc]
+  if type(owned) == "table" and type(owned.maps) == "table" then
+    owned.maps[p.map] = nil
+    if not next(owned.maps) then ns.db.owned[p.npc] = nil end
+  end
   if p.map and ns.AddCells then ns.AddCells(p.npc, p.map, p.cell) end
   if p.seenMap and ns.NoteSeenIn then ns.NoteSeenIn(p.npc, p.seenMap) end
   if not (level and level > 0) then return end
