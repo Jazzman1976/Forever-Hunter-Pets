@@ -73,7 +73,7 @@ node tools/test/run.mjs t114 t105    # nur Szenarien, deren Dateiname so beginnt
 ```
 
 - **Syntax:** alle `.lua` in `Core/`, `UI/`, `Locales/` und `Data/`.
-- **Szenarien:** jede Datei in `tools/test/szenarien/` läuft in einem frischen Lua. Geladen werden der Mock und die Dateien der TOC aus `Core/`, `Locales/` und `Data/`; `UI/` wird nur auf Syntax geprüft. Braucht ein Szenario eine UI-Datei, nennt es sie in einer Zeile `-- lädt: UI/Datei.lua` (#120); sie wird nach den anderen geladen. Der Mock merkt sich dafür bei Frames `shown` (Show/Hide), `value` (SetValue) und `text` (SetText); `Create…` liefert wieder einen Frame. Geheime Werte stellt ein Szenario über `SECRETS[wert] = true` her.
+- **Szenarien:** jede Datei in `tools/test/szenarien/` läuft in einem frischen Lua. Geladen werden der Mock und die Dateien der TOC aus `Core/`, `Locales/` und `Data/`; `UI/` wird nur auf Syntax geprüft. Braucht ein Szenario eine UI-Datei, nennt es sie in einer Zeile `-- lädt: UI/Datei.lua` (#120); sie wird nach den anderen geladen. Der Mock merkt sich dafür bei Frames `shown` (Show/Hide), `value` (SetValue) und `text` (SetText); `Create…` liefert wieder einen Frame. Nachgebildet sind nur Methoden (großer Anfangsbuchstabe); eigene Felder des Addons an einem Frame sind wie im Spiel `nil` (#131). Ein Szenario kann einzelne Methoden an einem Frame selbst setzen, etwa ein `PlayerModel` mit dem Verhalten des Clients (`t131-modell.lua`). Geheime Werte stellt ein Szenario über `SECRETS[wert] = true` her.
 - Ein Szenario schlägt fehl, wenn eine Prüfung `ok(bedingung, text)` nicht hält oder das Addon über `ns.SafeCall` einen Fehler meldet.
 - Am Ende steht „x Szenarien, y Prüfungen, alles ok“. Der Rückgabewert ist sonst 1.
 
