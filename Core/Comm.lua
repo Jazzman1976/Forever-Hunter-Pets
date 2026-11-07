@@ -781,6 +781,11 @@ function ns.ShareStatus()
   local tames, sights, cells, nReps, unknown = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, unknown, sights, cells, nReps))
+  if ns.ForeignRankStatus then
+    local total, resolved, below = ns.ForeignRankStatus()
+    ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d")
+      :format(total, resolved, below))
+  end
   local via = 0
   for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
   ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))

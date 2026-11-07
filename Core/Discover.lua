@@ -111,16 +111,18 @@ local function trackOnly(npc, map)
   return seenIn(npc, map) and nowhere(npc)
 end
 
--- Alle Tiere einer Zone: aus den Daten und aus Zellen. { [npc] = true }
+-- Alle Tiere einer Zone: aus den Daten und aus Zellen (fremde ab der Schwelle). { [npc] = true }
 function ns.BeastsIn(map)
   local out = {}
   for npc, zones in pairs(D.coords) do
     if zones[map] then out[npc] = true end
   end
-  for _, foreign in ipairs({ "loc", "locIn" }) do
-    for npc, maps in pairs((ns.db and ns.db[foreign]) or {}) do
-      if maps[map] and maps[map] ~= "" then out[npc] = true end
-    end
+  for npc, maps in pairs((ns.db and ns.db.loc) or {}) do
+    if maps[map] and maps[map] ~= "" then out[npc] = true end
+  end
+  -- fremde Zellen erst ab der Schwelle je Tier und Karte (#103)
+  for npc, maps in pairs((ns.db and ns.db.locIn) or {}) do
+    if maps[map] and ns.ForeignCellsOk(npc, map) then out[npc] = true end
   end
   for npc in pairs((ns.Finds() or {}).seenIn or {}) do
     if not out[npc] and (tamedIn(npc, map) or trackOnly(npc, map)) then out[npc] = true end
@@ -134,9 +136,12 @@ function ns.DiscoverZones()
   for _, zones in pairs(D.coords) do
     for map in pairs(zones) do set[map] = true end
   end
-  for _, key in ipairs({ "loc", "locIn" }) do
-    for _, maps in pairs((ns.db and ns.db[key]) or {}) do
-      for map, cells in pairs(maps) do if cells ~= "" then set[map] = true end end
+  for _, maps in pairs((ns.db and ns.db.loc) or {}) do
+    for map, cells in pairs(maps) do if cells ~= "" then set[map] = true end end
+  end
+  for npc, maps in pairs((ns.db and ns.db.locIn) or {}) do
+    for map in pairs(maps) do
+      if not set[map] and ns.ForeignCellsOk(npc, map) then set[map] = true end
     end
   end
   for npc, list in pairs((ns.Finds() or {}).seenIn or {}) do
@@ -281,7 +286,7 @@ end
 
 -- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts.
 -- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
--- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab 3 Meldern (ns.Observed), auch „lehrt nichts“
+-- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“
 -- (#40, vorher reichte eine einzige fremde Zähmung).
 -- Zweiter Wert (nur Komplettmodus): Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch
 -- Belege (Hinweiszeile im Tooltip, #40).
@@ -315,8 +320,8 @@ function ns.TeachInfo(npc, discover)
         if v == "seen" then
           clear = true
           add(e.a, e.r, ns.CONF_SURE)
-        elseif v == nil then
-          unsure = true   -- wie im Tooltip nicht gezeigt, bis 3 Melder ihn sahen
+        elseif v == nil or v == "unsure" then
+          unsure = true   -- wie im Tooltip erst ab ns.FOREIGN_SURE Meldern belegt; unsichere kommen über die Daten unten
         end
       end
     end

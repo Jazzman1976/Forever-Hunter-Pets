@@ -2,9 +2,10 @@
 // zusammen und merkt sich die Kürzel der eigenen Charaktere (myReps) in tools/eigene/eigene-melder.json.
 // Dazu die Sichtungen beim Anvisieren (Core/Sightings.lua) nach tools/eigene/sichtungen.json, die
 // Fundort-Zellen nach tools/eigene/zellen.json (eigene) und zellen-fremd.json (fremde, mit Melder), die Herkunft
-// fremder Melder nach tools/eigene/melder-wege.json und die
+// fremder Melder nach tools/eigene/melder-wege.json, die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
-// nach tools/eigene/erhebung.json.
+// nach tools/eigene/erhebung.json und Name und Rang unbekannter Zauber aus fremden Zähmungen (Core/ForeignRanks.lua,
+// #103) nach tools/eigene/fremde-raenge.json.
 // Eingelesen werden nur die eigenen SavedVariables (#104): Darin steht, was man selbst gesehen hat, und alles, was
 // andere im Spiel geteilt haben. Fremde Daten kommen über die Kanäle im Addon herein, nicht als fremde Datei.
 // Aufruf: node tools/import-observations.mjs [Schalter] <Pfad> [<Pfad> …]
@@ -33,6 +34,7 @@ const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
 // Namen der eigenen Kontoordner (#104, #62): privat wie das Salz, weil ein Hash des Namens sich zurückrechnen ließe
 const ACCOUNTS_FILE = path.join(HERE, '..', '.ignore', 'eigene-konten.json');
 const BLOCK_OUT = path.join(HERE, 'eigene', 'nicht-zaehmbar.json');
+const FOREIGN_RANKS_OUT = path.join(HERE, 'eigene', 'fremde-raenge.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
 // Familien, die es nur bei Dämonen gibt, wie ns.DEMON_FAMILY in Core/Sightings.lua (#80): Solche Tiere sind nicht
 // zähmbar. Ihre Sichtungen, Fundort-Zellen und Familien kommen nicht in die Daten, auch nicht aus dem Bestand.
@@ -441,3 +443,38 @@ fs.writeFileSync(SURVEY_OUT, '{\n' + ['raenge', 'listen', 'familien', 'zauberbuc
 console.log(`Erhebung aus ${surveyFiles} Datei(en): ${Object.keys(survey.raenge).length} Ränge, `
   + `${Object.keys(survey.listen).length} Familien mit Liste, ${Object.keys(survey.zauberbuch).length} Zauber aus Zauberbüchern `
   + '→ tools/eigene/erhebung.json');
+
+// ---- Fremde Ränge (Core/ForeignRanks.lua, #103) → tools/eigene/fremde-raenge.json ----
+// { Zauber-ID: { name: { Sprache: Name }, rang, quelle, datum } }: Name und Rang, die der eigene Client zu einem
+// unbekannten Zauber aus fremden Zähmungen nannte (ForeverHunterPetsDB.spellNames). Der Beleg sind die Zähmungen in
+// beobachtungen.json; ob ein Rang daraus wird, entscheidet tools/build-data.mjs (ab 3 Meldern).
+const foreignRanks = fs.existsSync(FOREIGN_RANKS_OUT) ? JSON.parse(fs.readFileSync(FOREIGN_RANKS_OUT, 'utf8')) : {};
+const today = day(Math.floor(Date.now() / 1000));
+let foreignRankFiles = 0, foreignRankNew = 0;
+for (const f of files) {
+  let names;
+  try {
+    names = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.spellNames;
+  } catch {
+    continue; // schon oben gemeldet
+  }
+  if (!names || typeof names !== 'object') continue;
+  foreignRankFiles++;
+  for (const [id, e] of Object.entries(names)) {
+    const n = Number(id);
+    if (!Number.isInteger(n) || n <= 0 || n > 9999999 || !e || typeof e !== 'object') continue;
+    if (typeof e.n !== 'string' || !e.n || e.n.length > 60 || /[|;]/.test(e.n)) continue;
+    if (!Number.isInteger(e.r) || e.r < 1 || e.r > 20) continue;
+    const lang = /^[a-z]{2}[A-Z]{2}$/.test(e.l) ? e.l : 'enUS';
+    const r = foreignRanks[id] ?? (foreignRankNew++, { name: {}, rang: e.r, quelle: 'Zähmungen anderer Spieler, Name und Rang vom eigenen Client', datum: today });
+    if (r.rang !== e.r) console.log(`Fremder Rang ${id}: Rang ${r.rang} und ${e.r} – der erste bleibt`);
+    r.name[lang] = e.n;
+    foreignRanks[id] = r;
+  }
+}
+if (Object.keys(foreignRanks).length) {
+  fs.writeFileSync(FOREIGN_RANKS_OUT, '{\n' + Object.entries(sortKeys(foreignRanks))
+    .map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n') + '\n}\n');
+}
+console.log(`Fremde Ränge aus ${foreignRankFiles} Datei(en): ${Object.keys(foreignRanks).length} Zauber, davon neu ${foreignRankNew} `
+  + '→ tools/eigene/fremde-raenge.json');

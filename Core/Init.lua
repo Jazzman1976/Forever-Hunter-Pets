@@ -10,6 +10,14 @@ local strings = (ns.Locales or {})[GetLocale and GetLocale() or "enUS"] or {}
 ns.L = setmetatable({}, { __index = function(_, k) return strings[k] or k end })
 local L = ns.L
 
+-- ---- Schwellen für fremde Meldungen (#103) ----
+-- Was andere Spieler melden, gilt ab FOREIGN_SURE verschiedenen Meldern als belegt, ab FOREIGN_UNSURE als unsicher
+-- (nur Lehrtier-Paare; gezeigt nur mit „Unsichere Angaben zeigen“). Die Melder müssen dabei über mindestens zwei
+-- verschiedene Absender gekommen sein (#15, ns.ViaDistinct in Core/Comm.lua). Die Zahlen stehen nur hier und in
+-- tools/build-data.mjs; sie werden angehoben, wenn mehr Spieler das Addon nutzen.
+ns.FOREIGN_SURE = 3     -- bis 17.10.2026: 10 (#1)
+ns.FOREIGN_UNSURE = 2   -- seit #103; vorher genügte ein einziger Melder
+
 -- ---- Helfer ----
 -- In Kampf und Instanzen liefert die API „geheime Werte“. Nur issecretvalue prüft das gefahrlos:
 -- schon der Vergleich eines geheimen Werts kann einen Fehler werfen.

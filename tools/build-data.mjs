@@ -18,9 +18,12 @@ const read = (name) => JSON.parse(fs.readFileSync(path.join(OWN, name), 'utf8'))
 // Belegung eines Lehrtiers (`conf`): 1 belegt, 2 unsicher, 3 unbelegt (geschätzt; gibt es noch nicht).
 // Widerlegte Paare werden nicht ausgeliefert.
 const CONF_SURE = 1, CONF_UNSURE = 2;
-// Fremde Beobachtungen zählen ab so vielen verschiedenen Meldern als belegt – wie im Addon (Core/Observe.lua).
-// Eigene gelten sofort als bewiesen, gesehen wie nicht gesehen.
-const FOREIGN_NEEDED = 3; // bis 17.10.2026: 10 (#1)
+// Fremde Beobachtungen zählen ab FOREIGN_SURE verschiedenen Meldern als belegt, Lehrtier-Paare ab FOREIGN_UNSURE als
+// unsicher – dieselben Zahlen wie ns.FOREIGN_SURE und ns.FOREIGN_UNSURE in Core/Init.lua (#103). Was nur ein fremder
+// Melder zeigt, bleibt in tools/eigene/, kommt aber nicht in die Daten. Eigene gelten sofort als bewiesen, gesehen wie
+// nicht gesehen.
+const FOREIGN_SURE = 3; // bis 17.10.2026: 10 (#1)
+const FOREIGN_UNSURE = 2; // seit #103; vorher genügte ein Melder
 
 // faehigkeiten.json: von Hand, was die Erhebung nicht liefert (etwa das Angriffstempo):
 //   [{ en?, de?, icon?, kind: general|family|trait, source: tame|trainer|unknown,
@@ -57,8 +60,10 @@ const blockList = fs.existsSync(path.join(OWN, 'nicht-zaehmbar.json')) ? read('n
 // Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei verschiedene Absender kamen – ein einzelner
 // Absender genügt nie (#15, wie ns.ViaDistinct in Core/Comm.lua). Ein Melder ohne Angabe trägt nichts bei, und
 // ohne melder-wege.json zählt kein fremder Melder (#60: im Zweifel nicht, alle Melder in tools/eigene/ haben eine Angabe).
-const enough = (reps) => {
-  if (reps.size < FOREIGN_NEEDED) return false;
+// n: die Schwelle, sonst FOREIGN_SURE. Eigene Kürzel unter reps zählen wie fremde mit; wer eigene sofort gelten
+// lassen will, prüft das vorher.
+const enough = (reps, n = FOREIGN_SURE) => {
+  if (reps.size < n) return false;
   let first = null;
   for (const rep of reps) {
     const l = ways[rep];
@@ -272,6 +277,66 @@ const abilitiesIn = [
   ...traitsFromObservations(),
 ];
 
+// ---- Ränge aus fremden Zähmungen (#103) ----
+// fremde-raenge.json (tools/import-observations.mjs aus Core/ForeignRanks.lua): Name und Rang, die der eigene Client zu
+// einer Zauber-ID aus fremden Zähmungen nannte. Eine ID, die keine Fähigkeit kennt, wird zum Rang, wenn ein eigener
+// Melder sie zeigte oder FOREIGN_SURE fremde über zwei Absender. Passt der Name zu einer Fähigkeit, die man von Tieren
+// lernt, wird sie ein weiterer Rang davon, ohne Pet-Stufe und TP (die bringt erst die Erhebung, und die geht vor).
+// Sonst entsteht eine neue Fähigkeit; dann bricht der Vergleich mit Git unten ab, bis sie geprüft ist (#37).
+const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? read('fremde-raenge.json') : {};
+{
+  const knownIds = new Set(abilitiesIn.flatMap((a) => (a.ranks || []).map((r) => r.id)));
+  const shownBy = new Map(); // Zauber-ID → { own, reps: Set, npcs: Set }
+  for (const o of observations) {
+    for (const id of o.zauber || []) {
+      if (knownIds.has(id) || !foreignRanksIn[id]) continue;
+      const e = shownBy.get(id) ?? shownBy.set(id, { own: false, reps: new Set(), npcs: new Set() }).get(id);
+      if (ownReps.has(o.melder)) e.own = true; else e.reps.add(o.melder);
+      e.npcs.add(o.npc);
+    }
+  }
+  const famOf = (npc) => beastsIn[npc]?.fam ?? sightingsAll.find((s) => s.npc === npc && s.familie)?.familie ?? null;
+  const fresh = new Map(); // Name → neue Fähigkeit
+  let added = 0, waiting = 0;
+  for (const [id, f] of Object.entries(foreignRanksIn)) {
+    need(f.quelle && f.datum, `Fremder Rang ${id} ohne Quelle oder Datum`);
+    need(Number.isInteger(f.rang) && f.rang > 0 && f.name && Object.keys(f.name).length, `Fremder Rang ${id} ohne Namen oder Rang`);
+    const e = shownBy.get(+id);
+    if (!e) continue; // schon bekannt (Erhebung geht vor) oder in keiner Zähmung
+    if (!e.own && !enough(e.reps)) { waiting++; continue; }
+    const de = f.name.deDE ?? null, en = f.name.enUS ?? f.name.enGB ?? null;
+    const a = abilitiesIn.find((x) => x.source === 'tame' && x.kind !== 'trait' && ((de && x.de === de) || (en && x.en === en)));
+    const rank = { id: +id, rank: f.rang, level: null, tp: null };
+    if (a) {
+      if (a.ranks.some((r) => r.rank === f.rang)) {
+        warnings.push(`Fremder Rang ${id}: ${label(a)} Rang ${f.rang} gibt es schon unter einer anderen Zauber-ID – nicht übernommen`);
+        continue;
+      }
+      a.ranks.push(rank);
+      a.ranks.sort((x, y) => x.rank - y.rank);
+      // wie im Addon (ns.MergeSurveyAbilities): die Familien der Tiere, die den Rang zeigten, kommen dazu
+      if (a.kind === 'family') {
+        a.families = [...new Set([...(a.families || []), ...[...e.npcs].map(famOf).filter((x) => x != null)])].sort((x, y) => x - y);
+      }
+    } else {
+      const key = de ?? en;
+      let n = fresh.get(key);
+      if (!n) {
+        n = { de, en, kind: 'family', source: 'tame', families: [], ranks: [],
+          beleg: `Zähmungen anderer Spieler, Name und Rang vom eigenen Client, seit ${f.datum} (tools/eigene/fremde-raenge.json)` };
+        fresh.set(key, n);
+        abilitiesIn.push(n);
+      }
+      if (n.ranks.some((r) => r.rank === f.rang)) continue;
+      n.ranks.push(rank);
+      n.ranks.sort((x, y) => x.rank - y.rank);
+      n.families = [...new Set([...n.families, ...[...e.npcs].map(famOf).filter((x) => x != null)])].sort((x, y) => x - y);
+    }
+    added++;
+  }
+  if (added || waiting) console.log(`Fremde Ränge: ${added} übernommen, ${waiting} warten auf weitere Melder (ab ${FOREIGN_SURE})`);
+}
+
 // ---- Fähigkeiten ----
 const spellRank = new Map(); // Zauber-ID → { a, rank }
 for (const a of abilitiesIn) {
@@ -300,12 +365,13 @@ const note = (a, npc, rank, rep) => {
   if (ownReps.has(rep)) e.own = true;
   seen.get(a).set(k, e);
 };
-const level = new Map(); // NPC-ID → [min, max] aus den Beobachtungen
+// Stufen je Tier aus den Beobachtungen: eigene sofort, fremde erst ab FOREIGN_SURE Meldern des Tiers (#103)
+const levelsOf = new Map(); // NPC-ID → { own: [Stufen], foreign: [Stufen], reps: Set }
 let unknownSpells = 0;
 for (const o of observations) {
   need(o.melder, `Beobachtung ohne Melder: ${JSON.stringify(o)}`);
-  const lv = level.get(o.npc) || [o.stufe, o.stufe];
-  level.set(o.npc, [Math.min(lv[0], o.stufe), Math.max(lv[1], o.stufe)]);
+  const l = levelsOf.get(o.npc) ?? levelsOf.set(o.npc, { own: [], foreign: [], reps: new Set() }).get(o.npc);
+  if (ownReps.has(o.melder)) l.own.push(o.stufe); else { l.foreign.push(o.stufe); l.reps.add(o.melder); }
   for (const id of o.zauber || []) {
     const hit = spellRank.get(id);
     if (!hit) { unknownSpells++; continue; }
@@ -319,11 +385,17 @@ for (const o of observations) {
   }
 }
 // Angriffstempo aus den Sichtungen: Das wilde Tier hat das Tempo, das es gezähmt hat (Probe 16.10.2026).
-// Belegt wie beim Zähmen: eigene sofort, fremde ab FOREIGN_NEEDED Meldern.
+// Belegt wie beim Zähmen: eigene sofort, fremde ab FOREIGN_SURE Meldern.
 for (const s of sightings) {
   if (s.tempo == null || Math.abs(s.tempo - NORMAL_SPEED) < 0.05) continue;
   const t = abilitiesIn.find((a) => a.kind === 'trait' && Math.abs(Number(a.speed) - s.tempo) < 0.05);
   if (t) note(t, s.npc, t.ranks[0].rank, s.melder);
+}
+
+const level = new Map(); // NPC-ID → [min, max]
+for (const [npc, l] of levelsOf) {
+  const use = l.own.length ? l.own : enough(l.reps) ? l.foreign : null;
+  if (use) level.set(npc, [Math.min(...use), Math.max(...use)]);
 }
 
 // ---- Befunde ----
@@ -355,7 +427,10 @@ for (const [a, pairs] of seen) {
   for (const e of pairs.values()) {
     const r = a.ranks.find((x) => x.rank === e.rank);
     const higher = a.ranks.filter((x) => x.rank > e.rank).map((x) => x.id);
-    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0) && !hasUnknown(o)
+    // Ein Rang ohne Pet-Stufe (aus einem Zauberbuch oder aus fremden Zähmungen) widerlegt nichts (#103, wie verdict in
+    // Core/Observe.lua): Man weiß nicht, ab welcher Stufe er käme.
+    if (r.level == null) continue;
+    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= r.level && !hasUnknown(o)
       && !(o.zauber || []).includes(r.id) && !higher.some((id) => (o.zauber || []).includes(id)));
     if (!against.length) continue;
     const ownAgainst = !e.own && against.some((o) => ownReps.has(o.melder));
@@ -376,7 +451,7 @@ for (const p of places) {
   for (const [x, y] of p.punkte) list.push(Math.round(x * 10), Math.round(y * 10));
 }
 // Zellen aus dem Spiel: Mittelpunkt jeder Zelle (Raster 50 × 50, Core/Places.lua). Eigene sofort, fremde wie
-// Zähmungen und Sichtungen: ab FOREIGN_NEEDED verschiedenen Meldern, ein eigenes Kürzel gilt als eigen (#2).
+// Zähmungen und Sichtungen: ab FOREIGN_SURE verschiedenen Meldern, ein eigenes Kürzel gilt als eigen (#2).
 const CELL_ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn';
 const shipCells = new Map(); // "npc:map" → Set der Zellen
 for (const [npc, maps] of Object.entries(cells)) {
@@ -412,7 +487,7 @@ for (const [key, set] of shipCells) {
     list.push(Math.round((cx + 0.5) * 20), Math.round((cy + 0.5) * 20));
   }
 }
-if (foreignShipped) console.log(`${foreignShipped} fremde Fundort-Zellen belegt (ab ${FOREIGN_NEEDED} Meldern)`);
+if (foreignShipped) console.log(`${foreignShipped} fremde Fundort-Zellen belegt (ab ${FOREIGN_SURE} Meldern)`);
 
 if (problems.length) {
   console.error(`Abbruch – ${problems.length} Angaben ohne Beleg oder fehlerhaft:\n  ` + problems.join('\n  '));
@@ -420,9 +495,13 @@ if (problems.length) {
 }
 
 // ---- Ausgabe ----
+// Ein Paar kommt in die Daten, wenn eine eigene Zähmung es zeigt (belegt) oder fremde Melder über zwei Absender:
+// ab FOREIGN_SURE belegt, ab FOREIGN_UNSURE unsicher (#103). Was weniger zeigen, wartet auf weitere Melder.
+let tooFew = 0;
 const abilities = abilitiesIn.map((a) => {
   const teach = [...seen.get(a).values()]
     .filter((e) => !refuted.has(`${label(a)}:${e.npc}:${e.rank}`))
+    .filter((e) => e.own || enough(e.reps, FOREIGN_UNSURE) || (tooFew++, false))
     .map((e) => ({ id: e.npc, rank: e.rank, conf: e.own || enough(e.reps) ? CONF_SURE : CONF_UNSURE }))
     .sort((x, y) => x.rank - y.rank || x.conf - y.conf || x.id - y.id);
   return {
@@ -435,7 +514,7 @@ const abilities = abilitiesIn.map((a) => {
 });
 
 // ---- Sichtungen: Name, Stufe, Familie, Einstufung je Tier ----
-// Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_NEEDED verschiedene Melder das Tier gesehen haben (wie
+// Eigene Sichtungen zählen sofort, fremde erst, wenn FOREIGN_SURE verschiedene Melder das Tier gesehen haben (wie
 // beim Zähmen). Familie und Einstufung: die eigene, sonst die häufigste.
 // Namen (#3, #47): je Sprache aus den Sichtungen dieser Sprache. Sie kommen nur an Tiere, die ohnehin ausgeliefert
 // werden (siehe beastIds unten). Der eigene Name geht vor; ein fremder nur, wenn genug verschiedene Melder ihn nennen
@@ -588,5 +667,6 @@ const pairs = countPairs(data);
 const points = countPoints(data);
 console.log(`Fertig: ${abilities.length} Fähigkeiten, ${spellRank.size} Ränge, ${pairs} Lehrtier-Paare, `
   + `${Object.keys(beasts).length} Tiere, ${Object.keys(families).length} Familien, ${points} Fundorte → ${path.relative(path.dirname(HERE), OUT)}`);
+if (tooFew) console.log(`${tooFew} Lehrtier-Paare von weniger als ${FOREIGN_UNSURE} fremden Meldern nicht übernommen (warten auf weitere Melder).`);
 if (unknownSpells) console.log(`${unknownSpells} beobachtete Zauber-IDs gehören zu keiner erhobenen Fähigkeit (erst die Fähigkeiten erheben).`);
 if (warnings.length) console.log(`Hinweise (${warnings.length}):\n  ` + warnings.join('\n  '));

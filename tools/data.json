@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-05T13:43:11.851Z",
+ "generatedAt": "2026-11-07T15:49:56.662Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -415,8 +415,8 @@
    "de": null,
    "en": null,
    "fam": null,
-   "min": 10,
-   "max": 10,
+   "min": null,
+   "max": null,
    "cls": 0
   },
   "1138": {
@@ -439,7 +439,7 @@
    "de": "Holzlauerer",
    "en": null,
    "fam": 3,
-   "min": 17,
+   "min": 18,
    "max": 18,
    "cls": 0
   },
@@ -448,7 +448,7 @@
    "en": null,
    "fam": 4,
    "min": 11,
-   "max": 12,
+   "max": 11,
    "cls": 0
   },
   "1188": {
@@ -559,8 +559,8 @@
    "de": null,
    "en": null,
    "fam": null,
-   "min": 10,
-   "max": 10,
+   "min": null,
+   "max": null,
    "cls": 0
   },
   "1693": {
@@ -575,16 +575,16 @@
    "de": null,
    "en": null,
    "fam": null,
-   "min": 12,
-   "max": 12,
+   "min": null,
+   "max": null,
    "cls": 0
   },
   "1797": {
    "de": null,
    "en": null,
    "fam": null,
-   "min": 12,
-   "max": 12,
+   "min": null,
+   "max": null,
    "cls": 0
   },
   "1922": {
@@ -593,14 +593,6 @@
    "fam": 1,
    "min": 7,
    "max": 8,
-   "cls": 0
-  },
-  "1961": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": 11,
-   "max": 11,
    "cls": 0
   },
   "1984": {
@@ -680,7 +672,7 @@
    "en": null,
    "fam": 3,
    "min": 8,
-   "max": 9,
+   "max": 8,
    "cls": 0
   },
   "2001": {
@@ -867,14 +859,6 @@
    "max": 19,
    "cls": 0
   },
-  "2406": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": null,
-   "max": null,
-   "cls": 0
-  },
   "2956": {
    "de": "Erwachsener Ebenenschreiter",
    "en": null,
@@ -936,7 +920,7 @@
    "en": null,
    "fam": 7,
    "min": 9,
-   "max": 10,
+   "max": 9,
    "cls": 0
   },
   "3035": {
@@ -1391,8 +1375,8 @@
    "de": null,
    "en": null,
    "fam": null,
-   "min": 6,
-   "max": 6,
+   "min": null,
+   "max": null,
    "cls": 0
   },
   "253529": {
@@ -4005,11 +3989,6 @@
      "conf": 1
     },
     {
-     "id": 251245,
-     "rank": 1,
-     "conf": 2
-    },
-    {
      "id": 2237,
      "rank": 2,
      "conf": 1
@@ -4373,16 +4352,6 @@
      "id": 3127,
      "rank": 2,
      "conf": 1
-    },
-    {
-     "id": 1778,
-     "rank": 2,
-     "conf": 2
-    },
-    {
-     "id": 1961,
-     "rank": 2,
-     "conf": 2
     },
     {
      "id": 1189,
@@ -5348,16 +5317,6 @@
      "id": 3425,
      "rank": 1,
      "conf": 1
-    },
-    {
-     "id": 2406,
-     "rank": 1,
-     "conf": 2
-    },
-    {
-     "id": 251245,
-     "rank": 1,
-     "conf": 2
     }
    ]
   },

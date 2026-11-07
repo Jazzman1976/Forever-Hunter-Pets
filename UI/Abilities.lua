@@ -13,7 +13,7 @@ local BEAST_H = 36
 local EFFORT_COLOR = { easy = { 0.62, 0.83, 0.37 }, medium = { 1, 0.82, 0 }, hard = { 1, 0.45, 0.35 } }
 local CLS_LABEL = { [1] = "Elite", [2] = "Rare elite", [3] = "Boss", [4] = "Rare" }
 local MAX_OPEN = 8   -- „? unentdecktes Tier“-Zeilen höchstens, dann „und n weitere“
-local CONF_HEAD = { [2] = "Uncertain – reported by fewer than 3 other players", [3] = "Unproven – estimated, not seen yet" }
+local CONF_HEAD = { [2] = "Uncertain – reported by fewer than %d other players", [3] = "Unproven – estimated, not seen yet" }
 
 local function zonesText(id, b)
   local zones = ns.BeastZones(id)
@@ -74,9 +74,11 @@ local function buildEntries(abilities, fam, zone)
       end
       -- dazu, was eigene Zähmungen zeigten, auch bei Tieren, die (noch) nicht in den Daten stehen
       for _, r in ipairs(a.ranks) do
-        for _, id in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
-          shown = shown + 1
-          if zone and inZones(ns.BeastZones(id), zone) then inZone = inZone + 1 end
+        for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
+          if ns.ShowConf(x.conf) then
+            shown = shown + 1
+            if zone and inZones(ns.BeastZones(x.id), zone) then inZone = inZone + 1 end
+          end
         end
       end
       if not zone or inZone > 0 then
@@ -122,7 +124,7 @@ local function zoneOptions()
     local ids = {}
     for _, t in ipairs(a.teach) do ids[#ids + 1] = t[1] end
     for _, r in ipairs(a.ranks) do
-      for _, id in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do ids[#ids + 1] = id end
+      for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do ids[#ids + 1] = x.id end
     end
     for _, npc in ipairs(ids) do
       for _, z in ipairs(ns.BeastZones(npc)) do
@@ -452,7 +454,7 @@ function ns.BuildAbilities(parent)
             sub:ClearAllPoints()
             sub:SetPoint("TOPLEFT", dc, "TOPLEFT", 0, -(y + 4))
             sub:SetWidth(DW)
-            sub:SetText(L[CONF_HEAD[group]])
+            sub:SetText((L[CONF_HEAD[group]]):format(ns.FOREIGN_SURE))
             y = y + sub:GetStringHeight() + 10
           end
           local row = beastRows:Get()

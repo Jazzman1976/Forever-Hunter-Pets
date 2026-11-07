@@ -163,15 +163,28 @@ function ns.BeastName(id)
   return (L["Unknown beast (#%d)"]):format(id)
 end
 
--- Stammdaten eines Tiers: aus den Daten, sonst aus der eigenen Sichtung oder Zähmung. Ein Tier, das man erst
+-- Stammdaten eines Tiers: aus den Daten, sonst aus der Sichtung oder Zähmung (eigene sofort, fremde ab der Schwelle, #103). Ein Tier, das man erst
 -- selbst gesichtet oder gezähmt hat, steht bis zum nächsten Import nicht in den Daten – es zählt trotzdem.
 function ns.BeastInfo(id)
   local b = D.beasts[id]
   if b then return b end
-  local seen = ns.SeenBeast and ns.SeenBeast(id)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(id)   -- eigene sofort, fremde ab der Schwelle (#103)
   if seen then return { fam = seen.fam, min = seen.min, max = seen.max, cls = seen.cls or 0 } end
+  -- Stufe aus Zähmungen: aus eigenen sofort, aus fremden erst ab ns.FOREIGN_SURE Meldern (#103)
+  local own, foreign, reps, n = {}, {}, {}, 0
   for _, o in ipairs(ns.ObservationsOf and ns.ObservationsOf(id) or {}) do
-    if o.level then return { min = o.level, max = o.level, cls = 0 } end
+    if o.level and o.own then
+      own[#own + 1] = o.level
+    elseif o.level then
+      foreign[#foreign + 1] = o.level
+      if not reps[o.rep] then reps[o.rep] = true; n = n + 1 end
+    end
+  end
+  local levels = #own > 0 and own or (ns.ForeignEnough and ns.ForeignEnough(reps, n) and foreign)
+  if levels and #levels > 0 then
+    local lo, hi = levels[1], levels[1]
+    for _, lv in ipairs(levels) do lo, hi = math.min(lo, lv), math.max(hi, lv) end
+    return { min = lo, max = hi, cls = 0 }
   end
   local fam
   if ns.TrackName then fam = select(2, ns.TrackName(id)) end   -- nicht „and“: das schnitte die Familie ab
@@ -179,12 +192,12 @@ function ns.BeastInfo(id)
   return nil
 end
 
--- Familie eines Tiers: aus den Daten, sonst aus der eigenen Sichtung. Ein Tier, das man nur selbst gezähmt hat,
+-- Familie eines Tiers: aus den Daten, sonst aus der eigenen Sichtung (fremde ab der Schwelle, #103). Ein Tier, das man nur selbst gezähmt hat,
 -- steht in den Daten ohne Familie, bis die Sichtung importiert ist – angezeigt wird sie trotzdem.
 function ns.BeastFamily(id)
   local b = D.beasts[id]
   if b and b.fam then return b.fam end
-  local seen = ns.SeenBeast and ns.SeenBeast(id)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(id)
   if seen and seen.fam then return seen.fam end
   local fam
   if ns.TrackName then fam = select(2, ns.TrackName(id)) end   -- nicht „and“: das schnitte die Familie ab
@@ -413,9 +426,10 @@ function ns.Teachers(a, r, zone)
       consider(t[1], b, effective(t[1], a, r, t[3]), i)
     end
   end
-  for _, id in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
-    local b = ns.BeastInfo(id)
-    if b and not listed[id] then consider(id, b, ns.CONF_SURE, #a.teach + 1) end
+  for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
+    -- ohne Stammdaten (etwa nur von 2 fremden Meldern gezähmt, #103) mit leerer Stufe („?“)
+    local b = ns.BeastInfo(x.id) or { cls = 0 }
+    if not listed[x.id] then consider(x.id, b, x.conf, #a.teach + 1) end
   end
   -- Entdeckermodus: nur Lehrtiere, bei denen eine eigene Zähmung den Rang zeigte; die übrigen zählen als
   -- unentdeckt (list.undiscovered), damit man weiß, dass es etwas zu finden gibt
@@ -487,7 +501,7 @@ function ns.AllBeastTeaches(npcId)
     out[#out + 1] = { a = x.a, r = x.r, conf = effective(npcId, x.a, x.r, x.conf) }
   end
   for _, x in ipairs(extra or {}) do
-    if not have[x.r] then out[#out + 1] = { a = x.a, r = x.r, conf = ns.CONF_SURE } end
+    if not have[x.r] then out[#out + 1] = { a = x.a, r = x.r, conf = x.conf or ns.CONF_SURE } end
   end
   if extra and #extra > 0 then table.sort(out, byNameAndRank) end
   return out
@@ -568,6 +582,12 @@ function ns.MergeSurveyAbilities()
   end
   for id, e in pairs(s.spells or {}) do
     if type(e) == "table" then add(id, e.name, e.rank, nil, nil, e.fam, false) end
+  end
+  -- Ränge aus fremden Zähmungen (Core/ForeignRanks.lua, #103): nur zu Fähigkeiten, die man schon kennt und von
+  -- Tieren lernt. Eine ganz neue Fähigkeit kommt nur über die Stammdaten (Prüfung auf Jägerzauber beim Import).
+  for _, c in ipairs(ns.ForeignRankCandidates and ns.ForeignRankCandidates() or {}) do
+    local a = byName[c.name]
+    if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false) end
   end
   if added then
     for _, fn in ipairs(abilityListeners) do ns.SafeCall("abilities", fn) end

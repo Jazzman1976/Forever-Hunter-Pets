@@ -113,7 +113,9 @@ function ns.ParseSighting(s)
   return o
 end
 
--- byNpc[npc] = { names = { [Sprache] = Name }, ownNames = { [Sprache] = Name }, min, max, fam, cls, speed, reps = { [Kürzel] = true }, own }
+-- byNpc[npc] = { names = { [Sprache] = Name }, ownNames = { [Sprache] = Name }, min, max, fam, cls, speed, reps = { [Kürzel] = true }, own,
+--   eigene Werte (ownMin, ownMax), fremde Melder (foreign = { [Kürzel] = true }, nForeign) und fremde Namen je Sprache mit
+--   ihren Meldern (nameReps[Sprache][Name] = { [Kürzel] = true }) für die Schwelle (#103) }
 -- keys[Schlüssel] = Stelle in ForeverHunterPetsDB.sights
 local byNpc, keys
 local function key(o) return o.npc .. ":" .. o.level .. ":" .. o.lang .. ":" .. o.rep end
@@ -121,8 +123,18 @@ local function key(o) return o.npc .. ":" .. o.level .. ":" .. o.lang .. ":" .. 
 local function add(o, i)
   local b = byNpc[o.npc]
   if not b then
-    b = { names = {}, ownNames = {}, reps = {}, min = o.level, max = o.level, fam = o.fam, cls = o.cls }
+    b = { names = {}, ownNames = {}, reps = {}, min = o.level, max = o.level, fam = o.fam, cls = o.cls,
+      foreign = {}, nForeign = 0, nameReps = {} }
     byNpc[o.npc] = b
+  end
+  if o.own then
+    b.ownMin, b.ownMax = math.min(b.ownMin or o.level, o.level), math.max(b.ownMax or o.level, o.level)
+  else
+    if not b.foreign[o.rep] then b.foreign[o.rep] = true; b.nForeign = b.nForeign + 1 end
+    local byName = b.nameReps[o.lang] or {}
+    b.nameReps[o.lang] = byName
+    byName[o.name] = byName[o.name] or {}
+    byName[o.name][o.rep] = true
   end
   -- der eigene Name geht vor, sonst bleibt der erste
   if o.own or not b.names[o.lang] then b.names[o.lang] = o.name end
@@ -146,14 +158,36 @@ end
 
 function ns.SightingsChanged() byNpc = nil end
 function ns.SightingCount() return #((ns.db and ns.db.sights) or {}) end
+-- Alles, was die Sichtungen über ein Tier wissen, roh – auch Fremdes unter der Schwelle (für Zählungen und Teilen)
 function ns.SeenBeast(npc) return index()[npc] end
 
--- Name eines gesichteten Tiers in der Client-Sprache und ob er aus einer eigenen Sichtung stammt, sonst nil (#47)
+-- Was davon gilt (#103): eigene Sichtungen sofort, fremde erst ab ns.FOREIGN_SURE Meldern über zwei Absender
+-- (ns.ForeignEnough), wie im Generator. { fam, cls, min, max } oder nil.
+function ns.TrustedSighting(npc)
+  local b = index()[npc]
+  if not b then return nil end
+  if b.own then return { fam = b.fam, cls = b.cls, min = b.ownMin, max = b.ownMax } end
+  if ns.ForeignEnough and ns.ForeignEnough(b.foreign, b.nForeign) then
+    return { fam = b.fam, cls = b.cls, min = b.min, max = b.max }
+  end
+  return nil
+end
+
+-- Name eines gesichteten Tiers in der Client-Sprache und ob er aus einer eigenen Sichtung stammt, sonst nil (#47).
+-- Ein fremder Name gilt erst, wenn ns.FOREIGN_SURE Melder genau ihn nennen (#103, wie im Generator); unter mehreren
+-- der mit den meisten Meldern.
 function ns.SeenName(npc)
   local b = index()[npc]
   if not b then return nil end
   local lang = GetLocale and GetLocale() or "enUS"
-  return b.names[lang], b.ownNames[lang] ~= nil
+  if b.ownNames[lang] then return b.ownNames[lang], true end
+  local best, bestN
+  for name, reps in pairs(b.nameReps[lang] or {}) do
+    local n = 0
+    for _ in pairs(reps) do n = n + 1 end
+    if (not bestN or n > bestN) and ns.ForeignEnough and ns.ForeignEnough(reps, n) then best, bestN = name, n end
+  end
+  return best, false
 end
 
 -- Hat die gespeicherte Sichtung an Stelle i schon ein Tempo? (neun Felder statt acht)
@@ -214,10 +248,10 @@ end
 
 -- ---- Teilen: gesammelt, sparsam ----
 -- Der verborgene Kanal soll nicht volllaufen. Geteilt wird nur, was nötig ist: nicht, was die Daten
--- kennen; nicht, wenn schon FOREIGN_ENOUGH Melder das Tier gemeldet haben (mehr braucht die Regel
--- „ab 3 Meldern“ in Core/Observe.lua nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
+-- kennen; nicht, wenn schon ns.FOREIGN_SURE Melder das Tier gemeldet haben (mehr braucht die Melder-Regel,
+-- Core/Init.lua, nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
 -- Gesammelt wird höchstens alle SHARE_EVERY Sekunden verschickt, je Runde höchstens SHARE_MAX.
-local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE, FOREIGN_ENOUGH = 300, 20, 200, 3
+local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE = 300, 20, 200
 local shareQueue, shareTimer, shared = {}, false, {}   -- shared[npc] = { min, max } dieser Sitzung
 
 local function repCount(npc)
@@ -242,7 +276,7 @@ local function flushShares()
 end
 
 local function queueShare(s, o)
-  if known(o) or repCount(o.npc) >= FOREIGN_ENOUGH then return end
+  if known(o) or repCount(o.npc) >= ns.FOREIGN_SURE then return end
   local r = shared[o.npc]
   if r and o.level >= r[1] and o.level <= r[2] then return end
   shared[o.npc] = r and { math.min(r[1], o.level), math.max(r[2], o.level) } or { o.level, o.level }
