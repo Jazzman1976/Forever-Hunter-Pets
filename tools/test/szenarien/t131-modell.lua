@@ -59,6 +59,16 @@ cached[1995] = true
 wait(3)
 ok(seen() == 222 and not iconShown(), "Eule nach dem Nachladen gezeigt, Icon weg")
 
+-- lädt das Modell zwischen zwei Prüfungen, verschwindet das Icon im selben Frame (nie beides zugleich)
+holder:SetBeast(1996, {})
+files[1996] = 333
+wait(1)
+ok(iconShown() == (holder.hasIcon == true), "unbekanntes Tier: Icon")
+cached[1996] = true
+holder.models[1996]:SetCreature(1996)   -- der Client lädt zwischendurch
+tick(0.01)
+ok(seen() == 333 and not iconShown(), "Modell geladen: Icon schon im nächsten Frame weg")
+
 -- bleibt ein Tier unbekannt, hört das Nachfragen auf
 holder:SetBeast(9999, {})
 wait(10)
@@ -76,4 +86,4 @@ local before = created
 holder:SetBeast(1995, {})
 holder:SetBeast(1985, {})
 ok(created == before, "erneut geöffnete Tiere bekommen keinen neuen Rahmen")
-ok(created == 4, "vier Tiere, vier Rahmen: " .. created)
+ok(created == 5, "fünf Tiere, fünf Rahmen: " .. created)

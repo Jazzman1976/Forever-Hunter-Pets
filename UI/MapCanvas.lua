@@ -209,6 +209,8 @@ local function createModel(parent, size)
   holder:SetScript("OnHide", function(self) self.dragX = nil end)
   holder:SetScript("OnUpdate", function(self)
     if not m then return end
+    -- Solange das Icon steht, in jedem Frame schauen, ob das Modell da ist, damit nie beides zugleich zu sehen ist
+    if self.icon:IsShown() and fileId() then showIcon(self, false) end
     -- geladen? Sonst Icon, nach ein paar Blicken den nächsten Weg versuchen, zuletzt nach einer Pause von vorn
     if self.checkAt and now() >= self.checkAt then
       if fileId() then
