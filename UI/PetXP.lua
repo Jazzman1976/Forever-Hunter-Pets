@@ -78,31 +78,47 @@ end
 -- ---- Rahmen ----
 local bar, badge
 
--- Wie die EP-Leiste des Spielers: dunkler Rahmen, Trennstriche, hier alle 20 % (CELLS Zellen)
-local function line(parent, layer)
-  local t = parent:CreateTexture(nil, layer or "OVERLAY")
-  t:SetColorTexture(0, 0, 0, 0.9)
+-- Wie die EP-Leiste des Spielers: eigener Rahmen, Trennstriche, hier alle 20 % (CELLS Zellen)
+local function line(parent, r, g, b, a)
+  local t = parent:CreateTexture(nil, "OVERLAY")
+  t:SetColorTexture(r, g, b, a)
   return t
 end
 
+-- Rahmen aus vier Linien, off px außerhalb der Leiste, 1 px dick
+local function border(b, off, r, g, bl, a)
+  local top, bottom, left, right = line(b, r, g, bl, a), line(b, r, g, bl, a), line(b, r, g, bl, a), line(b, r, g, bl, a)
+  top:SetPoint("TOPLEFT", b, "TOPLEFT", -off, off); top:SetPoint("TOPRIGHT", b, "TOPRIGHT", off, off); top:SetHeight(1)
+  bottom:SetPoint("BOTTOMLEFT", b, "BOTTOMLEFT", -off, -off); bottom:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", off, -off)
+  bottom:SetHeight(1)
+  left:SetPoint("TOPLEFT", b, "TOPLEFT", -off, off); left:SetPoint("BOTTOMLEFT", b, "BOTTOMLEFT", -off, -off); left:SetWidth(1)
+  right:SetPoint("TOPRIGHT", b, "TOPRIGHT", off, off); right:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", off, -off)
+  right:SetWidth(1)
+end
+
+-- Trennstriche nach der Breite setzen. Beim Anlegen ist die Breite oft noch 0; deshalb auch bei jeder
+-- Aktualisierung und wenn sich die Größe ändert
 local function placeTicks(b)
   local w = b:GetWidth()
-  if not (w and w > 0) then return end
+  if not (w and w > 0) or b.ticksFor == w then return end
+  b.ticksFor = w
   for i, t in ipairs(b.ticks) do
+    local x = math.floor(w * i / CELLS + 0.5)
     t:ClearAllPoints()
-    t:SetPoint("TOP", b, "TOPLEFT", math.floor(w * i / CELLS + 0.5), 0)
-    t:SetPoint("BOTTOM", b, "BOTTOMLEFT", math.floor(w * i / CELLS + 0.5), 0)
+    t:SetPoint("TOPLEFT", b, "TOPLEFT", x, 0)
+    t:SetPoint("BOTTOMLEFT", b, "BOTTOMLEFT", x, 0)
   end
 end
 
 local function createBar()
   local b = CreateFrame("StatusBar", nil, PetFrame)
   b:SetHeight(BAR_H)
-  -- bündig unter der Mana- bzw. Fokusleiste des Pets, gleich breit; der Rahmen liegt außen
+  -- unter der Mana- bzw. Fokusleiste des Pets, die Füllung gleich breit wie deren Füllung; der eigene Rand liegt
+  -- 2 px außen wie der Rand der Leisten darüber, deshalb 4 px Abstand nach oben
   local mana = PetFrameManaBar
   if mana then
-    b:SetPoint("TOPLEFT", mana, "BOTTOMLEFT", 0, -2)
-    b:SetPoint("TOPRIGHT", mana, "BOTTOMRIGHT", 0, -2)
+    b:SetPoint("TOPLEFT", mana, "BOTTOMLEFT", 0, -4)
+    b:SetPoint("TOPRIGHT", mana, "BOTTOMRIGHT", 0, -4)
   else
     b:SetWidth(70)
     b:SetPoint("TOPLEFT", PetFrame, "BOTTOMLEFT", 46, 8)
@@ -113,16 +129,13 @@ local function createBar()
   b.bg = b:CreateTexture(nil, "BACKGROUND")
   b.bg:SetAllPoints()
   b.bg:SetColorTexture(0, 0, 0, 0.6)
-  -- Rahmen: je eine Linie oben, unten, links, rechts, 1 px außerhalb der Leiste
-  local top, bottom, left, right = line(b), line(b), line(b), line(b)
-  top:SetPoint("BOTTOMLEFT", b, "TOPLEFT", -1, 0); top:SetPoint("BOTTOMRIGHT", b, "TOPRIGHT", 1, 0); top:SetHeight(1)
-  bottom:SetPoint("TOPLEFT", b, "BOTTOMLEFT", -1, 0); bottom:SetPoint("TOPRIGHT", b, "BOTTOMRIGHT", 1, 0); bottom:SetHeight(1)
-  left:SetPoint("TOPRIGHT", b, "TOPLEFT", 0, 0); left:SetPoint("BOTTOMRIGHT", b, "BOTTOMLEFT", 0, 0); left:SetWidth(1)
-  right:SetPoint("TOPLEFT", b, "TOPRIGHT", 0, 0); right:SetPoint("BOTTOMLEFT", b, "BOTTOMRIGHT", 0, 0); right:SetWidth(1)
-  -- Trennstriche zwischen den Zellen, nachgezogen, wenn sich die Breite ändert
+  -- eigener Rand, 2 px außerhalb der Füllung wie bei den Leisten darüber: innen schwarz, außen grau
+  border(b, 1, 0, 0, 0, 1)
+  border(b, 2, 0.5, 0.5, 0.5, 1)
+  -- Trennstriche zwischen den Zellen
   b.ticks = {}
   for i = 1, CELLS - 1 do
-    local t = line(b)
+    local t = line(b, 0, 0, 0, 0.9)
     t:SetWidth(1)
     b.ticks[i] = t
   end
@@ -167,6 +180,7 @@ function ns.UpdatePetXP()
   if not bar then return end
   local view = ns.PetXPView()
   if view.bar then
+    placeTicks(bar)
     bar:SetValue(view.fill)
     bar:Show()
   else
