@@ -8,7 +8,8 @@ local _, ns = ...
 local L = ns.L
 
 local BAR_H = 7
-local XP_COLOR = { 0.58, 0.0, 0.55 }   -- EP-Violett, falls die EP-Leiste des Spielers keine Farbe liefert
+local CELLS = 5                        -- Zellen der Leiste: ein Trennstrich alle 20 % (Wunsch des Maintainers, 07.11.2026)
+local XP_COLOR = { 0.0, 0.39, 0.88 }   -- Blau wie die EP-Leiste des Spielers (Wunsch des Maintainers, 07.11.2026)
 
 local function num(v) return tonumber(ns.clean(v)) end
 
@@ -77,19 +78,27 @@ end
 -- ---- Rahmen ----
 local bar, badge
 
-local function xpColor()
-  local r, g, b
-  if MainMenuExpBar and MainMenuExpBar.GetStatusBarColor then
-    r, g, b = call(MainMenuExpBar.GetStatusBarColor, MainMenuExpBar)
-    r, g, b = num(r), num(g), num(b)
+-- Wie die EP-Leiste des Spielers: dunkler Rahmen, Trennstriche, hier alle 20 % (CELLS Zellen)
+local function line(parent, layer)
+  local t = parent:CreateTexture(nil, layer or "OVERLAY")
+  t:SetColorTexture(0, 0, 0, 0.9)
+  return t
+end
+
+local function placeTicks(b)
+  local w = b:GetWidth()
+  if not (w and w > 0) then return end
+  for i, t in ipairs(b.ticks) do
+    t:ClearAllPoints()
+    t:SetPoint("TOP", b, "TOPLEFT", math.floor(w * i / CELLS + 0.5), 0)
+    t:SetPoint("BOTTOM", b, "BOTTOMLEFT", math.floor(w * i / CELLS + 0.5), 0)
   end
-  if r and g and b then return r, g, b end
-  return XP_COLOR[1], XP_COLOR[2], XP_COLOR[3]
 end
 
 local function createBar()
   local b = CreateFrame("StatusBar", nil, PetFrame)
   b:SetHeight(BAR_H)
+  -- bündig unter der Mana- bzw. Fokusleiste des Pets, gleich breit; der Rahmen liegt außen
   local mana = PetFrameManaBar
   if mana then
     b:SetPoint("TOPLEFT", mana, "BOTTOMLEFT", 0, -2)
@@ -99,10 +108,26 @@ local function createBar()
     b:SetPoint("TOPLEFT", PetFrame, "BOTTOMLEFT", 46, 8)
   end
   b:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+  b:SetStatusBarColor(XP_COLOR[1], XP_COLOR[2], XP_COLOR[3])
   b:SetMinMaxValues(0, 1)
   b.bg = b:CreateTexture(nil, "BACKGROUND")
   b.bg:SetAllPoints()
-  b.bg:SetColorTexture(0, 0, 0, 0.5)
+  b.bg:SetColorTexture(0, 0, 0, 0.6)
+  -- Rahmen: je eine Linie oben, unten, links, rechts, 1 px außerhalb der Leiste
+  local top, bottom, left, right = line(b), line(b), line(b), line(b)
+  top:SetPoint("BOTTOMLEFT", b, "TOPLEFT", -1, 0); top:SetPoint("BOTTOMRIGHT", b, "TOPRIGHT", 1, 0); top:SetHeight(1)
+  bottom:SetPoint("TOPLEFT", b, "BOTTOMLEFT", -1, 0); bottom:SetPoint("TOPRIGHT", b, "BOTTOMRIGHT", 1, 0); bottom:SetHeight(1)
+  left:SetPoint("TOPRIGHT", b, "TOPLEFT", 0, 0); left:SetPoint("BOTTOMRIGHT", b, "BOTTOMLEFT", 0, 0); left:SetWidth(1)
+  right:SetPoint("TOPLEFT", b, "TOPRIGHT", 0, 0); right:SetPoint("BOTTOMLEFT", b, "BOTTOMRIGHT", 0, 0); right:SetWidth(1)
+  -- Trennstriche zwischen den Zellen, nachgezogen, wenn sich die Breite ändert
+  b.ticks = {}
+  for i = 1, CELLS - 1 do
+    local t = line(b)
+    t:SetWidth(1)
+    b.ticks[i] = t
+  end
+  b:SetScript("OnSizeChanged", placeTicks)
+  placeTicks(b)
   b:EnableMouse(true)
   b:SetScript("OnEnter", function(self)
     local lines = ns.PetXPTooltip(ns.PetXPState())
@@ -142,7 +167,6 @@ function ns.UpdatePetXP()
   if not bar then return end
   local view = ns.PetXPView()
   if view.bar then
-    bar:SetStatusBarColor(xpColor())
     bar:SetValue(view.fill)
     bar:Show()
   else
