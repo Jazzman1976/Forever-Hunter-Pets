@@ -18,7 +18,9 @@ end
 -- und Text. Create… (Texturen, Schriften) liefert wieder einen Frame, alle anderen Methoden tun nichts.
 local frames = {}
 local frameMT = { __index = function(t, k)
-  if type(k) == "string" and k:sub(1, 6) == "Create" then return function() return CreateFrame() end end
+  -- nur Methoden (großer Anfangsbuchstabe) sind nachgebildet; eigene Felder des Addons sind wie im Spiel nil (#131)
+  if type(k) ~= "string" or not k:match("^%u") then return nil end
+  if k:sub(1, 6) == "Create" then return function() return CreateFrame() end end
   return function(self, ...)
     if k == "SetScript" then local s, fn = ...; self.scripts[s] = fn end
     if k == "RegisterEvent" then local e = ...; self.events[e] = true end

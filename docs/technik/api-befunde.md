@@ -117,3 +117,8 @@ In Kampf und Instanzen liefert die API „secret values“, die schon beim Vergl
 - **`PetFrameManaBar` ist breiter als das, was man sieht:** Der Rahmen reicht von 139,5 bis 216,5 (77 Einheiten), die sichtbare Füllung wie die Lebensleiste `PetFrameHealthBar` nur von 142,5 bis 212,5 (70). Wer etwas bündig unter die Leisten setzen will, rückt gegenüber `PetFrameManaBar` links 3 und rechts 4 Einheiten ein (gemessen mit `GetLeft`/`GetRight`, UI-Skalierung des Testers). `PetFrame.manabar` und `PetFrame.healthbar` sind dieselben Rahmen.
 - **Farbe der EP-Leiste des Spielers** lässt sich nicht verlässlich lesen: Über `MainMenuExpBar:GetStatusBarColor()` kam kein brauchbares Blau an, die Leiste fiel auf Violett zurück. Das Addon nimmt deshalb ein festes Blau.
 - **Randfarbe des Pet-Rahmens:** ein Goldton, etwa RGB 150/120/80, aus dem Screenshot gemessen.
+
+## 3D-Modell auf der Kartenseite (#131, 07.11.2026)
+
+- **`PlayerModel:SetCreature(npcId)` lädt nichts, wenn das Tier nicht im Kreaturen-Cache des Clients steht.** Der Cache liegt auf der Festplatte (`Cache/WDB/<Sprache>/creaturecache.wdb`, geschrieben beim Ausloggen) und bleibt über Neustarts erhalten. Ein Tier kommt hinein, sobald man es in der Welt sieht oder anvisiert oder einmal `SetCreature` dafür aufruft; danach lädt es sofort. Der Fehler zeigt sich deshalb nur beim ersten Mal je Tier und ist nicht konstant nachzustellen. Gezielt: Spiel beenden, `creaturecache.wdb` löschen.
+- **`ClearModel` räumt das alte Modell nicht sichtbar weg**, und `GetModelFileID` nennt danach noch dessen Datei. Ein Modell gilt deshalb erst als geladen, wenn `OnModelLoaded` gefeuert hat oder die Datei sich geändert hat (`UI/MapCanvas.lua`).
