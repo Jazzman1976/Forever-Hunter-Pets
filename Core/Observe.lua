@@ -146,12 +146,14 @@ local function verdict(o, a, r)
 end
 
 -- Alle Zähmungen eines Tiers zusammen. Eigene gelten als bewiesen, gesehen wie nicht gesehen, und gehen
--- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten erst ab 3 verschiedenen Meldern
--- (bis 17.10.2026: 10; wie FOREIGN_NEEDED in tools/build-data.mjs, #1); unter Fremden geht gesehen vor widerlegt. Widersprechen sich Zähmungen, meldet das der Generator.
--- Die Melder müssen dabei über mindestens zwei verschiedene Absender gekommen sein (#15, ns.ViaDistinct in Core/Comm.lua).
-local FOREIGN_NEEDED = 3
-local function enough(reps, n)
-  if n < FOREIGN_NEEDED then return false end
+-- allem Fremden vor (Wunsch des Nutzers, 16.10.2026). Fremde gelten ab ns.FOREIGN_SURE verschiedenen Meldern
+-- (Core/Init.lua, wie in tools/build-data.mjs) als gesehen bzw. widerlegt; unter Fremden geht gesehen vor widerlegt.
+-- Ab ns.FOREIGN_UNSURE Meldern, die ihn sahen, und ohne fremden Widerspruch gilt ein Rang als unsicher (#103):
+-- gezeigt nur mit „Unsichere Angaben zeigen“, wie unsichere Paare aus den Daten. Widersprechen sich Zähmungen,
+-- meldet das der Generator. Die Melder müssen dabei über mindestens zwei verschiedene Absender gekommen sein (#15,
+-- ns.ViaDistinct in Core/Comm.lua).
+local function enough(reps, n, need)
+  if n < (need or ns.FOREIGN_SURE) then return false end
   return not ns.ViaDistinct or ns.ViaDistinct(reps)
 end
 function ns.Observed(npcId, a, r)
@@ -173,13 +175,14 @@ function ns.Observed(npcId, a, r)
   if ownRefuted then return "refuted" end
   if enough(seen, nSeen) then return "seen" end
   if nSeen == 0 and enough(refuted, nRefuted) then return "refuted" end
+  if nRefuted == 0 and enough(seen, nSeen, ns.FOREIGN_UNSURE) then return "unsure" end
   return nil
 end
 
 -- Reichen diese fremden Melder { [rep] = true } (n verschiedene)? Dieselbe Schwelle wie oben, etwa für fremde
--- Zähmungen, die gar keinen Rang zeigten („lehrt nichts“, #40)
-function ns.ForeignEnough(reps, n)
-  return enough(reps, n)
+-- Zähmungen, die gar keinen Rang zeigten („lehrt nichts“, #40); need: eine andere Schwelle (ns.FOREIGN_UNSURE)
+function ns.ForeignEnough(reps, n, need)
+  return enough(reps, n, need)
 end
 
 -- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
@@ -190,24 +193,31 @@ function ns.OwnSeen(npcId, a, r)
   return false
 end
 
--- Belegung nach Beobachtungen: gesehen → belegt, widerlegt → ausgeblendet, sonst wie in den Daten
+-- Belegung nach Beobachtungen: gesehen → belegt, widerlegt → ausgeblendet, unsicher → höchstens unsicher, sonst wie
+-- in den Daten
 function ns.EffectiveConf(npcId, a, r, conf)
   local o = ns.Observed(npcId, a, r)
   if o == "seen" then return ns.CONF_SURE end
   if o == "refuted" then return ns.CONF_REFUTED end
+  -- unsicher nach Zähmungen: nur, wo die Daten nichts Besseres wissen
+  if o == "unsure" then return math.min(conf or ns.CONF_UNSURE, ns.CONF_UNSURE) end
   return conf or ns.CONF_SURE
 end
 
--- Ränge, die Beobachtungen bei einem Tier zeigen (auch über die Daten hinaus): { { a, r }, … }
+-- Ränge, die Beobachtungen bei einem Tier zeigen (auch über die Daten hinaus): { { a, r, conf }, … }; conf ist
+-- belegt (gesehen) oder unsicher (ab ns.FOREIGN_UNSURE fremden Meldern, #103)
+local OBSERVED_CONF = { seen = ns.CONF_SURE, unsure = ns.CONF_UNSURE }
 function ns.ObservedExtra(npcId)
   local list = index()[npcId]
   if not list then return nil end
   local out, have = {}, {}
   local idx = spellIndex()
   local function try(a, r)
-    if not have[r] and ns.Observed(npcId, a, r) == "seen" then
+    if have[r] then return end
+    local conf = OBSERVED_CONF[ns.Observed(npcId, a, r)]
+    if conf then
       have[r] = true
-      out[#out + 1] = { a = a, r = r }
+      out[#out + 1] = { a = a, r = r, conf = conf }
     end
   end
   for _, o in ipairs(list) do
@@ -224,14 +234,15 @@ function ns.ObservedExtra(npcId)
   return out
 end
 
--- Tiere, bei denen Beobachtungen diesen Rang zeigen: { npcId, … }
+-- Tiere, bei denen Beobachtungen diesen Rang zeigen: { { id = npcId, conf = belegt oder unsicher }, … }
 function ns.ObservedTeachers(a, r)
   local out = {}
   if a.source ~= "tame" and ns.Learnable(a) then return out end
   for npc, list in pairs(index()) do
     for _, o in ipairs(list) do
       if verdict(o, a, r) == "seen" then
-        if ns.Observed(npc, a, r) == "seen" then out[#out + 1] = npc end
+        local conf = OBSERVED_CONF[ns.Observed(npc, a, r)]
+        if conf then out[#out + 1] = { id = npc, conf = conf } end
         break
       end
     end

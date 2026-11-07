@@ -214,10 +214,10 @@ end
 
 -- ---- Teilen: gesammelt, sparsam ----
 -- Der verborgene Kanal soll nicht volllaufen. Geteilt wird nur, was nötig ist: nicht, was die Daten
--- kennen; nicht, wenn schon FOREIGN_ENOUGH Melder das Tier gemeldet haben (mehr braucht die Regel
--- „ab 3 Meldern“ in Core/Observe.lua nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
+-- kennen; nicht, wenn schon ns.FOREIGN_SURE Melder das Tier gemeldet haben (mehr braucht die Melder-Regel,
+-- Core/Init.lua, nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
 -- Gesammelt wird höchstens alle SHARE_EVERY Sekunden verschickt, je Runde höchstens SHARE_MAX.
-local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE, FOREIGN_ENOUGH = 300, 20, 200, 3
+local SHARE_EVERY, SHARE_MAX, SHARE_QUEUE = 300, 20, 200
 local shareQueue, shareTimer, shared = {}, false, {}   -- shared[npc] = { min, max } dieser Sitzung
 
 local function repCount(npc)
@@ -242,7 +242,7 @@ local function flushShares()
 end
 
 local function queueShare(s, o)
-  if known(o) or repCount(o.npc) >= FOREIGN_ENOUGH then return end
+  if known(o) or repCount(o.npc) >= ns.FOREIGN_SURE then return end
   local r = shared[o.npc]
   if r and o.level >= r[1] and o.level <= r[2] then return end
   shared[o.npc] = r and { math.min(r[1], o.level), math.max(r[2], o.level) } or { o.level, o.level }

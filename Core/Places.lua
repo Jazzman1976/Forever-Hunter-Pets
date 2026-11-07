@@ -8,7 +8,8 @@
 -- aus ALPHA (Spalte, Zeile). Fremde tragen ihren Melder, damit der Import die Regel „ab 3 Meldern“ prüfen
 -- kann (#2): locIn[npc][uiMapID][melder] = „xyxy…“; ältere Einträge ohne Melder (bis 0.8.0 ein String je
 -- Karte) liegen unter OLD – sichtbar, sie zählen aber nicht. Nur neue Zellen zählen, höchstens MAX_CELLS je
--- Tier, Karte und Melder. Neue eigene Zellen werden gesammelt und höchstens alle 5 Minuten geteilt (Core/Comm.lua).
+-- Tier, Karte und Melder. Gezeigt werden fremde Zellen erst ab ns.FOREIGN_SURE Meldern je Tier und Karte (#103).
+-- Neue eigene Zellen werden gesammelt und höchstens alle 5 Minuten geteilt (Core/Comm.lua).
 -- Eigene Zellen stehen zusätzlich je Charakter in ForeverHunterPetsCharDB.loc, gleiches Format (#43): Im
 -- Entdeckermodus zählen sie (ns.Finds, Core/Discover.lua), geteilt wird nur aus dem Konto.
 local _, ns = ...
@@ -19,7 +20,6 @@ local MAX_CELLS = 500
 local MAX_FOREIGN = 20000
 local SEND_EVERY = 300
 local OLD = "-"             -- Melder älterer fremder Zellen (unbekannt)
-local FOREIGN_ENOUGH = 3    -- mehr Melder je Zelle braucht die Regel „ab 3 Meldern“ (Core/Observe.lua) nicht
 ns.CELL_BUNDLE = 100        -- Zellen je Nachricht (200 Zeichen)
 
 local migrated = false
@@ -54,10 +54,29 @@ local function reporters(byRep, cell)
   return n
 end
 
--- Fremde Zellen eines Tiers auf einer Karte, alle Melder zusammen, jede einmal: „xyxy…“
+-- Reichen die fremden Melder eines Tiers auf einer Karte? Gezählt wird je Tier und Karte, nicht je Zelle (#103, Plan
+-- aus #54): mindestens ns.FOREIGN_SURE verschiedene Melder (ohne OLD) mit Zellen, über mindestens zwei Absender
+-- (ns.ForeignEnough, Core/Observe.lua). Darunter bleiben die Zellen gespeichert (für den Import und bis die Melder
+-- zusammen sind), werden aber nicht gezeigt: Ein einzelner Spieler bringt kein Tier in eine Zone.
+local function foreignOk(byRep)
+  local reps, n = {}, 0
+  for rep, cells in pairs(byRep or {}) do
+    if rep ~= OLD and cells ~= "" then reps[rep] = true; n = n + 1 end
+  end
+  return n > 0 and ns.ForeignEnough ~= nil and ns.ForeignEnough(reps, n)
+end
+
+function ns.ForeignCellsOk(npc, map)
+  return foreignOk((((store(true) or {})[npc]) or {})[map])
+end
+
+-- Fremde Zellen eines Tiers auf einer Karte, alle Melder zusammen, jede einmal: „xyxy…“; leer, solange die Melder
+-- nicht reichen (siehe oben)
 local function foreignCells(npc, map)
+  local byRep = (((store(true) or {})[npc]) or {})[map]
+  if not foreignOk(byRep) then return "" end
   local all, set = {}, {}
-  for _, cells in pairs(((store(true) or {})[npc] or {})[map] or {}) do
+  for _, cells in pairs(byRep) do
     for i = 1, #cells - 1, 2 do
       local cell = cells:sub(i, i + 1)
       if not set[cell] then set[cell] = true; all[#all + 1] = cell end
@@ -209,7 +228,7 @@ end
 
 -- Eigene Zellen werden immer gespeichert – auch was die Daten schon kennen, gehört zu den eigenen Funden –,
 -- geteilt aber nur, was die Daten nicht haben. Fremde Zellen werden nicht gespeichert, wenn die Daten oder die
--- eigenen Zellen sie haben oder schon FOREIGN_ENOUGH andere Melder sie gemeldet haben.
+-- eigenen Zellen sie haben oder schon ns.FOREIGN_SURE andere Melder sie gemeldet haben (mehr braucht die Regel nicht).
 -- Eigene Zellen auch je Charakter; true, wenn eine neu war
 local function addOwnChar(npc, map, cells)
   if not ns.char then return false end
@@ -244,7 +263,7 @@ function ns.AddCells(npc, map, cells, foreign)
     if #have / 2 >= MAX_CELLS then break end
     if foreign and countForeign() >= MAX_FOREIGN then break end
     if not hasCell(have, cell) and not hasCell(mine, cell)
-        and not (foreign and (inData(npc, map, cell) or reporters(byRep, cell) >= FOREIGN_ENOUGH)) then
+        and not (foreign and (inData(npc, map, cell) or reporters(byRep, cell) >= ns.FOREIGN_SURE)) then
       have = have .. cell
       added = added .. cell
       if foreign then foreignCount = countForeign() + 1 elseif not inData(npc, map, cell) then toShare = toShare .. cell end
@@ -320,7 +339,10 @@ function ns.CellMaps(npc, ownOnly)
   local out = {}
   for map, cells in pairs(((ownStore(ownOnly) or {})[npc]) or {}) do out[map] = #cells / 2 end
   if not ownOnly then
-    for map in pairs(((store(true) or {})[npc]) or {}) do out[map] = (out[map] or 0) + #foreignCells(npc, map) / 2 end
+    for map in pairs(((store(true) or {})[npc]) or {}) do
+      local n = #foreignCells(npc, map) / 2
+      if n > 0 then out[map] = (out[map] or 0) + n end
+    end
   end
   return out
 end
