@@ -293,6 +293,9 @@ function ns.BuildAbilities(parent)
     beastPage:Hide()
     detail:Show()
   end
+  -- Moduswechsel (#123): Die Kartenseite zeigte sonst ein Tier, das der Entdeckermodus noch nicht kennt. Die
+  -- Mode-Listener laufen vor dem Neubau (ns.ModeChanged), ApplyFilter zeigt danach die Details des Rangs.
+  ns.OnModeChanged(function() if beastPage:IsShown() then beastPage.onBack() end end)
 
   local iconBtn = CreateFrame("Button", nil, dc)
   iconBtn:SetSize(44, 44)
