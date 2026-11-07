@@ -10,7 +10,9 @@ local L = ns.L
 local BAR_H = 7
 local INSET_L, INSET_R = 3, 4          -- Einrückung gegenüber dem Rahmen der Fokusleiste, siehe createBar
 local CELLS = 5                        -- Zellen der Leiste: ein Trennstrich alle 20 % (Wunsch des Maintainers, 07.11.2026)
-local XP_COLOR = { 0.0, 0.39, 0.88 }   -- Blau wie die EP-Leiste des Spielers (Wunsch des Maintainers, 07.11.2026)
+local XP_COLOR = { 0.76, 0.2, 0.73 }   -- Lila nach der EP-Leiste des Spielers ohne Erholung (0,58 / 0 / 0,55), heller
+                                        -- (Wunsch des Maintainers im Abschlusstest von #130, 07.11.2026: Blau hob sich zu
+                                        -- wenig vom Hintergrund ab, das Lila des Spiels war zu dunkel)
 local EDGE = { 0.60, 0.48, 0.32 }      -- Goldton des Pet-Rahmens, aus dem Screenshot gemessen; für Rand und Trennstriche
 
 local function num(v) return tonumber(ns.clean(v)) end
