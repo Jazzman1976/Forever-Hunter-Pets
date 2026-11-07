@@ -130,10 +130,11 @@ end
 -- ---- 3D-Modell eines Tiers ----
 -- Der Client zeichnet es selbst (PlayerModel). Erst über die Anzeige-ID aus den Daten, dann über die
 -- NPC-ID; lädt beides nicht, bleibt das Familien-Icon stehen. Ziehen mit der Maus dreht das Modell.
--- Steht ein Tier noch nicht im Kreaturen-Cache des Clients, lädt SetCreature nichts, ClearModel räumt das alte
--- Modell nicht weg, und GetModelFileID nennt noch dessen Datei (#131). Deshalb bleibt das Modell versteckt, bis
--- eine andere Datei als die des zuletzt gezeigten Tiers geladen ist, und das Addon fragt RETRY_FOR Sekunden
--- lang alle RETRY_EVERY Sekunden nach, bis der Client das Tier kennt.
+-- Jedes Tier bekommt seinen eigenen PlayerModel-Rahmen (#131): Steht ein Tier noch nicht im Kreaturen-Cache des
+-- Clients, lädt SetCreature nichts, und ein schon benutzter Rahmen zeigte dann weiter das Modell des vorigen
+-- Tiers (ClearModel räumt es nicht weg). Ein frischer Rahmen bleibt in dem Fall leer; das Addon zeigt das
+-- Familien-Icon und fragt RETRY_FOR Sekunden lang alle RETRY_EVERY Sekunden nach, bis der Client das Tier kennt.
+-- Die Rahmen bleiben bis zum /reload (WoW gibt Rahmen nicht frei); versteckt kosten sie keine Zeichenzeit.
 local RETRY_EVERY, RETRY_FOR = 1, 6
 local function createModel(parent, size)
   local holder = CreateFrame("Frame", nil, parent)
@@ -142,34 +143,28 @@ local function createModel(parent, size)
   holder.icon = W.Icon(holder, math.floor(size * 0.4))
   holder.icon:SetPoint("CENTER")
   holder.icon:SetAlpha(0.6)
-  local ok, m = pcall(CreateFrame, "PlayerModel", nil, holder)
-  if not (ok and m) then m = nil end
-  if m then
-    m:SetAllPoints()
-    if m.EnableMouse then m:EnableMouse(false) end   -- die Maus gehört dem Rahmen darunter (Drehen)
-  end
+  holder.models = {}   -- NPC-ID -> eigener PlayerModel-Rahmen
+  local m              -- der Rahmen des gerade gezeigten Tiers
   local facing = -0.5
   local function now() return GetTime and GetTime() or 0 end
   local function fileId()
     if not (m and m.GetModelFileID) then return nil end
-    local ok2, file = pcall(m.GetModelFileID, m)
-    file = ok2 and ns.clean(file) or nil
+    local ok, file = pcall(m.GetModelFileID, m)
+    file = ok and ns.clean(file) or nil
     if file == 0 then return nil end
     return file
   end
-  -- Geladen heißt: die Datei ist eine andere als die des zuletzt gezeigten Tiers. Gemerkt wird sie beim Zeigen,
-  -- nicht beim Wechsel: Beim Wechsel ist die Seite noch versteckt, und dann ist auf GetModelFileID kein Verlass;
-  -- auch OnModelLoaded feuert im Spiel für das alte Modell (Test 07.11.2026). Dasselbe Tier wie zuletzt darf
-  -- dieselbe Datei haben; zwei verschiedene Tiere mit demselben Modell behalten das Familien-Icon.
-  local function loaded(self)
-    local file = fileId()
-    if not file then return false end
-    return file ~= self.shownFile or self.npc == self.shownNpc
+  local function modelFor(npcId)
+    if holder.models[npcId] then return holder.models[npcId] end
+    local ok, f = pcall(CreateFrame, "PlayerModel", nil, holder)
+    if not (ok and f) then return nil end
+    f:SetAllPoints()
+    if f.EnableMouse then f:EnableMouse(false) end   -- die Maus gehört dem Rahmen darunter (Drehen)
+    holder.models[npcId] = f
+    return f
   end
-  -- Modell zeigen oder verstecken; versteckt steht das Familien-Icon da, wenn es eins gibt
-  local function show(self, on)
-    if m then pcall(m.SetAlpha, m, on and 1 or 0) end
-    if on or not self.hasIcon then self.icon:Hide() else self.icon:Show() end
+  local function showIcon(self, on)
+    if on and self.hasIcon then self.icon:Show() else self.icon:Hide() end
   end
 
   function holder:Next()
@@ -181,26 +176,30 @@ local function createModel(parent, size)
       if now() < self.retryUntil then self.retryAt = now() + RETRY_EVERY end
       return
     end
-    pcall(m.ClearModel, m)
     pcall(m[try[1]], m, try[2])
     pcall(m.SetFacing, m, facing)
     self.checkAt, self.checks = now() + 0.4, 0
   end
 
   function holder:SetBeast(npcId, beast)
-    -- Bis das Modell geladen ist, das Familien-Icon; ohne Icon (die eigenen Daten kennen keins) bleibt
-    -- der Bereich leer, ebenso wenn das Modell nicht lädt
+    -- Das Icon erscheint nur, solange der eigene Rahmen des Tiers leer ist; ohne Icon (die eigenen Daten
+    -- kennen keins) bleibt der Bereich dann leer
     local icon, fallback = ns.FamilyIcon(ns.BeastFamily(npcId))
     self.hasIcon = not fallback
     if self.hasIcon then self.icon:SetTexture(icon) end
-    show(self, false)
-    if not m then return end
-    self.npc = npcId
+    showIcon(self, false)
+    if m then m:Hide() end
+    m = modelFor(npcId)
+    self.checkAt, self.retryAt = nil, nil
+    if not m then showIcon(self, true) return end
+    m:Show()
     facing = -0.5
+    pcall(m.SetFacing, m, facing)
+    if fileId() then return end   -- schon geladen: sofort da
     self.tries = {}
     if beast.disp then self.tries[#self.tries + 1] = { "SetDisplayInfo", beast.disp } end
     self.tries[#self.tries + 1] = { "SetCreature", npcId }
-    self.step, self.retryAt, self.retryUntil = 0, nil, now() + RETRY_FOR
+    self.step, self.retryUntil = 0, now() + RETRY_FOR
     self:Next()
   end
 
@@ -210,13 +209,14 @@ local function createModel(parent, size)
   holder:SetScript("OnHide", function(self) self.dragX = nil end)
   holder:SetScript("OnUpdate", function(self)
     if not m then return end
-    -- geladen? Sonst nach ein paar Blicken den nächsten Weg versuchen, zuletzt nach einer Pause von vorn
+    -- geladen? Sonst Icon, nach ein paar Blicken den nächsten Weg versuchen, zuletzt nach einer Pause von vorn
     if self.checkAt and now() >= self.checkAt then
-      if loaded(self) then
-        self.checkAt, self.retryAt, self.shownNpc, self.shownFile = nil, nil, self.npc, fileId()
-        show(self, true)
+      if fileId() then
+        self.checkAt, self.retryAt = nil, nil
+        showIcon(self, false)
         pcall(m.SetFacing, m, facing)
       else
+        showIcon(self, true)
         self.checks = self.checks + 1
         if self.checks >= 4 then self:Next() else self.checkAt = self.checkAt + 0.5 end
       end
