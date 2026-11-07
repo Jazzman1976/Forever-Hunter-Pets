@@ -190,6 +190,26 @@ local function registerSettings()
   manual:SetValueChangedCallback(function() ns.SafeCall("manual", ns.ShowConfChanged) end)   -- Liste neu aufbauen
   Settings.CreateCheckbox(category, manual,
     L["Lets you tick or untick ranks as learned by hand in the Abilities view. Usually not needed: the addon picks up what you learn from the Beast Training window and the game's messages. Switched off, the boxes only show what you know."])
+  -- Stufe und EP-Leiste am Pet-Rahmen (#120): Hauptschalter, darunter beide Teile einzeln, nur bedienbar,
+  -- solange der Hauptschalter an ist; jede Änderung wirkt sofort
+  local function petXP() ns.SafeCall("petxp", ns.UpdatePetXP) end
+  local pet = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_PetFrame", "petFrame", ns.db.ui,
+    Settings.VarType.Boolean, L["Enable pet frame additions"], true)
+  pet:SetValueChangedCallback(petXP)
+  local petInit = Settings.CreateCheckbox(category, pet,
+    L["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."])
+  local function petSub(key, variable, label, text)
+    local s = Settings.RegisterAddOnSetting(category, key, variable, ns.db.ui, Settings.VarType.Boolean, label, true)
+    s:SetValueChangedCallback(petXP)
+    local init = Settings.CreateCheckbox(category, s, text)
+    if petInit and init and init.SetParentInitializer then
+      pcall(init.SetParentInitializer, init, petInit, function() return ns.db.ui.petFrame end)
+    end
+  end
+  petSub("ForeverHunterPets_PetFrameLevel", "petFrameLevel", L["Show current level"],
+    L["Shows your pet's level in a small circle at the bottom left of the pet frame."])
+  petSub("ForeverHunterPets_PetFrameXP", "petFrameXP", L["Show experience bar"],
+    L["Shows a slim experience bar below the pet frame."])
   local share = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_Share", "share", ns.db.ui,
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
