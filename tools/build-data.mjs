@@ -164,22 +164,34 @@ function abilitiesFromSurvey() {
   for (const q of equations) {
     if (q.plus == null && q.tp === 0 && q.status !== 'unavailable') (zeros.get(q.id) ?? zeros.set(q.id, new Set()).get(q.id)).add(q.fam);
   }
+  // Bei Widerspruch gilt der größere Wert (#139): Die Kosten eines Rangs hängen nicht von der Familie ab. Ein kleinerer
+  // Wert ist meist der Aufpreis gegenüber einem niedrigeren Rang, den das Pet hat, der aber nicht in der Liste steht.
+  // Die Werte steigen nur, die Schleife endet also.
   const tp = new Map();
+  const seen = new Map(); // Zauber-ID → alle errechneten Werte mit Familie, für die Hinweise unten
   const solve = () => { for (let changed = true; changed;) {
     changed = false;
     for (const q of equations) {
       if (q.plus == null && q.tp === 0) continue;
       if (q.plus != null && !tp.has(q.plus)) continue;
       const v = q.tp + (q.plus != null ? tp.get(q.plus) : 0);
-      if (!tp.has(q.id)) { tp.set(q.id, v); changed = true; } else if (tp.get(q.id) !== v && !q.warned) {
-        q.warned = true;
-        warnings.push(`TP für Zauber ${q.id} widersprechen sich: ${tp.get(q.id)} und ${v} (Familie ${q.fam})`);
-      }
+      (seen.get(q.id) ?? seen.set(q.id, new Map()).get(q.id)).set(v, q.fam);
+      if (!tp.has(q.id) || tp.get(q.id) < v) { tp.set(q.id, v); changed = true; }
     }
   } };
   solve();
   for (const [id, fams] of zeros) if (!tp.has(id) && fams.size >= 2) tp.set(id, 0);
   solve();
+  // Hinweis nur, wenn sich ein kleinerer Wert nicht als Aufpreis erklären lässt: voller Preis minus kleinerer Wert
+  // muss der Preis eines niedrigeren Rangs derselben Fähigkeit sein (Große Ausdauer R2: 10 − 5 = Preis von R1).
+  for (const [id, values] of seen) {
+    const full = tp.get(id), r = rankOfId.get(id);
+    const lower = new Set([...rankOfId.values()]
+      .filter((x) => nameOf(x.name) === nameOf(r.name) && x.rang < r.rang && tp.has(x.id)).map((x) => tp.get(x.id)));
+    for (const [v, fam] of values) {
+      if (v !== full && !lower.has(full - v)) warnings.push(`TP für Zauber ${id} widersprechen sich: ${full} und ${v} (Familie ${fam})`);
+    }
+  }
 
   const out = [];
   for (const [name, ranks] of groups) {

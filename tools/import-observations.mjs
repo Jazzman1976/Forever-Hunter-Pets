@@ -383,11 +383,13 @@ if (wegeOld || wege.size) {
 
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),
-// je Familie gilt die jüngste vollständige Liste der Wildtierausbildung. Namen stehen je Client-Sprache.
+// je Familie werden die Listen der Wildtierausbildung zusammengeführt, vorhandene Zeilen gehen vor (#139).
+// Namen stehen je Client-Sprache.
 const survey = fs.existsSync(SURVEY_OUT)
   ? JSON.parse(fs.readFileSync(SURVEY_OUT, 'utf8'))
   : { raenge: {}, listen: {}, familien: {}, zauberbuch: {} };
 let surveyFiles = 0;
+let listRowsAdded = 0, listRowsKept = 0; // Zeilen der Wildtierausbildung: ergänzt bzw. abweichend (alte behalten)
 for (const f of files) {
   let s;
   try {
@@ -412,10 +414,16 @@ for (const f of files) {
     if (e.npc && !NO_TRAINER) r.tierausbilder = true;
     if (e.t) r.datum = r.datum && r.datum < day(e.t) ? r.datum : day(e.t);
   }
+  // Listen je Familie zusammenführen (#139): Eine vorhandene Zeile bleibt, eine neue Liste ergänzt nur Zauber-IDs,
+  // die noch fehlen. Eine spätere Liste kann kürzer sein (frischer Jäger) oder nur den Aufpreis gegenüber einem Rang
+  // zeigen, der in ihr fehlt; sie darf belegte TP nicht überstimmen (#124).
   for (const [fam, l] of Object.entries(s.lists || {})) {
-    const had = survey.listen[fam];
-    if (had && had.zeit >= l.at) continue;
-    survey.listen[fam] = { zeit: l.at, datum: day(l.at), zeilen: Object.fromEntries(Object.entries(l.rows || {}).sort()) };
+    const e = (survey.listen[fam] ??= { zeit: l.at, datum: day(l.at), zeilen: {} });
+    for (const [id, row] of Object.entries(l.rows || {})) {
+      if (!(id in e.zeilen)) { e.zeilen[id] = row; listRowsAdded++; } else if (e.zeilen[id] !== row) listRowsKept++;
+    }
+    if (l.at > e.zeit) { e.zeit = l.at; e.datum = day(l.at); }
+    e.zeilen = Object.fromEntries(Object.entries(e.zeilen).sort());
   }
   for (const [fam, name] of Object.entries(s.families || {})) {
     const e = (survey.familien[fam] ??= { name: {} });
@@ -443,6 +451,8 @@ fs.writeFileSync(SURVEY_OUT, '{\n' + ['raenge', 'listen', 'familien', 'zauberbuc
 console.log(`Erhebung aus ${surveyFiles} Datei(en): ${Object.keys(survey.raenge).length} Ränge, `
   + `${Object.keys(survey.listen).length} Familien mit Liste, ${Object.keys(survey.zauberbuch).length} Zauber aus Zauberbüchern `
   + '→ tools/eigene/erhebung.json');
+console.log(`Listen der Wildtierausbildung: ${listRowsAdded} Zeilen ergänzt, `
+  + `${listRowsKept} abweichende Zeilen ignoriert (vorhandene gehen vor)`);
 
 // ---- Fremde Ränge (Core/ForeignRanks.lua, #103) → tools/eigene/fremde-raenge.json ----
 // { Zauber-ID: { name: { Sprache: Name }, rang, quelle, datum } }: Name und Rang, die der eigene Client zu einem

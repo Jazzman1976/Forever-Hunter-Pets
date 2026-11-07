@@ -12,7 +12,7 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 
 | Datei | Inhalt | woher |
 | --- | --- | --- |
-| `erhebung.json` | `raenge` (je Zauber-ID: Name je Sprache, Rang, Icon, `petStufe`, `jaegerStufe`, `preis` in Kupfer, `wildtierausbildung`, `tierausbilder`, `datum`), `listen` (je Familien-ID die letzte vollständige Wildtierausbildung: `zeilen` = Zauber-ID → „Status/angezeigte TP“), `familien` (Name je Sprache), `zauberbuch` (je Zauber-ID: Name, Rang, passiv, Familien der Pets) | Import aus `ForeverHunterPetsDB.survey` |
+| `erhebung.json` | `raenge` (je Zauber-ID: Name je Sprache, Rang, Icon, `petStufe`, `jaegerStufe`, `preis` in Kupfer, `wildtierausbildung`, `tierausbilder`, `datum`), `listen` (je Familien-ID die zusammengeführten Listen der Wildtierausbildung: `zeilen` = Zauber-ID → „Status/angezeigte TP“; eine vorhandene Zeile bleibt, neue Listen ergänzen nur fehlende Zauber-IDs, `zeit`/`datum` der jüngsten beteiligten Liste, #139), `familien` (Name je Sprache), `zauberbuch` (je Zauber-ID: Name, Rang, passiv, Familien der Pets) | Import aus `ForeverHunterPetsDB.survey` |
 | `sichtungen.json` | `[{ npc, stufe, einstufung, familie, sprache, name, zeit, melder, tempo? }]`, je Tier, Stufe, Sprache und Melder einer | Import aus `ForeverHunterPetsDB.sights` |
 | `beobachtungen.json` | `[{ npc, stufe, zauber: [IDs], tempo, zeit, melder }]`, eine je Zähmung | Import aus `ForeverHunterPetsDB.obs` |
 | `zellen.json` | `{ npc: { uiMapID: "xyxy…" } }`, eigene Fundort-Zellen, zwei Zeichen je Zelle (Spalte, Zeile im Raster 50 × 50, Alphabet `0–9 A–Z a–n`) | Import aus `ForeverHunterPetsDB.loc` |
