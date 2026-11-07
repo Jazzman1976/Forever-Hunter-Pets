@@ -310,7 +310,7 @@ function ns.BuildBeastPage(parent, width, height)
     self.teacher = t
     local b = t.beast
     name:SetText(ns.BeastName(t.id))
-    sub:SetText((L["Level %s"]):format(ns.LevelText(b)) .. " · " .. ns.FamilyName(ns.BeastFamily(t.id)) .. " · " .. what)
+    sub:SetText((L["Level %s"]):format(ns.LevelText(b)) .. " · " .. ns.BeastFamilyText(t.id) .. " · " .. what)
 
     -- Zonen mit Fundorten, die mit den meisten Punkten zuerst
     local zones = {}

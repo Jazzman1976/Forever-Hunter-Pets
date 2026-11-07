@@ -93,7 +93,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
 ![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
-**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain beasts on).
+**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other players have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
 
 - **Explorer mode:** each beast carries its status, and the checkbox follows it:
 
@@ -196,8 +196,8 @@ Switch **Share observations** off and nothing is sent or received.
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
 - **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other players found does not show up in *Area* yet.
-- **Uncertain:** when **2 other players** saw a beast teach a rank, it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**. What only one other player reports is kept, but not shown.
-- **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 players saw it, it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
+- **Uncertain:** what **2 other players** have reported is *uncertain* – which beast teaches a rank, a new rank or attack speed, a beast's name, family or level, where it lives, *teaches nothing*. It is hidden by default; switch on *Show uncertain data* and it appears marked **?** right after the value (*Rank 5?*, *Level 12?*), and it counts in *X of Y*. What only one other player reports is kept, but not shown.
+- **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 players saw it (2 with *Show uncertain data*, marked **?**), it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
 - **Names, family and level** of a beast appear as soon as you have seen it yourself, otherwise once 3 other players have reported the same (for the name: 3 players with your client's language). Until then you see what the shipped data or your own tracks know, or *Unknown beast (#ID)*.
 - **WoW Forever is new** and still changes. Where nothing is known, the addon says so instead of guessing.
@@ -226,7 +226,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | Beast tooltips | on | the addon's lines in beast tooltips |
 | – Empty line before / after | on / off | separates the lines from other addons |
 | – Also show ranks you have | on | also lists ranks you have, and *teaches nothing* |
-| Show uncertain beasts | off | beasts 2 other players have reported (fewer than 3), marked **?** |
+| Show uncertain data | off | what 2 other players have reported (fewer than 3), marked **?** |
 | Manual editing | off | tick or untick learned ranks by hand |
 | Enable pet frame additions | on | level and experience bar at the game's pet frame |
 | – Show current level | on | your pet's level in a circle at the pet frame |

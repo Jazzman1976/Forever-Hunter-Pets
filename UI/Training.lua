@@ -293,7 +293,7 @@ function ns.BuildTraining(parent)
         local name = ns.AbilityName(a)
         local allowed = fam and (ns.AppliesToAll(a) or contains(a.families, fam))
         for _, r in ipairs(a.ranks) do
-          if ns.IsKnown(r) then
+          if ns.IsKnown(r) and ns.RankShown(r) then   -- unsichere fremde Ränge nur mit dem Schalter (#136)
             local state = nil
             if fam then
               if not allowed then

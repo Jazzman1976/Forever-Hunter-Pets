@@ -56,14 +56,17 @@ end
 
 -- Reichen die fremden Melder eines Tiers auf einer Karte? Gezählt wird je Tier und Karte, nicht je Zelle (#103, Plan
 -- aus #54): mindestens ns.FOREIGN_SURE verschiedene Melder (ohne OLD) mit Zellen, über mindestens zwei Absender
--- (ns.ForeignEnough, Core/Observe.lua). Darunter bleiben die Zellen gespeichert (für den Import und bis die Melder
--- zusammen sind), werden aber nicht gezeigt: Ein einzelner Spieler bringt kein Tier in eine Zone.
+-- (ns.ForeignConf, Core/Observe.lua); mit „Unsichere Angaben zeigen“ schon ab ns.FOREIGN_UNSURE als unsicher (#136).
+-- Darunter bleiben die Zellen gespeichert (für den Import und bis die Melder zusammen sind), werden aber nicht
+-- gezeigt: Ein einzelner Spieler bringt kein Tier in eine Zone. Liefert die Belegung, wenn gezeigt wird, sonst nil.
 local function foreignOk(byRep)
   local reps, n = {}, 0
   for rep, cells in pairs(byRep or {}) do
     if rep ~= OLD and cells ~= "" then reps[rep] = true; n = n + 1 end
   end
-  return n > 0 and ns.ForeignEnough ~= nil and ns.ForeignEnough(reps, n)
+  if n == 0 or not ns.ForeignConf then return nil end
+  local conf = ns.ForeignConf(reps, n)
+  return ns.ForeignShown(conf) and conf or nil
 end
 
 function ns.ForeignCellsOk(npc, map)

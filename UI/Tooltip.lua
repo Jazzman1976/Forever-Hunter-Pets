@@ -117,7 +117,7 @@ local function addLines(tooltip, guid)
   tooltip:AddLine("Forever Hunter Pets", 0.62, 0.83, 0.37)
   -- alle Zeilen bündig mit der Kopfzeile (Wunsch des Nutzers)
   if status then tooltip:AddLine(status, 1, 0.82, 0) end
-  if nothing then tooltip:AddLine(L["teaches nothing"], 0.6, 0.6, 0.6) end   -- grau wie „gelernt“
+  if nothing then tooltip:AddLine(L["teaches nothing"] .. ns.ConfMark(info.conf), 0.6, 0.6, 0.6) end   -- grau wie „gelernt“; „?“ unsicher (#136)
   if missing then   -- gold wie der Status
     tooltip:AddLine(L["No hunter knows yet what this beast teaches. Tame it and help!"], 1, 0.82, 0, true)
   end

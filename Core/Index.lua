@@ -74,11 +74,15 @@ end
 function ns.Learnable(a) return a.kind ~= "trait" end
 function ns.AppliesToAll(a) return a.kind ~= "family" end
 
+-- „?“ hinter einem Rang, der nur aus unsicheren fremden Zähmungen stammt (#136)
 function ns.RankLabel(a, r)
-  if a.kind == "trait" then return (L["Speed %s s"]):format(ns.Decimal(a.speed)) end
-  if r.rank and r.rank > 0 then return (L["Rank %d"]):format(r.rank) end
+  if a.kind == "trait" then return (L["Speed %s s"]):format(ns.Decimal(a.speed)) .. ns.ConfMark(r and r.conf) end
+  if r.rank and r.rank > 0 then return (L["Rank %d"]):format(r.rank) .. ns.ConfMark(r.conf) end
   return ""
 end
+
+-- Wird der Rang gezeigt? Unsichere fremde Ränge nur mit „Unsichere Angaben zeigen“ (#136)
+function ns.RankShown(r) return ns.ShowConf(r.conf) end
 
 -- 1.3 → „1,3“ im deutschen Client
 function ns.Decimal(n, digits)
@@ -149,16 +153,17 @@ end
 -- Name in Client-Sprache, wo es einen gibt (#3): aus einer eigenen Sichtung (Core/Sightings.lua), aus den Daten,
 -- aus einer Fährte (nur von weitem gesehen, Core/Discover.lua), aus einer fremden Sichtung; dann aus den Daten in
 -- der anderen Sprache; sonst „Unbekanntes Tier (#ID)“ – dann kennt ihn noch niemand, und Anvisieren liefert ihn.
--- Die fremde Sichtung steht hinter den Daten, damit ein einzelner Melder keinen bekannten Namen ersetzt (#47).
+-- Die fremde Sichtung steht hinter den Daten, damit ein einzelner Melder keinen bekannten Namen ersetzt (#47); ist
+-- sie unsicher (#136), steht „?“ dahinter.
 function ns.BeastName(id)
-  local seen, own
-  if ns.SeenName then seen, own = ns.SeenName(id) end
+  local seen, own, conf
+  if ns.SeenName then seen, own, conf = ns.SeenName(id) end
   if seen and own then return seen end
   local b = D.beasts[id]
   if ownName(b) then return ownName(b) end
   local far = ns.TrackName and ns.TrackName(id)
   if far then return far end
-  if seen then return seen end
+  if seen then return seen .. ns.ConfMark(conf) end
   if b and (b.de or b.en) then return ns.Name(b) end
   return (L["Unknown beast (#%d)"]):format(id)
 end
@@ -168,9 +173,10 @@ end
 function ns.BeastInfo(id)
   local b = D.beasts[id]
   if b then return b end
+  -- conf: Belegung der Angaben, wenn sie von anderen Spielern stammen (#136); ns.LevelText setzt dann „?“
   local seen = ns.TrustedSighting and ns.TrustedSighting(id)   -- eigene sofort, fremde ab der Schwelle (#103)
-  if seen then return { fam = seen.fam, min = seen.min, max = seen.max, cls = seen.cls or 0 } end
-  -- Stufe aus Zähmungen: aus eigenen sofort, aus fremden erst ab ns.FOREIGN_SURE Meldern (#103)
+  if seen then return { fam = seen.fam, min = seen.min, max = seen.max, cls = seen.cls or 0, conf = seen.conf } end
+  -- Stufe aus Zähmungen: aus eigenen sofort, aus fremden nach der Schwelle (#103, #136)
   local own, foreign, reps, n = {}, {}, {}, 0
   for _, o in ipairs(ns.ObservationsOf and ns.ObservationsOf(id) or {}) do
     if o.level and o.own then
@@ -180,11 +186,15 @@ function ns.BeastInfo(id)
       if not reps[o.rep] then reps[o.rep] = true; n = n + 1 end
     end
   end
-  local levels = #own > 0 and own or (ns.ForeignEnough and ns.ForeignEnough(reps, n) and foreign)
-  if levels and #levels > 0 then
+  local levels, conf = own, ns.CONF_SURE
+  if #own == 0 then
+    conf = ns.ForeignConf and ns.ForeignConf(reps, n)
+    levels = ns.ForeignShown and ns.ForeignShown(conf) and foreign or {}
+  end
+  if #levels > 0 then
     local lo, hi = levels[1], levels[1]
     for _, lv in ipairs(levels) do lo, hi = math.min(lo, lv), math.max(hi, lv) end
-    return { min = lo, max = hi, cls = 0 }
+    return { min = lo, max = hi, cls = 0, conf = conf }
   end
   local fam
   if ns.TrackName then fam = select(2, ns.TrackName(id)) end   -- nicht „and“: das schnitte die Familie ab
@@ -194,20 +204,29 @@ end
 
 -- Familie eines Tiers: aus den Daten, sonst aus der eigenen Sichtung (fremde ab der Schwelle, #103). Ein Tier, das man nur selbst gezähmt hat,
 -- steht in den Daten ohne Familie, bis die Sichtung importiert ist – angezeigt wird sie trotzdem.
+-- Zweiter Wert: die Belegung, wenn die Familie aus fremden Sichtungen stammt (#136).
 function ns.BeastFamily(id)
   local b = D.beasts[id]
   if b and b.fam then return b.fam end
   local seen = ns.TrustedSighting and ns.TrustedSighting(id)
-  if seen and seen.fam then return seen.fam end
+  if seen and seen.fam then return seen.fam, seen.conf end
   local fam
   if ns.TrackName then fam = select(2, ns.TrackName(id)) end   -- nicht „and“: das schnitte die Familie ab
   return fam
 end
 
+-- Name der Familie eines Tiers zum Anzeigen, mit „?“, wenn sie unsicher ist (#136)
+function ns.BeastFamilyText(id)
+  local fam, conf = ns.BeastFamily(id)
+  return ns.FamilyName(fam) .. ns.ConfMark(conf)
+end
+
+-- Stufe zum Anzeigen; „?“ dahinter, wenn sie aus unsicheren fremden Angaben stammt (#136)
 function ns.LevelText(b)
   if not b.min then return "?" end
-  if not b.max or b.max == b.min then return tostring(b.min) end
-  return b.min .. "-" .. b.max
+  local mark = ns.ConfMark(b.conf)
+  if not b.max or b.max == b.min then return tostring(b.min) .. mark end
+  return b.min .. "-" .. b.max .. mark
 end
 
 -- Einstufung: 1 Elite, 2 Rar-Elite, 3 Boss, 4 Rar
@@ -538,6 +557,8 @@ end
 function ns.IsDataTrainerRank(id) return dataTrainerRank[id] == true end
 function ns.IsDataBeastRank(id) return dataBeastRank[id] == true end
 
+ns.foreignRankIds = ns.foreignRankIds or {}   -- fremde Ränge, die eingehängt sind (Core/ForeignRanks.lua)
+
 function ns.MergeSurveyAbilities()
   -- erst die Erhebung auf den neuesten Stand bringen (Core/Survey.lua: räumt Jägerzauber weg, #16)
   local s = ns.SurveyStore and ns.SurveyStore() or (ns.db and ns.db.survey)
@@ -550,7 +571,7 @@ function ns.MergeSurveyAbilities()
     end
   end
   local added = false
-  local function add(id, name, rank, level, icon, fams, trainer)
+  local function add(id, name, rank, level, icon, fams, trainer, conf)
     if type(id) ~= "number" or knownId[id] or type(name) ~= "string" or name == "" or type(rank) ~= "number" then
       return
     end
@@ -565,7 +586,12 @@ function ns.MergeSurveyAbilities()
     for _, r in ipairs(a.ranks) do
       if r.rank == rank then return end   -- denselben Rang unter anderer ID nicht doppelt
     end
-    a.ranks[#a.ranks + 1] = { id = id, rank = rank, level = level }
+    local r = { id = id, rank = rank, level = level }
+    if conf then
+      r.conf = conf ~= ns.CONF_SURE and conf or nil   -- unsicher nur mit dem Schalter (#136)
+      ns.foreignRankIds[id] = r
+    end
+    a.ranks[#a.ranks + 1] = r
     table.sort(a.ranks, function(x, y) return (x.rank or 0) < (y.rank or 0) end)
     if a.kind == "family" then
       for fam in pairs(fams or {}) do
@@ -585,9 +611,33 @@ function ns.MergeSurveyAbilities()
   end
   -- Ränge aus fremden Zähmungen (Core/ForeignRanks.lua, #103): nur zu Fähigkeiten, die man schon kennt und von
   -- Tieren lernt. Eine ganz neue Fähigkeit kommt nur über die Stammdaten (Prüfung auf Jägerzauber beim Import).
+  -- Unsicher ab 2 Meldern, belegt ab 3 (#136); ein schon eingehängter Rang bekommt die neue Belegung.
   for _, c in ipairs(ns.ForeignRankCandidates and ns.ForeignRankCandidates() or {}) do
-    local a = byName[c.name]
-    if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false) end
+    local had = ns.foreignRankIds and ns.foreignRankIds[c.id]
+    if had then
+      local conf = c.conf ~= ns.CONF_SURE and c.conf or nil
+      if had.conf ~= conf then had.conf = conf; added = true end
+    else
+      local a = byName[c.name]
+      if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false, c.conf) end
+    end
+  end
+  -- Angriffstempo, das noch keine Tempo-Fähigkeit trägt (#136): eigenes sofort, fremdes ab 2 unsicher, ab 3 belegt
+  for _, c in ipairs(ns.ObservedSpeedCandidates and ns.ObservedSpeedCandidates() or {}) do
+    local conf = c.conf ~= ns.CONF_SURE and c.conf or nil
+    local have
+    for _, a in ipairs(D.abilities) do
+      if a.kind == "trait" and a.speed and math.abs(a.speed - c.speed) < 0.05 then have = a end
+    end
+    if not have then
+      D.abilities[#D.abilities + 1] = { de = "Angriffstempo", en = "Attack speed", icon = "INV_Misc_PocketWatch_01",
+        kind = "trait", source = "tame", speed = c.speed, families = {}, teach = {},
+        ranks = { { id = -math.floor(c.speed * 100 + 0.5), rank = 1, conf = conf } }, observed = true }
+      added = true
+    elseif have.observed and have.ranks[1].conf ~= conf then
+      have.ranks[1].conf = conf   -- die Belegung steigt mit neuen Meldern
+      added = true
+    end
   end
   if added then
     for _, fn in ipairs(abilityListeners) do ns.SafeCall("abilities", fn) end

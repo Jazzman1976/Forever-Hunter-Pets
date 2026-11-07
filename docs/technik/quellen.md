@@ -44,7 +44,7 @@ Das Teilen im Spiel (`Core/Comm.lua`) bringt die Erhebungen anderer Spieler mit;
 | Stufe | Bedeutung | im Addon |
 | --- | --- | --- |
 | **belegt** | ein eigener Charakter hat es beim Zähmen gesehen, ein Befund „bestätigt“ liegt vor, oder 3 verschiedene andere Spieler haben es gesehen | immer gezeigt |
-| **unsicher** | bisher von 2 anderen Spielern gemeldet (weniger als 3); was nur einer meldet, wird weder ausgeliefert noch gezeigt (#103) | auf Wunsch, mit „?“ |
+| **unsicher** | bisher von 2 anderen Spielern gemeldet (weniger als 3); gilt im Spiel für jede Datenart (#136), in den Stammdaten nur für Paare; was nur einer meldet, wird weder ausgeliefert noch gezeigt (#103) | auf Wunsch, mit „?“ |
 | **unbelegt** | nur geschätzt, noch nicht gesehen (Idee „Lehrtiere schätzen“, bisher gibt es keine) | auf Wunsch, mit „!“; der Schalter erscheint erst, wenn es Schätzungen gibt |
 | **widerlegt** | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte und kein höherer Rang da war; eine Zähmung mit einem Zauber, den keine Fähigkeit kennt, widerlegt nichts (#114), ein Rang ohne Pet-Stufe wird nie widerlegt (#103) | nie gezeigt, nicht ausgeliefert |
 
