@@ -163,12 +163,12 @@ function ns.BeastName(id)
   return (L["Unknown beast (#%d)"]):format(id)
 end
 
--- Stammdaten eines Tiers: aus den Daten, sonst aus der Sichtung oder Zähmung. Ein Tier, das man erst
+-- Stammdaten eines Tiers: aus den Daten, sonst aus der Sichtung oder Zähmung (eigene sofort, fremde ab der Schwelle, #103). Ein Tier, das man erst
 -- selbst gesichtet oder gezähmt hat, steht bis zum nächsten Import nicht in den Daten – es zählt trotzdem.
 function ns.BeastInfo(id)
   local b = D.beasts[id]
   if b then return b end
-  local seen = ns.SeenBeast and ns.SeenBeast(id)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(id)   -- eigene sofort, fremde ab der Schwelle (#103)
   if seen then return { fam = seen.fam, min = seen.min, max = seen.max, cls = seen.cls or 0 } end
   -- Stufe aus Zähmungen: aus eigenen sofort, aus fremden erst ab ns.FOREIGN_SURE Meldern (#103)
   local own, foreign, reps, n = {}, {}, {}, 0
@@ -192,12 +192,12 @@ function ns.BeastInfo(id)
   return nil
 end
 
--- Familie eines Tiers: aus den Daten, sonst aus der eigenen Sichtung. Ein Tier, das man nur selbst gezähmt hat,
+-- Familie eines Tiers: aus den Daten, sonst aus der eigenen Sichtung (fremde ab der Schwelle, #103). Ein Tier, das man nur selbst gezähmt hat,
 -- steht in den Daten ohne Familie, bis die Sichtung importiert ist – angezeigt wird sie trotzdem.
 function ns.BeastFamily(id)
   local b = D.beasts[id]
   if b and b.fam then return b.fam end
-  local seen = ns.SeenBeast and ns.SeenBeast(id)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(id)
   if seen and seen.fam then return seen.fam end
   local fam
   if ns.TrackName then fam = select(2, ns.TrackName(id)) end   -- nicht „and“: das schnitte die Familie ab

@@ -29,10 +29,10 @@ local function hereZone()
   return ok and tonumber(ns.clean(map)) or nil
 end
 
--- Familie und Stufe eines Tiers: aus den Daten, sonst aus der eigenen Sichtung
+-- Familie und Stufe eines Tiers: aus den Daten, sonst aus der Sichtung (eigene sofort, fremde ab der Schwelle)
 local function famAndLevel(npc)
   local b = D.beasts[npc]
-  local seen = ns.SeenBeast and ns.SeenBeast(npc)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(npc)   -- fremde erst ab der Schwelle (#103)
   local fam = ns.BeastFamily(npc)
   local level
   if b and b.min then level = ns.LevelText(b)

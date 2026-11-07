@@ -199,7 +199,7 @@ Switch **Share observations** off and nothing is sent or received.
 - **Uncertain:** when **2 other players** saw a beast teach a rank, it is *uncertain*: hidden by default; switch on *Show uncertain beasts* and it appears marked **?**. What only one other player reports is kept, but not shown.
 - **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 players saw it, it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
-- **Names** of beasts and families appear in your client's language once a player with that language has seen the beast – a name needs no confirmation. Until then you see the name your game knows (from a track or your own pets) or the one from the shipped data.
+- **Names, family and level** of a beast appear as soon as you have seen it yourself, otherwise once 3 other players have reported the same (for the name: 3 players with your client's language). Until then you see what the shipped data or your own tracks know, or *Unknown beast (#ID)*.
 - **WoW Forever is new** and still changes. Where nothing is known, the addon says so instead of guessing.
 
 ## Pet frame
