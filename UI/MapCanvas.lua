@@ -130,6 +130,12 @@ end
 -- ---- 3D-Modell eines Tiers ----
 -- Der Client zeichnet es selbst (PlayerModel). Erst über die Anzeige-ID aus den Daten, dann über die
 -- NPC-ID; lädt beides nicht, bleibt das Familien-Icon stehen. Ziehen mit der Maus dreht das Modell.
+-- Jedes Tier bekommt seinen eigenen PlayerModel-Rahmen (#131): Steht ein Tier noch nicht im Kreaturen-Cache des
+-- Clients, lädt SetCreature nichts, und ein schon benutzter Rahmen zeigte dann weiter das Modell des vorigen
+-- Tiers (ClearModel räumt es nicht weg). Ein frischer Rahmen bleibt in dem Fall leer; das Addon zeigt das
+-- Familien-Icon und fragt RETRY_FOR Sekunden lang alle RETRY_EVERY Sekunden nach, bis der Client das Tier kennt.
+-- Die Rahmen bleiben bis zum /reload (WoW gibt Rahmen nicht frei); versteckt kosten sie keine Zeichenzeit.
+local RETRY_EVERY, RETRY_FOR = 1, 6
 local function createModel(parent, size)
   local holder = CreateFrame("Frame", nil, parent)
   holder:SetSize(size, size)
@@ -137,48 +143,63 @@ local function createModel(parent, size)
   holder.icon = W.Icon(holder, math.floor(size * 0.4))
   holder.icon:SetPoint("CENTER")
   holder.icon:SetAlpha(0.6)
-  local ok, m = pcall(CreateFrame, "PlayerModel", nil, holder)
-  if not (ok and m) then m = nil end
-  if m then
-    m:SetAllPoints()
-    if m.EnableMouse then m:EnableMouse(false) end   -- die Maus gehört dem Rahmen darunter (Drehen)
-    pcall(m.SetScript, m, "OnModelLoaded", function() holder.icon:Hide() end)
-  end
+  holder.models = {}   -- NPC-ID -> eigener PlayerModel-Rahmen
+  local m              -- der Rahmen des gerade gezeigten Tiers
   local facing = -0.5
   local function now() return GetTime and GetTime() or 0 end
-  local function loaded()
-    if not (m and m.GetModelFileID) then return false end
-    local ok2, file = pcall(m.GetModelFileID, m)
-    file = ok2 and ns.clean(file)
-    return file ~= nil and file ~= 0
+  local function fileId()
+    if not (m and m.GetModelFileID) then return nil end
+    local ok, file = pcall(m.GetModelFileID, m)
+    file = ok and ns.clean(file) or nil
+    if file == 0 then return nil end
+    return file
+  end
+  local function modelFor(npcId)
+    if holder.models[npcId] then return holder.models[npcId] end
+    local ok, f = pcall(CreateFrame, "PlayerModel", nil, holder)
+    if not (ok and f) then return nil end
+    f:SetAllPoints()
+    if f.EnableMouse then f:EnableMouse(false) end   -- die Maus gehört dem Rahmen darunter (Drehen)
+    holder.models[npcId] = f
+    return f
+  end
+  local function showIcon(self, on)
+    if on and self.hasIcon then self.icon:Show() else self.icon:Hide() end
   end
 
   function holder:Next()
     self.step = self.step + 1
     local try = self.tries[self.step]
-    pcall(m.ClearModel, m)
-    if not try then self.checkAt = nil; return end
+    if not try then
+      -- alle Wege versucht: in RETRY_EVERY Sekunden von vorn, solange RETRY_FOR nicht um ist
+      self.checkAt = nil
+      if now() < self.retryUntil then self.retryAt = now() + RETRY_EVERY end
+      return
+    end
     pcall(m[try[1]], m, try[2])
     pcall(m.SetFacing, m, facing)
     self.checkAt, self.checks = now() + 0.4, 0
   end
 
   function holder:SetBeast(npcId, beast)
-    -- Bis das Modell geladen ist, das Familien-Icon; ohne Icon (die eigenen Daten kennen keins) bleibt
-    -- der Bereich leer, ebenso wenn das Modell nicht lädt
+    -- Das Icon erscheint nur, solange der eigene Rahmen des Tiers leer ist; ohne Icon (die eigenen Daten
+    -- kennen keins) bleibt der Bereich dann leer
     local icon, fallback = ns.FamilyIcon(ns.BeastFamily(npcId))
-    if not fallback then
-      self.icon:SetTexture(icon)
-      self.icon:Show()
-    else
-      self.icon:Hide()
-    end
-    if not m then return end
+    self.hasIcon = not fallback
+    if self.hasIcon then self.icon:SetTexture(icon) end
+    showIcon(self, false)
+    if m then m:Hide() end
+    m = modelFor(npcId)
+    self.checkAt, self.retryAt = nil, nil
+    if not m then showIcon(self, true) return end
+    m:Show()
     facing = -0.5
+    pcall(m.SetFacing, m, facing)
+    if fileId() then return end   -- schon geladen: sofort da
     self.tries = {}
     if beast.disp then self.tries[#self.tries + 1] = { "SetDisplayInfo", beast.disp } end
     self.tries[#self.tries + 1] = { "SetCreature", npcId }
-    self.step = 0
+    self.step, self.retryUntil = 0, now() + RETRY_FOR
     self:Next()
   end
 
@@ -188,16 +209,22 @@ local function createModel(parent, size)
   holder:SetScript("OnHide", function(self) self.dragX = nil end)
   holder:SetScript("OnUpdate", function(self)
     if not m then return end
-    -- geladen? Sonst nach ein paar Blicken den nächsten Weg versuchen
+    -- Solange das Icon steht, in jedem Frame schauen, ob das Modell da ist, damit nie beides zugleich zu sehen ist
+    if self.icon:IsShown() and fileId() then showIcon(self, false) end
+    -- geladen? Sonst Icon, nach ein paar Blicken den nächsten Weg versuchen, zuletzt nach einer Pause von vorn
     if self.checkAt and now() >= self.checkAt then
-      if loaded() then
-        self.icon:Hide()
-        self.checkAt = nil
+      if fileId() then
+        self.checkAt, self.retryAt = nil, nil
+        showIcon(self, false)
         pcall(m.SetFacing, m, facing)
       else
+        showIcon(self, true)
         self.checks = self.checks + 1
         if self.checks >= 4 then self:Next() else self.checkAt = self.checkAt + 0.5 end
       end
+    elseif self.retryAt and now() >= self.retryAt then
+      self.retryAt, self.step = nil, 0
+      self:Next()
     end
     if self.dragX then
       local x = GetCursorPosition()
@@ -208,6 +235,7 @@ local function createModel(parent, size)
   end)
   return holder
 end
+ns.CreateBeastModel = createModel   -- für die Prüfung ohne Spiel (tools/test/szenarien/t131-modell.lua)
 
 -- ---- Kartenseite eines Tiers: Zurück, Name, Modell, Zonen-Umschalter, Karte, Fundortzeile ----
 local MODEL = 130
