@@ -111,7 +111,8 @@ local function trackOnly(npc, map)
   return seenIn(npc, map) and nowhere(npc)
 end
 
--- Alle Tiere einer Zone: aus den Daten und aus Zellen (fremde ab der Schwelle). { [npc] = true }
+-- Alle Tiere einer Zone: aus den Daten und aus Zellen (fremde ab der Schwelle). { [npc] = true }, oder
+-- { [npc] = ns.CONF_SURE bzw. ns.CONF_UNSURE }, wenn das Tier nur durch fremde Zellen hier steht (#136)
 function ns.BeastsIn(map)
   local out = {}
   for npc, zones in pairs(D.coords) do
@@ -122,10 +123,12 @@ function ns.BeastsIn(map)
   end
   -- fremde Zellen erst ab der Schwelle je Tier und Karte (#103)
   for npc, maps in pairs((ns.db and ns.db.locIn) or {}) do
-    if maps[map] and ns.ForeignCellsOk(npc, map) then out[npc] = true end
+    if not out[npc] and maps[map] then out[npc] = ns.ForeignCellsOk(npc, map) end
   end
   for npc in pairs((ns.Finds() or {}).seenIn or {}) do
     if not out[npc] and (tamedIn(npc, map) or trackOnly(npc, map)) then out[npc] = true end
+    -- selbst in dieser Zone gesehen: dann ist der Fundort nicht mehr nur unsicher (#136)
+    if out[npc] == ns.CONF_UNSURE and seenIn(npc, map) then out[npc] = true end
   end
   return out
 end
@@ -236,7 +239,7 @@ function ns.TeachText(npc)
   local L = ns.L
   local info = ns.TeachInfo(npc, ns.Discovering())
   if not info then return L["? unclear"] end
-  if #info == 0 then return L["teaches nothing"] end
+  if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf) end
   local parts = {}
   for _, e in ipairs(info) do
     parts[#parts + 1] = ("|T%s:14:14|t"):format(ns.AbilityIcon(e.a)) .. ns.ConfMark(e.conf)
@@ -284,7 +287,8 @@ local function fromObservation(o, out, have)
   end
 end
 
--- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts.
+-- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts
+-- (dann info.conf = ns.CONF_UNSURE, wenn das nur 2 fremde Melder sagen, #136).
 -- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
 -- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“
 -- (#40, vorher reichte eine einzige fremde Zähmung).
@@ -335,9 +339,16 @@ function ns.TeachInfo(npc, discover)
         add(e.a, e.r, e.conf)
       end
     end
+    -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
+    -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
     if nEmpty > 0 then
-      if ns.ForeignEnough(empty, nEmpty) then clear = true
-      elseif not clear then unsure = true end
+      local conf = ns.ForeignConf(empty, nEmpty)
+      if conf == ns.CONF_SURE then
+        clear = true
+      elseif not clear then
+        unsure = true
+        if ns.ForeignShown(conf) then clear = true; out.conf = conf end
+      end
     end
   end
   if not clear then return nil, unsure end

@@ -161,33 +161,36 @@ function ns.SightingCount() return #((ns.db and ns.db.sights) or {}) end
 -- Alles, was die Sichtungen über ein Tier wissen, roh – auch Fremdes unter der Schwelle (für Zählungen und Teilen)
 function ns.SeenBeast(npc) return index()[npc] end
 
--- Was davon gilt (#103): eigene Sichtungen sofort, fremde erst ab ns.FOREIGN_SURE Meldern über zwei Absender
--- (ns.ForeignEnough), wie im Generator. { fam, cls, min, max } oder nil.
+-- Was davon gilt (#103, #136): eigene Sichtungen sofort, fremde ab ns.FOREIGN_SURE Meldern über zwei Absender als
+-- belegt, ab ns.FOREIGN_UNSURE als unsicher – unsicher nur mit „Unsichere Angaben zeigen“ (ns.ForeignConf,
+-- ns.ForeignShown). { fam, cls, min, max, conf } oder nil.
 function ns.TrustedSighting(npc)
   local b = index()[npc]
   if not b then return nil end
-  if b.own then return { fam = b.fam, cls = b.cls, min = b.ownMin, max = b.ownMax } end
-  if ns.ForeignEnough and ns.ForeignEnough(b.foreign, b.nForeign) then
-    return { fam = b.fam, cls = b.cls, min = b.min, max = b.max }
+  if b.own then return { fam = b.fam, cls = b.cls, min = b.ownMin, max = b.ownMax, conf = ns.CONF_SURE } end
+  local conf = ns.ForeignConf and ns.ForeignConf(b.foreign, b.nForeign)
+  if ns.ForeignShown and ns.ForeignShown(conf) then
+    return { fam = b.fam, cls = b.cls, min = b.min, max = b.max, conf = conf }
   end
   return nil
 end
 
--- Name eines gesichteten Tiers in der Client-Sprache und ob er aus einer eigenen Sichtung stammt, sonst nil (#47).
--- Ein fremder Name gilt erst, wenn ns.FOREIGN_SURE Melder genau ihn nennen (#103, wie im Generator); unter mehreren
--- der mit den meisten Meldern.
+-- Name eines gesichteten Tiers in der Client-Sprache, ob er aus einer eigenen Sichtung stammt, und seine Belegung;
+-- sonst nil (#47). Ein fremder Name gilt nach derselben Schwelle wie oben, gezählt nur unter den Meldern, die genau
+-- ihn nennen (#103, wie im Generator); unter mehreren der mit den meisten Meldern.
 function ns.SeenName(npc)
   local b = index()[npc]
   if not b then return nil end
   local lang = GetLocale and GetLocale() or "enUS"
-  if b.ownNames[lang] then return b.ownNames[lang], true end
-  local best, bestN
+  if b.ownNames[lang] then return b.ownNames[lang], true, ns.CONF_SURE end
+  local best, bestN, bestConf
   for name, reps in pairs(b.nameReps[lang] or {}) do
     local n = 0
     for _ in pairs(reps) do n = n + 1 end
-    if (not bestN or n > bestN) and ns.ForeignEnough and ns.ForeignEnough(reps, n) then best, bestN = name, n end
+    local conf = ns.ForeignConf and ns.ForeignConf(reps, n)
+    if (not bestN or n > bestN) and ns.ForeignShown and ns.ForeignShown(conf) then best, bestN, bestConf = name, n, conf end
   end
-  return best, false
+  return best, false, bestConf
 end
 
 -- Hat die gespeicherte Sichtung an Stelle i schon ein Tempo? (neun Felder statt acht)

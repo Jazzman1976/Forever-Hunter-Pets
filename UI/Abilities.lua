@@ -84,19 +84,22 @@ local function buildEntries(abilities, fam, zone)
       if not zone or inZone > 0 then
         local filtered = zone ~= nil and inZone < shown
         for _, r in ipairs(a.ranks) do
-          local teachers = ns.Teachers(a, r, zone)
-          -- Angeborenes hängt am gezähmten Tier selbst: mit gewählter Familie zählen nur deren
-          -- Tiere, und ohne ein solches fällt der Eintrag weg
-          local trait = fam and not ns.Learnable(a)
-          if trait then
-            local own = {}
-            for _, t in ipairs(teachers) do
-              if ns.BeastFamily(t.id) == fam then own[#own + 1] = t end
+          -- unsichere fremde Ränge nur mit „Unsichere Angaben zeigen“ (#136)
+          if ns.RankShown(r) then
+            local teachers = ns.Teachers(a, r, zone)
+            -- Angeborenes hängt am gezähmten Tier selbst: mit gewählter Familie zählen nur deren
+            -- Tiere, und ohne ein solches fällt der Eintrag weg
+            local trait = fam and not ns.Learnable(a)
+            if trait then
+              local own = {}
+              for _, t in ipairs(teachers) do
+                if ns.BeastFamily(t.id) == fam then own[#own + 1] = t end
+              end
+              teachers = own
             end
-            teachers = own
-          end
-          if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0) then
-            entries[#entries + 1] = { a = a, r = r, name = x.name, teachers = teachers }
+            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0) then
+              entries[#entries + 1] = { a = a, r = r, name = x.name, teachers = teachers }
+            end
           end
         end
       end
@@ -357,7 +360,7 @@ function ns.BuildAbilities(parent)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
       GameTooltip:SetText(ns.BeastName(t.id))
       GameTooltip:AddLine((L["Level %s"]):format(ns.LevelText(beast)) .. (cls and (" · " .. L[cls]) or "")
-        .. " · " .. ns.FamilyName(ns.BeastFamily(t.id)), 1, 1, 1)
+        .. " · " .. ns.BeastFamilyText(t.id), 1, 1, 1)
       GameTooltip:AddLine(zonesText(t.id, beast), 0.8, 0.8, 0.8, true)
       local c = EFFORT_COLOR[t.effort.level]
       GameTooltip:AddLine(" ")
@@ -472,7 +475,7 @@ function ns.BuildAbilities(parent)
           local cls = CLS_LABEL[t.beast.cls]
           row.name:SetText(ns.BeastName(t.id) .. ns.ConfMark(t.conf) .. (cls and ("  |cffffa633" .. L[cls] .. "|r") or ""))
           row.level:SetText((L["Level %s"]):format(ns.LevelText(t.beast)))
-          row.where:SetText(zonesText(t.id, t.beast) .. " · " .. ns.FamilyName(ns.BeastFamily(t.id)))
+          row.where:SetText(zonesText(t.id, t.beast) .. " · " .. ns.BeastFamilyText(t.id))
           y = y + BEAST_H
         end
       end

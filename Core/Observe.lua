@@ -188,6 +188,19 @@ function ns.ForeignEnough(reps, n, need)
   return enough(reps, n, need)
 end
 
+-- Belegung fremder Melder { [rep] = true } (n verschiedene), für jede Datenart gleich (#136): ns.CONF_SURE ab
+-- ns.FOREIGN_SURE, ns.CONF_UNSURE ab ns.FOREIGN_UNSURE, sonst nil
+function ns.ForeignConf(reps, n)
+  if enough(reps, n) then return ns.CONF_SURE end
+  if enough(reps, n, ns.FOREIGN_UNSURE) then return ns.CONF_UNSURE end
+  return nil
+end
+
+-- Wird Fremdes mit dieser Belegung gezeigt? Unsicheres nur mit „Unsichere Angaben zeigen“ (#136)
+function ns.ForeignShown(conf)
+  return conf ~= nil and ns.ShowConf(conf)
+end
+
 -- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
 function ns.OwnSeen(npcId, a, r)
   for _, o in ipairs(index()[npcId] or {}) do
@@ -218,6 +231,7 @@ function ns.ObservedExtra(npcId)
   local function try(a, r)
     if have[r] then return end
     local conf = OBSERVED_CONF[ns.Observed(npcId, a, r)]
+    if conf and r.conf then conf = math.max(conf, r.conf) end   -- ein unsicherer Rang macht das Paar unsicher (#136)
     if conf then
       have[r] = true
       out[#out + 1] = { a = a, r = r, conf = conf }
@@ -245,6 +259,7 @@ function ns.ObservedTeachers(a, r)
     for _, o in ipairs(list) do
       if verdict(o, a, r) == "seen" then
         local conf = OBSERVED_CONF[ns.Observed(npc, a, r)]
+        if conf and r.conf then conf = math.max(conf, r.conf) end   -- wie oben (#136)
         if conf then out[#out + 1] = { id = npc, conf = conf } end
         break
       end

@@ -177,8 +177,8 @@ local function registerSettings()
     s:SetValueChangedCallback(function() ns.SafeCall("conf", ns.ShowConfChanged) end)
     Settings.CreateCheckbox(category, s, text)
   end
-  conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain beasts"],
-    (L["Also lists beasts that %d or more other players have reported so far, but fewer than %d. In all views and in the tooltip they are marked with “?”."]):format(ns.FOREIGN_UNSURE, ns.FOREIGN_SURE))
+  conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain data"],
+    (L["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."]):format(ns.FOREIGN_UNSURE, ns.FOREIGN_SURE))
   -- unbelegt heißt geschätzt; solange die Daten keine Schätzung enthalten, fehlt der Schalter
   if ns.HasUnproven() then
     conf("ForeverHunterPets_ShowUnproven", "showUnproven", L["Show unproven beasts"],

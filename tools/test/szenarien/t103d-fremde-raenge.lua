@@ -1,5 +1,6 @@
 -- #103 B1/B2: unbekannte Zauber aus fremden Zähmungen über den eigenen Client auflösen; ein neuer Rang einer bekannten
--- Fähigkeit erscheint ab 3 Meldern, ohne Pet-Stufe, und widerlegt nichts. Fremde Namen und 2 Melder: nichts.
+-- Fähigkeit erscheint ab 3 Meldern, ohne Pet-Stufe, und widerlegt nichts. Fremde Namen: nichts. 2 Melder: unsicher
+-- (seit #136).
 local a
 for _, x in ipairs(NS.Data.abilities) do
   if x.de == "Ducken" then a = x end
@@ -54,7 +55,10 @@ end
 local a1, r1 = rankOf(7700001)
 ok(a1 == a and r1.rank == NEW_RANK, "Rang " .. NEW_RANK .. " hängt an Ducken (3 Melder)")
 ok(r1.level == nil and r1.tp == nil, "ohne Pet-Stufe und TP")
-ok(rankOf(7700002) == nil, "2 Melder: kein Rang")
+local a2, r2 = rankOf(7700002)
+ok(a2 == a and r2.conf == NS.CONF_UNSURE, "2 Melder: Rang als unsicher eingehängt (#136)")
+ok(not NS.RankShown(r2) and NS.RankShown(r1), "unsicherer Rang ohne „Unsichere Angaben zeigen“ verborgen, belegter gezeigt")
+ok(NS.RankLabel(a, r2) == "Rang " .. (NEW_RANK + 1) .. "?", "unsicherer Rang trägt „?“: " .. NS.RankLabel(a, r2))
 ok(rankOf(7700004) == nil, "Name passt zu keiner Fähigkeit: keine neue Fähigkeit im Spiel")
 ok(not NS.HasUnknownSpell(NS.ObservationsOf(990401)[1]), "der Zauber gilt jetzt als bekannt")
 
@@ -80,4 +84,4 @@ NS.ShareStatus()
 local line
 for _, m in ipairs(PRINTED) do if m:find("Unbekannte Zauber aus fremden") then line = m end end
 print("  " .. tostring(line))
-ok(line and line:find("unter der Schwelle 1", 1, true), "/fhp teilen nennt den Rang unter der Schwelle")
+ok(line and line:find("unter der Schwelle 0", 1, true), "/fhp teilen: ab 2 Meldern ist nichts mehr unter der Schwelle (#136)")

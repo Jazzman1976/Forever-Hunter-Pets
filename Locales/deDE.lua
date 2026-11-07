@@ -141,9 +141,9 @@ ns.Locales.deDE = {
   ["Puts an empty line below the addon's lines in the tooltip, to set them apart from other addons."] = "Setzt im Tooltip eine Leerzeile unter die Zeilen des Addons, als Abstand zu anderen Addons.",
   ["Adds to the tooltip of a beast which ranks it teaches and whether you have learned them already, plus its attack speed; in explorer mode also how far you are with this beast."] = "Ergänzt den Tooltip eines Tiers um die Ränge, die es beibringt, und ob du sie schon gelernt hast, dazu das Angriffstempo; im Entdeckermodus auch, wie weit du mit diesem Tier bist.",
   -- Belegung der Lehrtiere
-  ["Show uncertain beasts"] = "Unsichere Angaben zeigen",
+  ["Show uncertain data"] = "Unsichere Angaben zeigen",
   ["Show unproven beasts"] = "Unbelegte Angaben zeigen",
-  ["Also lists beasts that %d or more other players have reported so far, but fewer than %d. In all views and in the tooltip they are marked with “?”."] = "Zeigt auch Tiere, die bisher mindestens %d, aber weniger als %d andere Spieler gemeldet haben. In allen Ansichten und im Tooltip sind sie mit „?“ gekennzeichnet.",
+  ["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."] = "Zeigt auch, was bisher erst %d andere Spieler gemeldet haben (bestätigt ab %d): Lehrtiere, Ränge, Angriffstempo, Name, Familie und Stufe eines Tiers, Fundorte, „lehrt nichts“. Es ist überall mit „?“ gekennzeichnet.",
   ["Also lists beasts that are only estimated and have not been seen yet. In all views and in the tooltip they are marked with “!”."] = "Zeigt auch Tiere, die nur geschätzt und noch nicht im Spiel gesehen sind. In allen Ansichten und im Tooltip sind sie mit „!“ gekennzeichnet.",
   ["Uncertain – reported by fewer than %d other players"] = "Unsicher – von weniger als %d anderen Spielern gemeldet",
   ["Unproven – estimated, not seen yet"] = "Unbelegt – geschätzt, noch nicht gesehen",
