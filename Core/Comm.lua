@@ -491,8 +491,9 @@ local function testDone()
     local ok, r = pcall(C_ChatInfo.IsAddonMessagePrefixRegistered, PREFIX)
     reg = ok and tostring(ns.clean(r)) or "Fehler"
   end
-  testOut(("Selbsttest: Prefix %s registriert: %s · eigener Name %s · Addon-Nachrichten mit unserem Prefix empfangen: %d")
-    :format(PREFIX, reg, tostring((me())), #test.heard))
+  -- Kürzel statt Namen (#68): In der SavedVariables-Datei steht kein Spielername, auch nicht der eigene
+  testOut(("Selbsttest: Prefix %s registriert: %s · eigenes Kürzel %s · Addon-Nachrichten mit unserem Prefix empfangen: %d")
+    :format(PREFIX, reg, tostring(select(2, me())), #test.heard))
   for _, h in ipairs(test.heard) do testOut("  empfangen: " .. h) end
   for _, w in ipairs(test.ways) do
     local r = test.back[w]
@@ -503,7 +504,7 @@ local function testDone()
       testOut(("Selbsttest %s: %s, nicht zurückgekommen"):format(w, sent))
     end
   end
-  if ns.db then ns.db.probe = test.log end
+  ns.SaveProbe(test.log)
   test = nil
 end
 
@@ -657,7 +658,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if prefix ~= PREFIX or type(text) ~= "string" or type(sender) ~= "string" then return end
   local name = me()
   if test and #test.heard < 20 then
-    test.heard[#test.heard + 1] = ("%s von %s über %s: %s"):format(text:sub(1, 3), sender, tostring(ns.clean(kind)), text:sub(1, 40))
+    test.heard[#test.heard + 1] = ("%s von %s über %s: %s"):format(text:sub(1, 3), senderRep(sender), tostring(ns.clean(kind)), text:sub(1, 40))
   end
   local own = isSelf(sender, name)
   if text:sub(1, 3) == "T1;" then

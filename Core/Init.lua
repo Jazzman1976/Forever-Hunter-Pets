@@ -92,6 +92,14 @@ local DEFAULTS = { ui = { minimap = true, minimapAngle = 215, keepFilters = true
 -- (show: abgewählte Häkchen = false; zone, fam: ID, "current" oder nichts für „Alle“)
 local CHAR_DEFAULTS = { known = {}, filters = { show = {} } }
 
+-- Protokoll einer Probe oder des Selbsttests speichern (ForeverHunterPetsDB.probe), mit Zeitstempel: Es soll
+-- nach /reload aus der Datei lesbar sein, aber nicht ewig liegen bleiben (#68)
+local PROBE_KEEP = 24 * 60 * 60
+function ns.SaveProbe(log)
+  if not ns.db then return end
+  ns.db.probe, ns.db.probeAt = log, time()
+end
+
 ns.On("ADDON_LOADED", function(name)
   if name ~= ADDON then return end
   ForeverHunterPetsDB = ForeverHunterPetsDB or {}
@@ -101,6 +109,9 @@ ns.On("ADDON_LOADED", function(name)
   ns.db, ns.char = ForeverHunterPetsDB, ForeverHunterPetsCharDB
   -- Protokolle abgeschlossener Proben (Lehren, Vormarkieren) nicht weiter mitschleppen
   ns.db.teachProbe, ns.db.selectProbe, ns.db.selectMethod = nil, nil, nil
+  -- Protokoll der letzten Probe bzw. des Selbsttests nur einen Tag aufheben (#68); ohne Zeitstempel ist es
+  -- von vor diesem Stand und kommt auch weg
+  if not (ns.db.probeAt and time() - ns.db.probeAt < PROBE_KEEP) then ns.db.probe, ns.db.probeAt = nil, nil end
   -- Schalter „Fundorte anderer Spieler“ gibt es nicht mehr (16.10.2026)
   ns.db.ui.showForeignCells = nil
 end)
