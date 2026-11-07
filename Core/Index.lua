@@ -583,6 +583,12 @@ function ns.MergeSurveyAbilities()
   for id, e in pairs(s.spells or {}) do
     if type(e) == "table" then add(id, e.name, e.rank, nil, nil, e.fam, false) end
   end
+  -- Ränge aus fremden Zähmungen (Core/ForeignRanks.lua, #103): nur zu Fähigkeiten, die man schon kennt und von
+  -- Tieren lernt. Eine ganz neue Fähigkeit kommt nur über die Stammdaten (Prüfung auf Jägerzauber beim Import).
+  for _, c in ipairs(ns.ForeignRankCandidates and ns.ForeignRankCandidates() or {}) do
+    local a = byName[c.name]
+    if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false) end
+  end
   if added then
     for _, fn in ipairs(abilityListeners) do ns.SafeCall("abilities", fn) end
   end

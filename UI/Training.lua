@@ -156,7 +156,9 @@ function ns.BuildTraining(parent)
     status:SetText(reason(e) or "")
     status:SetTextColor(c[1], c[2], c[3])
     local y = 56
-    y = place(needs, y, (L["Requires: pet level %d"]):format(r.level or 0), e.state == "later" and RED or WHITE)
+    -- ein Rang aus fremden Zähmungen hat noch keine Pet-Stufe, bis jemand die Wildtierausbildung öffnet (#103)
+    local needText = r.level and (L["Requires: pet level %d"]):format(r.level) or L["Requires: pet level unknown"]
+    y = place(needs, y, needText, e.state == "later" and RED or WHITE)
     local costText = r.tp and ((r.tp == 1 and L["Cost: 1 training point"] or L["Cost: %d training points"]):format(r.tp))
       or L["Cost: unknown"]
     -- mit einem niedrigeren Rang zahlt das Pet nur die Differenz

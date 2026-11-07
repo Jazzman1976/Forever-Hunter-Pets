@@ -73,6 +73,7 @@ ns.Locales.deDE = {
   ["%d for your pet, it already has a lower rank"] = "%d für dein Pet, es hat schon einen niedrigeren Rang",
   ["free: %d"] = "frei: %d",
   ["Requires: pet level %d"] = "Benötigt: Pet-Stufe %d",
+  ["Requires: pet level unknown"] = "Benötigt: Pet-Stufe unbekannt",
   ["Cost: 1 training point"] = "Kosten: 1 Trainingspunkt",
   ["Cost: %d training points"] = "Kosten: %d Trainingspunkte",
   ["Cost: unknown"] = "Kosten: unbekannt",

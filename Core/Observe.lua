@@ -48,6 +48,7 @@ local function knownSpell(id)
   end
   return allSpells[id] == true
 end
+ns.IsKnownSpell = knownSpell
 
 -- Zeigt die Zähmung einen Zauber, den hier noch keine Fähigkeit kennt (#114)? Etwa ein höherer Rang oder eine
 -- Fähigkeit, die noch niemand erhoben hat. Solche Zähmungen werden gespeichert und geteilt, aber sie widerlegen
@@ -140,8 +141,10 @@ local function verdict(o, a, r)
   end
   -- Kein oder nur ein niedrigerer Rang, obwohl die Stufe reicht: widerlegt. Die Fähigkeiten hängen an der
   -- NPC-ID, nur der Rang an der Stufe (Classic; in Forever bisher bestätigt). Ein unbekannter Zauber kann ein
-  -- höherer Rang dieser Fähigkeit sein, dann sagt die Zähmung nichts (#114).
-  if o.level >= (r.level or 0) and not ns.HasUnknownSpell(o) then return "refuted" end
+  -- höherer Rang dieser Fähigkeit sein, dann sagt die Zähmung nichts (#114). Ein Rang ohne Pet-Stufe (aus einem
+  -- Zauberbuch oder aus fremden Zähmungen, #103) widerlegt nichts: Man weiß nicht, ab welcher Stufe er käme.
+  if not r.level then return nil end
+  if o.level >= r.level and not ns.HasUnknownSpell(o) then return "refuted" end
   return nil
 end
 

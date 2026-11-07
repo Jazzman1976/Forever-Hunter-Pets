@@ -277,6 +277,66 @@ const abilitiesIn = [
   ...traitsFromObservations(),
 ];
 
+// ---- Ränge aus fremden Zähmungen (#103) ----
+// fremde-raenge.json (tools/import-observations.mjs aus Core/ForeignRanks.lua): Name und Rang, die der eigene Client zu
+// einer Zauber-ID aus fremden Zähmungen nannte. Eine ID, die keine Fähigkeit kennt, wird zum Rang, wenn ein eigener
+// Melder sie zeigte oder FOREIGN_SURE fremde über zwei Absender. Passt der Name zu einer Fähigkeit, die man von Tieren
+// lernt, wird sie ein weiterer Rang davon, ohne Pet-Stufe und TP (die bringt erst die Erhebung, und die geht vor).
+// Sonst entsteht eine neue Fähigkeit; dann bricht der Vergleich mit Git unten ab, bis sie geprüft ist (#37).
+const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? read('fremde-raenge.json') : {};
+{
+  const knownIds = new Set(abilitiesIn.flatMap((a) => (a.ranks || []).map((r) => r.id)));
+  const shownBy = new Map(); // Zauber-ID → { own, reps: Set, npcs: Set }
+  for (const o of observations) {
+    for (const id of o.zauber || []) {
+      if (knownIds.has(id) || !foreignRanksIn[id]) continue;
+      const e = shownBy.get(id) ?? shownBy.set(id, { own: false, reps: new Set(), npcs: new Set() }).get(id);
+      if (ownReps.has(o.melder)) e.own = true; else e.reps.add(o.melder);
+      e.npcs.add(o.npc);
+    }
+  }
+  const famOf = (npc) => beastsIn[npc]?.fam ?? sightingsAll.find((s) => s.npc === npc && s.familie)?.familie ?? null;
+  const fresh = new Map(); // Name → neue Fähigkeit
+  let added = 0, waiting = 0;
+  for (const [id, f] of Object.entries(foreignRanksIn)) {
+    need(f.quelle && f.datum, `Fremder Rang ${id} ohne Quelle oder Datum`);
+    need(Number.isInteger(f.rang) && f.rang > 0 && f.name && Object.keys(f.name).length, `Fremder Rang ${id} ohne Namen oder Rang`);
+    const e = shownBy.get(+id);
+    if (!e) continue; // schon bekannt (Erhebung geht vor) oder in keiner Zähmung
+    if (!e.own && !enough(e.reps)) { waiting++; continue; }
+    const de = f.name.deDE ?? null, en = f.name.enUS ?? f.name.enGB ?? null;
+    const a = abilitiesIn.find((x) => x.source === 'tame' && x.kind !== 'trait' && ((de && x.de === de) || (en && x.en === en)));
+    const rank = { id: +id, rank: f.rang, level: null, tp: null };
+    if (a) {
+      if (a.ranks.some((r) => r.rank === f.rang)) {
+        warnings.push(`Fremder Rang ${id}: ${label(a)} Rang ${f.rang} gibt es schon unter einer anderen Zauber-ID – nicht übernommen`);
+        continue;
+      }
+      a.ranks.push(rank);
+      a.ranks.sort((x, y) => x.rank - y.rank);
+      // wie im Addon (ns.MergeSurveyAbilities): die Familien der Tiere, die den Rang zeigten, kommen dazu
+      if (a.kind === 'family') {
+        a.families = [...new Set([...(a.families || []), ...[...e.npcs].map(famOf).filter((x) => x != null)])].sort((x, y) => x - y);
+      }
+    } else {
+      const key = de ?? en;
+      let n = fresh.get(key);
+      if (!n) {
+        n = { de, en, kind: 'family', source: 'tame', families: [], ranks: [],
+          beleg: `Zähmungen anderer Spieler, Name und Rang vom eigenen Client, seit ${f.datum} (tools/eigene/fremde-raenge.json)` };
+        fresh.set(key, n);
+        abilitiesIn.push(n);
+      }
+      if (n.ranks.some((r) => r.rank === f.rang)) continue;
+      n.ranks.push(rank);
+      n.ranks.sort((x, y) => x.rank - y.rank);
+      n.families = [...new Set([...n.families, ...[...e.npcs].map(famOf).filter((x) => x != null)])].sort((x, y) => x - y);
+    }
+    added++;
+  }
+  if (added || waiting) console.log(`Fremde Ränge: ${added} übernommen, ${waiting} warten auf weitere Melder (ab ${FOREIGN_SURE})`);
+}
+
 // ---- Fähigkeiten ----
 const spellRank = new Map(); // Zauber-ID → { a, rank }
 for (const a of abilitiesIn) {
@@ -367,7 +427,10 @@ for (const [a, pairs] of seen) {
   for (const e of pairs.values()) {
     const r = a.ranks.find((x) => x.rank === e.rank);
     const higher = a.ranks.filter((x) => x.rank > e.rank).map((x) => x.id);
-    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= (r.level ?? 0) && !hasUnknown(o)
+    // Ein Rang ohne Pet-Stufe (aus einem Zauberbuch oder aus fremden Zähmungen) widerlegt nichts (#103, wie verdict in
+    // Core/Observe.lua): Man weiß nicht, ab welcher Stufe er käme.
+    if (r.level == null) continue;
+    const against = observations.filter((o) => o.npc === e.npc && o.stufe >= r.level && !hasUnknown(o)
       && !(o.zauber || []).includes(r.id) && !higher.some((id) => (o.zauber || []).includes(id)));
     if (!against.length) continue;
     const ownAgainst = !e.own && against.some((o) => ownReps.has(o.melder));
