@@ -10,6 +10,7 @@ local L = ns.L
 local BAR_H = 7
 local CELLS = 5                        -- Zellen der Leiste: ein Trennstrich alle 20 % (Wunsch des Maintainers, 07.11.2026)
 local XP_COLOR = { 0.0, 0.39, 0.88 }   -- Blau wie die EP-Leiste des Spielers (Wunsch des Maintainers, 07.11.2026)
+local EDGE = { 0.60, 0.48, 0.32 }      -- Goldton des Pet-Rahmens, aus dem Screenshot gemessen; für Rand und Trennstriche
 
 local function num(v) return tonumber(ns.clean(v)) end
 
@@ -129,13 +130,13 @@ local function createBar()
   b.bg = b:CreateTexture(nil, "BACKGROUND")
   b.bg:SetAllPoints()
   b.bg:SetColorTexture(0, 0, 0, 0.6)
-  -- eigener Rand, 2 px außerhalb der Füllung wie bei den Leisten darüber: innen schwarz, außen grau
+  -- eigener Rand, 2 px außerhalb der Füllung wie bei den Leisten darüber: innen schwarz, außen im Goldton des Pet-Rahmens
   border(b, 1, 0, 0, 0, 1)
-  border(b, 2, 0.5, 0.5, 0.5, 1)
+  border(b, 2, EDGE[1], EDGE[2], EDGE[3], 1)
   -- Trennstriche zwischen den Zellen
   b.ticks = {}
   for i = 1, CELLS - 1 do
-    local t = line(b, 0, 0, 0, 0.9)
+    local t = line(b, EDGE[1], EDGE[2], EDGE[3], 1)
     t:SetWidth(1)
     b.ticks[i] = t
   end
