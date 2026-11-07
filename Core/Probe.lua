@@ -216,7 +216,7 @@ end
 -- /fhp karte: eigenes Protokoll in ForeverHunterPetsDB.probe
 function ns.ProbeMap()
   log = {}
-  ns.db.probe = log
+  ns.SaveProbe(log)
   out("=== Karten-Probe " .. date("%Y-%m-%d %H:%M:%S") .. " · Addon " .. ns.version .. " ===")
   probe("GetBuildInfo()", GetBuildInfo)
   local names = {}
@@ -250,7 +250,7 @@ end
 
 function ns.ProbeApi()
   log = {}
-  ns.db.probe = log
+  ns.SaveProbe(log)
   out("=== API-Probe " .. date("%Y-%m-%d %H:%M:%S") .. " · Addon " .. ns.version .. " ===")
   probe("GetBuildInfo()", GetBuildInfo)
   out("WOW_PROJECT_ID = " .. tostring(WOW_PROJECT_ID) .. " · WOW_PROJECT_CAMELOT = " .. tostring(WOW_PROJECT_CAMELOT))
@@ -409,7 +409,7 @@ end
 
 function ns.ProbeTame()
   log = {}
-  ns.db.probe = log
+  ns.SaveProbe(log)
   tameStart = GetTime()
   tameUntil = tameStart + 600
   silent = true
@@ -519,7 +519,7 @@ end
 
 function ns.ProbeOwner()
   log = {}
-  ns.db.probe = log
+  ns.SaveProbe(log)
   ownerStart = GetTime()
   ownerUntil = ownerStart + 600
   ownerSeen = {}

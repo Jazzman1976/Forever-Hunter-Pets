@@ -177,8 +177,8 @@ local function registerSettings()
     s:SetValueChangedCallback(function() ns.SafeCall("conf", ns.ShowConfChanged) end)
     Settings.CreateCheckbox(category, s, text)
   end
-  conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain beasts"],
-    L["Also lists beasts that fewer than 3 other players have reported so far. In all views and in the tooltip they are marked with “?”."])
+  conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain data"],
+    (L["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."]):format(ns.FOREIGN_UNSURE, ns.FOREIGN_SURE))
   -- unbelegt heißt geschätzt; solange die Daten keine Schätzung enthalten, fehlt der Schalter
   if ns.HasUnproven() then
     conf("ForeverHunterPets_ShowUnproven", "showUnproven", L["Show unproven beasts"],
@@ -190,11 +190,31 @@ local function registerSettings()
   manual:SetValueChangedCallback(function() ns.SafeCall("manual", ns.ShowConfChanged) end)   -- Liste neu aufbauen
   Settings.CreateCheckbox(category, manual,
     L["Lets you tick or untick ranks as learned by hand in the Abilities view. Usually not needed: the addon picks up what you learn from the Beast Training window and the game's messages. Switched off, the boxes only show what you know."])
+  -- Stufe und EP-Leiste am Pet-Rahmen (#120): Hauptschalter, darunter beide Teile einzeln, nur bedienbar,
+  -- solange der Hauptschalter an ist; jede Änderung wirkt sofort
+  local function petXP() ns.SafeCall("petxp", ns.UpdatePetXP) end
+  local pet = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_PetFrame", "petFrame", ns.db.ui,
+    Settings.VarType.Boolean, L["Enable pet frame additions"], true)
+  pet:SetValueChangedCallback(petXP)
+  local petInit = Settings.CreateCheckbox(category, pet,
+    L["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."])
+  local function petSub(key, variable, label, text)
+    local s = Settings.RegisterAddOnSetting(category, key, variable, ns.db.ui, Settings.VarType.Boolean, label, true)
+    s:SetValueChangedCallback(petXP)
+    local init = Settings.CreateCheckbox(category, s, text)
+    if petInit and init and init.SetParentInitializer then
+      pcall(init.SetParentInitializer, init, petInit, function() return ns.db.ui.petFrame end)
+    end
+  end
+  petSub("ForeverHunterPets_PetFrameLevel", "petFrameLevel", L["Show current level"],
+    L["Shows your pet's level in a small circle at the bottom left of the pet frame."])
+  petSub("ForeverHunterPets_PetFrameXP", "petFrameXP", L["Show experience bar"],
+    L["Shows a slim experience bar below the pet frame."])
   local share = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_Share", "share", ns.db.ui,
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
   Settings.CreateCheckbox(category, share,
-    L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."])
+    (L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."]):format(ns.FOREIGN_SURE))
   Settings.RegisterAddOnCategory(category)
   ns.settingsCategory = category
 end

@@ -178,6 +178,9 @@ local function requestLoad(id)
   pcall(C_Spell.RequestLoadSpellData, id)
 end
 
+-- auch für fremde Ränge (Core/ForeignRanks.lua, #103): dieselben Merker, damit nichts doppelt angefordert wird
+ns.SubtextRank, ns.SpellDataCached, ns.RequestSpellData = subtextRank, cached, requestLoad
+
 -- Wartet für diese Zauber-IDs noch ein Rang auf die Daten des Clients? (Chatzeile beim Zähmen, Core/Observe.lua)
 function ns.SurveyRankPending(ids)
   local s = ns.db and ns.db.survey

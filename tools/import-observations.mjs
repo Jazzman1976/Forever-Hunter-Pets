@@ -2,16 +2,17 @@
 // zusammen und merkt sich die Kürzel der eigenen Charaktere (myReps) in tools/eigene/eigene-melder.json.
 // Dazu die Sichtungen beim Anvisieren (Core/Sightings.lua) nach tools/eigene/sichtungen.json, die
 // Fundort-Zellen nach tools/eigene/zellen.json (eigene) und zellen-fremd.json (fremde, mit Melder), die Herkunft
-// fremder Melder nach tools/eigene/melder-wege.json und die
+// fremder Melder nach tools/eigene/melder-wege.json, die
 // Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch (Core/Survey.lua)
-// nach tools/eigene/erhebung.json.
+// nach tools/eigene/erhebung.json und Name und Rang unbekannter Zauber aus fremden Zähmungen (Core/ForeignRanks.lua,
+// #103) nach tools/eigene/fremde-raenge.json.
 // Eingelesen werden nur die eigenen SavedVariables (#104): Darin steht, was man selbst gesehen hat, und alles, was
 // andere im Spiel geteilt haben. Fremde Daten kommen über die Kanäle im Addon herein, nicht als fremde Datei.
 // Aufruf: node tools/import-observations.mjs [Schalter] <Pfad> [<Pfad> …]
 //   Ein Pfad ist eine Forever-Hunter-Pets.lua (früher ForeverHunterPets.lua) oder ein Ordner, unter dem sie
 //   gesucht wird (etwa der WoW-Ordner).
-// Gespeichert werden keine Namen: fremde Beobachtungen tragen schon ein Kürzel; eigene (Melder leer) bekommen
-// eines aus dem Namen des Account-Ordners, damit sie von denen anderer Dateien unterscheidbar bleiben.
+// Gespeichert werden keine Namen: Beobachtungen tragen ein Kürzel; eine ohne Kürzel ist unbrauchbar (#62).
+// Welche Kontoordner eigene sind, steht privat in .ignore/eigene-konten.json, nicht im Repo (#62).
 // Fremde Einträge werden entschärft, bevor sie ins öffentliche Repo kommen (#48): Das Kürzel ist ein ungesalzener
 // Hash des Charakternamens und ließe sich mit einer Namensliste zurückrechnen. Es wird deshalb mit einem geheimen
 // Salz neu gehasht (pseudo), und die Zeit gilt nur auf den Tag (dayStart). Eigene Kürzel bleiben, wie sie sind.
@@ -30,7 +31,10 @@ const SIGHT_OUT = path.join(HERE, 'eigene', 'sichtungen.json');
 const CELLS_OUT = path.join(HERE, 'eigene', 'zellen.json');
 const FOREIGN_CELLS_OUT = path.join(HERE, 'eigene', 'zellen-fremd.json');
 const WAYS_OUT = path.join(HERE, 'eigene', 'melder-wege.json');
+// Namen der eigenen Kontoordner (#104, #62): privat wie das Salz, weil ein Hash des Namens sich zurückrechnen ließe
+const ACCOUNTS_FILE = path.join(HERE, '..', '.ignore', 'eigene-konten.json');
 const BLOCK_OUT = path.join(HERE, 'eigene', 'nicht-zaehmbar.json');
+const FOREIGN_RANKS_OUT = path.join(HERE, 'eigene', 'fremde-raenge.json');
 const MIN_TIME = 1788220800; // 01.09.2026, wie im Addon (Core/Comm.lua)
 // Familien, die es nur bei Dämonen gibt, wie ns.DEMON_FAMILY in Core/Sightings.lua (#80): Solche Tiere sind nicht
 // zähmbar. Ihre Sichtungen, Fundort-Zellen und Familien kommen nicht in die Daten, auch nicht aus dem Bestand.
@@ -112,7 +116,7 @@ function parseMyReps(text) {
 }
 
 // Felder, die neuere Versionen hinten anhängen, werden übergangen (Protokollregel #12, #57).
-function record(s, ownRep) {
+function record(s) {
   const m = s.match(/^(\d+);(\d+);([\d,]*);([\d.]*);(\d*);([0-9a-f]*)(?:;.*)?$/);
   if (!m) return null;
   const r = {
@@ -120,9 +124,7 @@ function record(s, ownRep) {
     zauber: m[3] ? m[3].split(',').map(Number) : [],
     tempo: m[4] ? +m[4] : null,
     zeit: m[5] ? +m[5] : null,
-    melder: m[6] || ownRep,
-    // ältere eigene Einträge ohne Kürzel: Ersatz aus dem Konto, bis die Datei das echte nachliefert
-    ...(m[6] ? {} : { ersatz: true }),
+    melder: m[6],
   };
   if (r.stufe < 1 || r.stufe > 63 || !r.zeit || r.zeit < MIN_TIME) return null;
   if (r.tempo != null && (r.tempo < 0.5 || r.tempo > 4)) return null;
@@ -140,16 +142,32 @@ if (!files.length) {
 // Eigene Kürzel: Beobachtungen damit gelten im Generator schon mit einem Melder als belegt. Vor allem anderen
 // aus allen Dateien gesammelt, damit pseudo() kein eigenes Kürzel salzt.
 const own = new Set(fs.existsSync(OWN_OUT) ? JSON.parse(fs.readFileSync(OWN_OUT, 'utf8')) : []);
-// Nur eigene Konten (#104): Das Kürzel jedes eigenen Kontoordners steht schon in eigene-melder.json. Eine Datei aus
-// einem anderen Konto machte dessen Spieler zu eigenen Meldern: sofort belegt und nicht entschärft (#48).
-const foreign = files.filter((f) => !own.has(hash('konto:' + accountOf(f))));
+// Nur eigene Konten (#104): Eine Datei aus einem anderen Konto machte dessen Spieler zu eigenen Meldern: sofort
+// belegt und nicht entschärft (#48). Die eigenen Kontoordner stehen in .ignore/eigene-konten.json (#62).
+const kontoHash = (name) => hash('konto:' + name);
+let accounts;
+if (fs.existsSync(ACCOUNTS_FILE)) {
+  accounts = new Set(JSON.parse(fs.readFileSync(ACCOUNTS_FILE, 'utf8')));
+} else {
+  // Einmalige Umstellung (#62): Bis dahin stand der Hash jedes eigenen Kontoordners in eigene-melder.json.
+  accounts = new Set(files.map(accountOf).filter((a) => own.has(kontoHash(a))));
+  console.log(`Umstellung (#62): ${accounts.size} eigene(r) Kontoordner nach ${ACCOUNTS_FILE}` +
+    (accounts.size ? `: ${[...accounts].join(', ')}` : ''));
+}
+const foreign = files.filter((f) => !accounts.has(accountOf(f)));
 if (foreign.length && !flags.includes('--neues-konto')) {
   console.error('Nicht aus einem eigenen Konto, Import abgebrochen:\n' + foreign.map((f) => '  ' + f).join('\n') +
     '\nEingelesen werden nur die eigenen SavedVariables. Ist es ein weiteres eigenes Konto: --neues-konto.');
   process.exit(1);
 }
+for (const f of files) accounts.add(accountOf(f));
+fs.mkdirSync(path.dirname(ACCOUNTS_FILE), { recursive: true });
+fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify([...accounts].sort()) + '\n');
+// Hashes der eigenen Kontoordner gehören nicht mehr in die öffentliche eigene-melder.json
+for (const a of accounts) {
+  if (own.delete(kontoHash(a))) console.log(`Konto-Hash von ${a} aus ${path.relative(process.cwd(), OWN_OUT)} entfernt`);
+}
 for (const f of files) {
-  own.add(hash('konto:' + accountOf(f)));
   for (const rep of parseMyReps(fs.readFileSync(f, 'utf8'))) own.add(rep);
 }
 // fremdes Kürzel → gesalzenes (8 Hex-Zeichen wie bisher), eigenes bleibt
@@ -162,22 +180,21 @@ const day = (t) => new Date(t * 1000).toISOString().slice(0, 10);
 const mask = (r) => own.has(r.melder) ? r : { ...r, melder: pseudo(r.melder), zeit: dayStart(r.zeit) };
 
 const old = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : [];
-// Dieselbe Zähmung: gleiches Tier zur selben Sekunde. Das echte Kürzel ersetzt ein Ersatzkürzel. Fremde tragen
+// Dieselbe Zähmung: gleiches Tier zur selben Sekunde. Fremde tragen
 // nur den Tag; bei ihnen gilt nur der ganz gleiche Eintrag als derselbe, sonst fielen verschiedene Zähmungen
 // am selben Tag zusammen.
 const key = (r) => own.has(r.melder) ? `${r.npc}:${r.zeit}` : JSON.stringify(r);
 const all = new Map(old.map((r) => [key(r), r]));
 let read = 0, bad = 0;
 for (const f of files) {
-  const ownRep = hash('konto:' + accountOf(f));
   const text = fs.readFileSync(f, 'utf8');
   for (const s of parseObs(text)) {
     read++;
-    let r = record(s, ownRep);
+    let r = record(s);
     if (!r) { bad++; continue; }
     r = mask(r);
     const had = all.get(key(r));
-    if (!had || (had.ersatz && !r.ersatz)) all.set(key(r), r);
+    if (!had) all.set(key(r), r);
   }
 }
 const list = [...all.values()].sort((x, y) => x.zeit - y.zeit || x.npc - y.npc);
@@ -366,11 +383,13 @@ if (wegeOld || wege.size) {
 
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),
-// je Familie gilt die jüngste vollständige Liste der Wildtierausbildung. Namen stehen je Client-Sprache.
+// je Familie werden die Listen der Wildtierausbildung zusammengeführt, vorhandene Zeilen gehen vor (#139).
+// Namen stehen je Client-Sprache.
 const survey = fs.existsSync(SURVEY_OUT)
   ? JSON.parse(fs.readFileSync(SURVEY_OUT, 'utf8'))
   : { raenge: {}, listen: {}, familien: {}, zauberbuch: {} };
 let surveyFiles = 0;
+let listRowsAdded = 0, listRowsKept = 0; // Zeilen der Wildtierausbildung: ergänzt bzw. abweichend (alte behalten)
 for (const f of files) {
   let s;
   try {
@@ -395,10 +414,16 @@ for (const f of files) {
     if (e.npc && !NO_TRAINER) r.tierausbilder = true;
     if (e.t) r.datum = r.datum && r.datum < day(e.t) ? r.datum : day(e.t);
   }
+  // Listen je Familie zusammenführen (#139): Eine vorhandene Zeile bleibt, eine neue Liste ergänzt nur Zauber-IDs,
+  // die noch fehlen. Eine spätere Liste kann kürzer sein (frischer Jäger) oder nur den Aufpreis gegenüber einem Rang
+  // zeigen, der in ihr fehlt; sie darf belegte TP nicht überstimmen (#124).
   for (const [fam, l] of Object.entries(s.lists || {})) {
-    const had = survey.listen[fam];
-    if (had && had.zeit >= l.at) continue;
-    survey.listen[fam] = { zeit: l.at, datum: day(l.at), zeilen: Object.fromEntries(Object.entries(l.rows || {}).sort()) };
+    const e = (survey.listen[fam] ??= { zeit: l.at, datum: day(l.at), zeilen: {} });
+    for (const [id, row] of Object.entries(l.rows || {})) {
+      if (!(id in e.zeilen)) { e.zeilen[id] = row; listRowsAdded++; } else if (e.zeilen[id] !== row) listRowsKept++;
+    }
+    if (l.at > e.zeit) { e.zeit = l.at; e.datum = day(l.at); }
+    e.zeilen = Object.fromEntries(Object.entries(e.zeilen).sort());
   }
   for (const [fam, name] of Object.entries(s.families || {})) {
     const e = (survey.familien[fam] ??= { name: {} });
@@ -426,3 +451,40 @@ fs.writeFileSync(SURVEY_OUT, '{\n' + ['raenge', 'listen', 'familien', 'zauberbuc
 console.log(`Erhebung aus ${surveyFiles} Datei(en): ${Object.keys(survey.raenge).length} Ränge, `
   + `${Object.keys(survey.listen).length} Familien mit Liste, ${Object.keys(survey.zauberbuch).length} Zauber aus Zauberbüchern `
   + '→ tools/eigene/erhebung.json');
+console.log(`Listen der Wildtierausbildung: ${listRowsAdded} Zeilen ergänzt, `
+  + `${listRowsKept} abweichende Zeilen ignoriert (vorhandene gehen vor)`);
+
+// ---- Fremde Ränge (Core/ForeignRanks.lua, #103) → tools/eigene/fremde-raenge.json ----
+// { Zauber-ID: { name: { Sprache: Name }, rang, quelle, datum } }: Name und Rang, die der eigene Client zu einem
+// unbekannten Zauber aus fremden Zähmungen nannte (ForeverHunterPetsDB.spellNames). Der Beleg sind die Zähmungen in
+// beobachtungen.json; ob ein Rang daraus wird, entscheidet tools/build-data.mjs (ab 3 Meldern).
+const foreignRanks = fs.existsSync(FOREIGN_RANKS_OUT) ? JSON.parse(fs.readFileSync(FOREIGN_RANKS_OUT, 'utf8')) : {};
+const today = day(Math.floor(Date.now() / 1000));
+let foreignRankFiles = 0, foreignRankNew = 0;
+for (const f of files) {
+  let names;
+  try {
+    names = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.spellNames;
+  } catch {
+    continue; // schon oben gemeldet
+  }
+  if (!names || typeof names !== 'object') continue;
+  foreignRankFiles++;
+  for (const [id, e] of Object.entries(names)) {
+    const n = Number(id);
+    if (!Number.isInteger(n) || n <= 0 || n > 9999999 || !e || typeof e !== 'object') continue;
+    if (typeof e.n !== 'string' || !e.n || e.n.length > 60 || /[|;]/.test(e.n)) continue;
+    if (!Number.isInteger(e.r) || e.r < 1 || e.r > 20) continue;
+    const lang = /^[a-z]{2}[A-Z]{2}$/.test(e.l) ? e.l : 'enUS';
+    const r = foreignRanks[id] ?? (foreignRankNew++, { name: {}, rang: e.r, quelle: 'Zähmungen anderer Spieler, Name und Rang vom eigenen Client', datum: today });
+    if (r.rang !== e.r) console.log(`Fremder Rang ${id}: Rang ${r.rang} und ${e.r} – der erste bleibt`);
+    r.name[lang] = e.n;
+    foreignRanks[id] = r;
+  }
+}
+if (Object.keys(foreignRanks).length) {
+  fs.writeFileSync(FOREIGN_RANKS_OUT, '{\n' + Object.entries(sortKeys(foreignRanks))
+    .map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n') + '\n}\n');
+}
+console.log(`Fremde Ränge aus ${foreignRankFiles} Datei(en): ${Object.keys(foreignRanks).length} Zauber, davon neu ${foreignRankNew} `
+  + '→ tools/eigene/fremde-raenge.json');

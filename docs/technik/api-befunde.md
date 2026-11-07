@@ -110,3 +110,16 @@ Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer)
 ## Geheime Werte
 
 In Kampf und Instanzen liefert die API „secret values“, die schon beim Vergleichen einen Fehler werfen. Nur `issecretvalue()` ist ein sicherer Test. Auslesen also nur außerhalb des Kampfs und durch `ns.clean()`.
+
+## Pet-Rahmen (Test von #120, 07.11.2026)
+
+- **`GetPetExperience()`** liefert in Forever aktuelle und nötige EP des Pets; `UnitLevel("pet")` die Stufe. Leiste und Stufe folgen im Spiel ohne `/reload` (EP beim Töten, Stufenaufstieg, Pet wegschicken und rufen) über `UNIT_PET_EXPERIENCE`, `UNIT_LEVEL`, `UNIT_PET` und `PET_UI_UPDATE`.
+- **`PetFrameManaBar` ist breiter als das, was man sieht:** Der Rahmen reicht von 139,5 bis 216,5 (77 Einheiten), die sichtbare Füllung wie die Lebensleiste `PetFrameHealthBar` nur von 142,5 bis 212,5 (70). Wer etwas bündig unter die Leisten setzen will, rückt gegenüber `PetFrameManaBar` links 3 und rechts 4 Einheiten ein (gemessen mit `GetLeft`/`GetRight`, UI-Skalierung des Testers). `PetFrame.manabar` und `PetFrame.healthbar` sind dieselben Rahmen.
+- **Farbe der EP-Leiste des Spielers** lässt sich nicht verlässlich lesen: Über `MainMenuExpBar:GetStatusBarColor()` kam kein brauchbares Blau an, die Leiste fiel auf Violett zurück. Das Addon nimmt deshalb eine feste Farbe: zuerst Blau, seit dem Abschlusstest von 1.1.0-beta.1 (#130) ein helleres Lila nach der EP-Leiste des Spielers ohne Erholung (0,76 / 0,2 / 0,73 statt 0,58 / 0 / 0,55), weil sich Blau zu wenig vom Hintergrund abhob und das Lila des Spiels zu dunkel war.
+- **Randfarbe des Pet-Rahmens:** ein Goldton, etwa RGB 150/120/80, aus dem Screenshot gemessen.
+
+## 3D-Modell auf der Kartenseite (#131, 07.11.2026)
+
+- **`PlayerModel:SetCreature(npcId)` lädt nichts, wenn das Tier nicht im Kreaturen-Cache des Clients steht.** Der Cache liegt auf der Festplatte (`Cache/WDB/<Sprache>/creaturecache.wdb`, geschrieben beim Ausloggen) und bleibt über Neustarts erhalten. Ein Tier kommt hinein, sobald man es in der Welt sieht oder anvisiert oder einmal `SetCreature` dafür aufruft; danach lädt es sofort. Der Fehler zeigt sich deshalb nur beim ersten Mal je Tier und ist nicht konstant nachzustellen. Gezielt: Spiel beenden, `creaturecache.wdb` löschen.
+- **`ClearModel` räumt das alte Modell nicht sichtbar weg**, und `GetModelFileID` nennt danach noch dessen Datei.
+- **Weder `OnModelLoaded` noch `GetModelFileID` zeigen verlässlich, ob ein *neues* Modell geladen ist** (zwei Tests am 07.11.2026): Mit `OnModelLoaded` und der beim Wechsel gelesenen Datei-ID erschien weiter das Modell des vorigen Tiers; mit dem Vergleich gegen die Datei des zuletzt gezeigten Tiers blieben Tiere mit gleichem Aussehen (Großer und Kleiner Klippeneber) ohne Modell. Das Addon gibt deshalb jedem Tier einen eigenen `PlayerModel`-Rahmen; ein frischer Rahmen hat kein altes Modell, und `GetModelFileID` ≠ 0 heißt dort einfach „geladen“ (`UI/MapCanvas.lua`).

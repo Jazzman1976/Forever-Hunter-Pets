@@ -14,12 +14,21 @@ string.format = function(f, ...)
   return fmt(f, ...)
 end
 
--- Frames: nur Skripte und Ereignisse, alle anderen Methoden tun nichts
+-- Frames: Skripte und Ereignisse; für UI-Dateien, die ein Szenario mitlädt (#120), auch Sichtbarkeit, Wert
+-- und Text. Create… (Texturen, Schriften) liefert wieder einen Frame, alle anderen Methoden tun nichts.
 local frames = {}
 local frameMT = { __index = function(t, k)
+  -- nur Methoden (großer Anfangsbuchstabe) sind nachgebildet; eigene Felder des Addons sind wie im Spiel nil (#131)
+  if type(k) ~= "string" or not k:match("^%u") then return nil end
+  if k:sub(1, 6) == "Create" then return function() return CreateFrame() end end
   return function(self, ...)
     if k == "SetScript" then local s, fn = ...; self.scripts[s] = fn end
     if k == "RegisterEvent" then local e = ...; self.events[e] = true end
+    if k == "Show" then self.shown = true end
+    if k == "Hide" then self.shown = false end
+    if k == "IsShown" then return self.shown ~= false end
+    if k == "SetValue" then self.value = ... end
+    if k == "SetText" then self.text = ... end
   end end }
 function CreateFrame() local f = setmetatable({ scripts = {}, events = {} }, frameMT); frames[#frames + 1] = f; return f end
 function FireEvent(e, ...)
@@ -40,6 +49,9 @@ function GetLocale() return "deDE" end
 function UnitFullName() return "Test", "Realm" end
 function GetNormalizedRealmName() return "Realm" end
 function InCombatLockdown() return false end
+-- geheime Werte (Kampf, Instanz): Ein Szenario trägt Werte in SECRETS ein, ns.clean macht daraus nil
+SECRETS = {}
+function issecretvalue(v) return v ~= nil and SECRETS[v] == true end
 function IsInInstance() return false end
 function strsplit(sep, s)
   local out = {}

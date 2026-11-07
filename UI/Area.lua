@@ -29,14 +29,14 @@ local function hereZone()
   return ok and tonumber(ns.clean(map)) or nil
 end
 
--- Familie und Stufe eines Tiers: aus den Daten, sonst aus der eigenen Sichtung
+-- Familie und Stufe eines Tiers: aus den Daten, sonst aus der Sichtung (eigene sofort, fremde ab der Schwelle)
 local function famAndLevel(npc)
   local b = D.beasts[npc]
-  local seen = ns.SeenBeast and ns.SeenBeast(npc)
+  local seen = ns.TrustedSighting and ns.TrustedSighting(npc)   -- fremde erst ab der Schwelle (#103)
   local fam = ns.BeastFamily(npc)
   local level
   if b and b.min then level = ns.LevelText(b)
-  elseif seen then level = seen.min == seen.max and tostring(seen.min) or (seen.min .. "-" .. seen.max) end
+  elseif seen then level = ns.LevelText(seen) end   -- mit „?“, wenn unsicher (#136)
   return fam, level
 end
 
@@ -49,7 +49,7 @@ local function teachTooltip(owner, npc)
   if not info then
     GameTooltip:AddLine(L["? unclear"], 0.8, 0.8, 0.8)
   elseif #info == 0 then
-    GameTooltip:AddLine(L["teaches nothing"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(L["teaches nothing"] .. ns.ConfMark(info.conf), 0.8, 0.8, 0.8)
   else
     for _, e in ipairs(info) do
       local rank = ns.RankLabel(e.a, e.r)
@@ -401,8 +401,8 @@ function ns.BuildArea(parent)
     -- Einträge: Entdeckermodus nach Status (bekannt, gefunden, Fährte, unentdeckt), unentdeckte anonym und nicht
     -- anklickbar; Komplettmodus jedes Tier mit Namen, die mit bekannter Lehre zuerst
     local entries = {}
-    for npc in pairs(ns.BeastsIn(zone)) do
-      local e = { npc = npc }
+    for npc, here in pairs(ns.BeastsIn(zone)) do
+      local e = { npc = npc, unsure = here == ns.CONF_UNSURE }
       if discover then
         e.st = ns.BeastStatus(npc, zone)
         e.pick = STATUS[e.st] ~= nil
@@ -411,7 +411,11 @@ function ns.BuildArea(parent)
         e.st = ns.TeachInfo(npc, false) and "known" or "open"
         e.pick, e.order = true, e.st == "known" and 1 or 2
       end
-      if e.pick then e.name = ns.BeastName(npc) end
+      if e.pick then
+        e.name = ns.BeastName(npc)
+        -- nur durch unsichere fremde Fundorte in dieser Zone (#136): „?“ hinter dem Namen, einmal
+        if e.unsure and e.name:sub(-1) ~= "?" then e.name = e.name .. ns.ConfMark(ns.CONF_UNSURE) end
+      end
       entries[#entries + 1] = e
     end
     table.sort(entries, function(a, b)
@@ -440,7 +444,7 @@ function ns.BuildArea(parent)
       r:SetPoint("TOPLEFT", 0, -ry)
       local fam, level = famAndLevel(e.npc)
       local where = {}
-      if fam then where[#where + 1] = ns.FamilyName(fam) end
+      if fam then where[#where + 1] = ns.BeastFamilyText(e.npc) end
       if level then where[#where + 1] = (L["Level %s"]):format(level) end
       -- Haken = Fähigkeiten bekannt. Entdeckermodus: leeres Kästchen = Tier gefunden, kein Kästchen bei Fährte
       -- und unentdeckt; Komplettmodus: leeres Kästchen = noch unklar, was es lehrt

@@ -73,6 +73,7 @@ ns.Locales.deDE = {
   ["%d for your pet, it already has a lower rank"] = "%d für dein Pet, es hat schon einen niedrigeren Rang",
   ["free: %d"] = "frei: %d",
   ["Requires: pet level %d"] = "Benötigt: Pet-Stufe %d",
+  ["Requires: pet level unknown"] = "Benötigt: Pet-Stufe unbekannt",
   ["Cost: 1 training point"] = "Kosten: 1 Trainingspunkt",
   ["Cost: %d training points"] = "Kosten: %d Trainingspunkte",
   ["Cost: unknown"] = "Kosten: unbekannt",
@@ -140,11 +141,11 @@ ns.Locales.deDE = {
   ["Puts an empty line below the addon's lines in the tooltip, to set them apart from other addons."] = "Setzt im Tooltip eine Leerzeile unter die Zeilen des Addons, als Abstand zu anderen Addons.",
   ["Adds to the tooltip of a beast which ranks it teaches and whether you have learned them already, plus its attack speed; in explorer mode also how far you are with this beast."] = "Ergänzt den Tooltip eines Tiers um die Ränge, die es beibringt, und ob du sie schon gelernt hast, dazu das Angriffstempo; im Entdeckermodus auch, wie weit du mit diesem Tier bist.",
   -- Belegung der Lehrtiere
-  ["Show uncertain beasts"] = "Unsichere Angaben zeigen",
+  ["Show uncertain data"] = "Unsichere Angaben zeigen",
   ["Show unproven beasts"] = "Unbelegte Angaben zeigen",
-  ["Also lists beasts that fewer than 3 other players have reported so far. In all views and in the tooltip they are marked with “?”."] = "Zeigt auch Tiere, die bisher weniger als 3 andere Spieler gemeldet haben. In allen Ansichten und im Tooltip sind sie mit „?“ gekennzeichnet.",
+  ["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."] = "Zeigt auch, was bisher erst %d andere Spieler gemeldet haben (bestätigt ab %d): Lehrtiere, Ränge, Angriffstempo, Name, Familie und Stufe eines Tiers, Fundorte, „lehrt nichts“. Es ist überall mit „?“ gekennzeichnet.",
   ["Also lists beasts that are only estimated and have not been seen yet. In all views and in the tooltip they are marked with “!”."] = "Zeigt auch Tiere, die nur geschätzt und noch nicht im Spiel gesehen sind. In allen Ansichten und im Tooltip sind sie mit „!“ gekennzeichnet.",
-  ["Uncertain – reported by fewer than 3 other players"] = "Unsicher – von weniger als 3 anderen Spielern gemeldet",
+  ["Uncertain – reported by fewer than %d other players"] = "Unsicher – von weniger als %d anderen Spielern gemeldet",
   ["Unproven – estimated, not seen yet"] = "Unbelegt – geschätzt, noch nicht gesehen",
   ["seen in the game"] = "im Spiel gesehen",
   ["reported by only a few players"] = "erst von wenigen Spielern gemeldet",
@@ -160,7 +161,7 @@ ns.Locales.deDE = {
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel
   ["Share observations"] = "Beobachtungen teilen",
-  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once 3 different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und ein verborgener Kanal). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald 3 verschiedene Spieler dasselbe gesehen haben. Bestätigte Daten kommen unter der MIT-Lizenz in die Daten des Addons. Ausgeschaltet wird nichts gesendet oder empfangen.",
+  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und ein verborgener Kanal). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald %d verschiedene Spieler dasselbe gesehen haben. Bestätigte Daten kommen unter der MIT-Lizenz in die Daten des Addons. Ausgeschaltet wird nichts gesendet oder empfangen.",
   -- Lehrtiere nach Jägerstufe
   ["Tameable at your level (%d)"] = "Zähmbar auf deiner Stufe (%d)",
   ["Above your level (%d)"] = "Erst ab höherer Stufe (%d)",
@@ -192,7 +193,7 @@ ns.Locales.deDE = {
   ["You can change this for this character at any time in the settings."] = "Du kannst das für diesen Charakter jederzeit in den Einstellungen ändern.",
   ["Shows only what you have found yourself: beasts you sighted, found or tamed, and what they teach. Abilities and ranks stay visible, and the addon tells you how much there is still to discover. Switched off (complete mode), it shows the complete data. Applies to this character. Tip: with enemy nameplates switched on, the addon notices beasts as you ride past."] = "Zeigt nur, was du selbst gefunden hast: Tiere, die du gesichtet, gefunden oder gezähmt hast, und was sie lehren. Fähigkeiten und Ränge bleiben sichtbar, und das Addon sagt dir, wie viel es noch zu entdecken gibt. Ausgeschaltet (Komplettmodus) zeigt es den kompletten Datenbestand. Gilt für diesen Charakter. Tipp: Mit eingeschalteten Namensplaketten für Gegner bemerkt das Addon Tiere schon beim Vorbeireiten.",
   -- Entdecken pro Charakter (#43)
-  ["Show finds of my other characters"] = "Funde meiner anderen Charaktere zeigen",
+  ["Show finds of my other characters"] = "Funde anderer Charaktere",
   ["Also counts what your other characters on this account have sighted, found and tamed. Switched off, this character discovers everything on its own."] = "Zählt auch, was deine anderen Charaktere auf diesem Konto gesichtet, gefunden und gezähmt haben. Ausgeschaltet entdeckt dieser Charakter alles selbst.",
   -- Entdecken: Modi in den Ansichten (E3)
   ["%d undiscovered"] = "%d unentdeckt",
@@ -239,4 +240,15 @@ ns.Locales.deDE = {
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
   ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",
+  -- Pet-Rahmen: Stufe und EP-Leiste (#120)
+  ["Enable pet frame additions"] = "Pet Frame Erweiterungen aktivieren",
+  ["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."] = "Ergänzt den Pet-Rahmen des Spiels um die Stufe deines Pets und eine Erfahrungsleiste. Fährst du mit der Maus über die Leiste, siehst du die genauen Zahlen.",
+  ["Show current level"] = "Aktuelle Stufe anzeigen",
+  ["Shows your pet's level in a small circle at the bottom left of the pet frame."] = "Zeigt die Stufe deines Pets in einem kleinen Kreis unten links am Pet-Rahmen.",
+  ["Show experience bar"] = "Erfahrungsleiste anzeigen",
+  ["Shows a slim experience bar below the pet frame."] = "Zeigt eine schmale Erfahrungsleiste unter dem Pet-Rahmen.",
+  ["Level %d – %s / %s XP (%d%%)"] = "Stufe %d – %s / %s EP (%d %%)",
+  ["%s / %s XP (%d%%)"] = "%s / %s EP (%d %%)",
+  ["%s XP to level %d"] = "Noch %s EP bis Stufe %d",
+  ["Level %d – Max"] = "Stufe %d – Max",
 }

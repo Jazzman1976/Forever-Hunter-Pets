@@ -3,7 +3,7 @@
 ## Notes: Which beast teaches which rank of a hunter pet ability, and where to find it.
 ## Notes-deDE: Welches Tier welchen Rang einer Pet-Fähigkeit beibringt und wo es steht.
 ## Author: Elmar Höfinghoff
-## Version: 1.0.0
+## Version: 1.1.0-beta.1
 ## X-License: MIT
 ## X-Website: https://github.com/Jazzman1976/Forever-Hunter-Pets
 ## X-Curse-Project-ID: 1750003
@@ -26,6 +26,7 @@ Core\Discover.lua
 Core\Comm.lua
 Core\Probe.lua
 Core\Survey.lua
+Core\ForeignRanks.lua
 UI\Widgets.lua
 UI\MapCanvas.lua
 UI\Abilities.lua
@@ -36,4 +37,5 @@ UI\ModeDialog.lua
 UI\Settings.xml
 UI\Settings.lua
 UI\Tooltip.lua
+UI\PetXP.lua
 UI\Scent.lua

@@ -10,6 +10,14 @@ local strings = (ns.Locales or {})[GetLocale and GetLocale() or "enUS"] or {}
 ns.L = setmetatable({}, { __index = function(_, k) return strings[k] or k end })
 local L = ns.L
 
+-- ---- Schwellen für fremde Meldungen (#103) ----
+-- Was andere Spieler melden, gilt ab FOREIGN_SURE verschiedenen Meldern als belegt, ab FOREIGN_UNSURE als unsicher
+-- (nur Lehrtier-Paare; gezeigt nur mit „Unsichere Angaben zeigen“). Die Melder müssen dabei über mindestens zwei
+-- verschiedene Absender gekommen sein (#15, ns.ViaDistinct in Core/Comm.lua). Die Zahlen stehen nur hier und in
+-- tools/build-data.mjs; sie werden angehoben, wenn mehr Spieler das Addon nutzen.
+ns.FOREIGN_SURE = 3     -- bis 17.10.2026: 10 (#1)
+ns.FOREIGN_UNSURE = 2   -- seit #103; vorher genügte ein einziger Melder
+
 -- ---- Helfer ----
 -- In Kampf und Instanzen liefert die API „geheime Werte“. Nur issecretvalue prüft das gefahrlos:
 -- schon der Vergleich eines geheimen Werts kann einen Fehler werfen.
@@ -83,12 +91,22 @@ end)
 -- je Konto: Fensterposition, Knopf an der Minikarte (an/aus und sein Winkel am Ring in Grad),
 -- ob die Filter der Ansicht „Fähigkeiten“ die Sitzung überdauern, ob Tier-Tooltips ergänzt werden (mit Leerzeile
 -- davor, danach), ob Lehrtiere aus unsicheren oder unbelegten Quellen erscheinen und ob Beobachtungen
--- beim Zähmen mit anderen Spielern geteilt werden; den Lernstand von Hand ändern (manualEdit) ist standardmäßig aus
+-- beim Zähmen mit anderen Spielern geteilt werden; den Lernstand von Hand ändern (manualEdit) ist standardmäßig aus;
+-- Stufe und EP-Leiste am Pet-Rahmen (petFrame mit petFrameLevel und petFrameXP, #120)
 local DEFAULTS = { ui = { minimap = true, minimapAngle = 215, keepFilters = true, tooltip = true, tooltipGapBefore = true, tooltipGapAfter = false,
-  showUncertain = false, showUnproven = false, share = true, manualEdit = false, tooltipShowKnown = true } }
+  showUncertain = false, showUnproven = false, share = true, manualEdit = false, tooltipShowKnown = true,
+  petFrame = true, petFrameLevel = true, petFrameXP = true } }
 -- je Charakter: Lernstand { [Fähigkeit] = { Ränge } } und die zuletzt gewählten Filter
 -- (show: abgewählte Häkchen = false; zone, fam: ID, "current" oder nichts für „Alle“)
 local CHAR_DEFAULTS = { known = {}, filters = { show = {} } }
+
+-- Protokoll einer Probe oder des Selbsttests speichern (ForeverHunterPetsDB.probe), mit Zeitstempel: Es soll
+-- nach /reload aus der Datei lesbar sein, aber nicht ewig liegen bleiben (#68)
+local PROBE_KEEP = 24 * 60 * 60
+function ns.SaveProbe(log)
+  if not ns.db then return end
+  ns.db.probe, ns.db.probeAt = log, time()
+end
 
 ns.On("ADDON_LOADED", function(name)
   if name ~= ADDON then return end
@@ -99,6 +117,9 @@ ns.On("ADDON_LOADED", function(name)
   ns.db, ns.char = ForeverHunterPetsDB, ForeverHunterPetsCharDB
   -- Protokolle abgeschlossener Proben (Lehren, Vormarkieren) nicht weiter mitschleppen
   ns.db.teachProbe, ns.db.selectProbe, ns.db.selectMethod = nil, nil, nil
+  -- Protokoll der letzten Probe bzw. des Selbsttests nur einen Tag aufheben (#68); ohne Zeitstempel ist es
+  -- von vor diesem Stand und kommt auch weg
+  if not (ns.db.probeAt and time() - ns.db.probeAt < PROBE_KEEP) then ns.db.probe, ns.db.probeAt = nil, nil end
   -- Schalter „Fundorte anderer Spieler“ gibt es nicht mehr (16.10.2026)
   ns.db.ui.showForeignCells = nil
 end)

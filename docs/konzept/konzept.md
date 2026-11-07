@@ -61,13 +61,14 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 | **Sichtung** | Ziel, Maus, Namensplakette; außerhalb Kampf und Instanz | Fährte (jede Entfernung), Stammdaten (28 m), Fundort (10 m) |
 | **Witterung** | Maus über einem Punkt von „Wildtiere aufspüren“ auf der Minikarte | Fährte (über den Namen zugeordnet) |
 | **Zähmen** | „Wildtier zähmen“ gelingt | Zauber-IDs, Stufe, Tempo, Fundort (immer), Fährte |
+| **Fremde Ränge** | eine fremde Zähmung zeigt einen unbekannten Zauber (#103) | Name und Rang vom eigenen Client |
 | **Lernmeldung, Ausbildungsfenster** | „Ihr habt einen neuen Zauber erlernt“, Wildtierausbildung | Lernstand des Jägers |
 
 Wildtierkunde zeigt in Forever keine Fähigkeiten (an Blizzard gemeldet) und taugt deshalb nicht zum Sammeln; ihr Icon ist trotzdem das Addon-Icon.
 
 ### Ablage
 
-Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `shareFinds`, `filters`, dazu die eigenen Funde `seenIn` und `loc`). Gesammelt und geteilt wird kontoweit; im Entdeckermodus zählen die Funde des Charakters, auf Wunsch die des Kontos (#43). Der Modus gilt je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
+Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `seenIn`, `trackNames`, `myReps`, `spellNames`), je Charakter in `ForeverHunterPetsCharDB` (`known`, `discover`, `modeChosen`, `shareFinds`, `filters`, dazu die eigenen Funde `seenIn` und `loc`). Gesammelt und geteilt wird kontoweit; im Entdeckermodus zählen die Funde des Charakters, auf Wunsch die des Kontos (#43). Der Modus gilt je Charakter. Formate in [addon-technik.md](../technik/addon-technik.md).
 
 ### Vom Spiel ins Repo
 
@@ -75,7 +76,7 @@ Kontoweit in `ForeverHunterPetsDB` (`survey`, `sights`, `obs`, `loc`, `locIn`, `
 SavedVariables ──tools/import-observations.mjs──> tools/eigene/*.json ──build-data.mjs──> tools/data.json ──build-addon.mjs──> Data/Data.lua
 ```
 
-Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden je Melder gespeichert und wie Zähmungen und Sichtungen ab 3 Meldern ausgeliefert (#2).
+Jeder Eintrag in `tools/eigene/` braucht einen Beleg. Der Generator rechnet die Belegung ([§10](#10-belegung-was-gilt-als-wahr)) und bricht ab, wenn ein Beleg fehlt. `tools/data.json` und `Data/Data.lua` sind generiert und werden nie von Hand bearbeitet. Fremde Fundort-Zellen werden je Melder gespeichert und wie Zähmungen und Sichtungen ab 3 Meldern ausgeliefert (#2), fremde Ränge ebenso (#103).
 
 ### Zur Laufzeit: Daten und eigene Funde zusammen
 
@@ -83,13 +84,13 @@ Die mitgelieferten Daten sind nur ein Teil. Was das Addon zeigt, setzt sich zusa
 
 | Frage | Helfer | Quellen |
 | --- | --- | --- |
-| Welche Fähigkeiten und Ränge gibt es? | `ns.MergeSurveyAbilities` (beim Einloggen und nach jeder Erhebung; Zwischenspeicher über `ns.OnAbilitiesChanged`) | Daten + eigene Erhebung |
-| Stufe, Familie, Einstufung eines Tiers | `ns.BeastInfo`, `ns.BeastFamily` | Daten → Sichtung → Zähmung → Fernname |
-| Name eines Tiers | `ns.BeastName` | Sichtung (Client-Sprache) → Daten → Fernname → „Unbekanntes Tier (#ID)“ |
+| Welche Fähigkeiten und Ränge gibt es? | `ns.MergeSurveyAbilities` (beim Einloggen und nach jeder Erhebung; Zwischenspeicher über `ns.OnAbilitiesChanged`) | Daten + eigene Erhebung + fremde Ränge bekannter Fähigkeiten ab 3 Meldern (`ns.ForeignRankCandidates`, #103) |
+| Stufe, Familie, Einstufung eines Tiers | `ns.BeastInfo`, `ns.BeastFamily` | Daten → Sichtung (`ns.TrustedSighting`) → Zähmung → Fernname; Sichtung und Zähmung je eigene sofort, fremde ab 3 Meldern (#103) |
+| Name eines Tiers | `ns.BeastName` | eigene Sichtung (Client-Sprache) → Daten → Fernname → fremde Sichtung ab 3 Meldern, die genau diesen Namen nennen (#103) → „Unbekanntes Tier (#ID)“ |
 | Name und Icon einer Familie | `ns.FamilyName`, `ns.FamilyIds`, `ns.FamilyIcon` | Daten → Erhebung → Ersatz-Icon „Wildtier zähmen“ |
 | Lehrtiere eines Rangs | `ns.Teachers`, `ns.ObservedTeachers` | Daten + Zähmungen (eigene und geteilte) |
 | Was lehrt ein Tier? | `ns.TeachInfo(npc, discover)` | Entdeckermodus: eigene Zähmung; sonst Daten + alle Zähmungen |
-| Fundorte, Zonen | `ns.Coords`, `ns.ZoneCounts`, `ns.BeastZones`, `ns.TamedZones` | Daten + Zellen + eigene Zähmungen |
+| Fundorte, Zonen | `ns.Coords`, `ns.ZoneCounts`, `ns.BeastZones`, `ns.TamedZones` | Daten + Zellen (fremde ab 3 Meldern je Tier und Karte, `ns.ForeignCellsOk`) + eigene Zähmungen |
 
 Anlass für den Grundsatz: Ein gezähmter Kojote fehlte bei „Beißen 2“, ein Junger Fleischreißer „brachte keine Fähigkeit mit“ – beides, weil nur die mitgelieferten Daten gelesen wurden.
 
@@ -111,7 +112,7 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | Ausbildung | unverändert | unverändert |
 | Sammeln und Teilen | an | an |
 
-- **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde meiner anderen Charaktere zeigen“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
+- **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde anderer Charaktere“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
 - **Der Entdeckermodus ist der empfohlene und der Standard** (Nutzer, 20.10.2026, #42: „Ich möchte niemandem etwas verbieten. Ich möchte überzeugen.“). Der Startdialog zeigt ihn zuerst, mit „Empfohlen.“ als Wort; der Komplettmodus folgt darunter, ehrlich als Weg für alle, die nicht suchen wollen. Wer den Dialog ohne Wahl schließt, spielt im Entdeckermodus; auch „Standard wiederherstellen“ in den Einstellungen ergibt ihn.
 - **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Bis 0.13.0-beta mit einem Absatz zur Beta (ermutigend: Lücken warten darauf, entdeckt zu werden), mit 1.0.0 entfernt. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad; Hover erklärt ihn und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen.
 - **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „? unentdeckt“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus).
@@ -178,7 +179,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | Stufe | Bedeutung | Anzeige |
 | --- | --- | --- |
 | belegt | eigene Zähmung, oder mindestens 3 verschiedene fremde Melder, oder ein Befund „bestätigt“ | normal |
-| unsicher | weniger als 3 fremde Melder | aus; einschaltbar, Zeichen „?“ |
+| unsicher | 2 fremde Melder (weniger als 3), für jede Datenart (#136); was nur einer meldet, wird gespeichert, aber weder ausgeliefert noch gezeigt | aus; einschaltbar, Zeichen „?“ |
 | unbelegt | nur geschätzt (noch keine Schätzungen, Schalter fehlt) | aus; Zeichen „!“ |
 | widerlegt | eine Zähmung zeigte den Rang nicht, obwohl die Stufe reichte | nie |
 
@@ -186,6 +187,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Die Fähigkeiten hängen an der NPC-ID**, nur der Rang an der Stufe. Darum widerlegt eine Zähmung ein Paar endgültig – und darum gibt es **keine Wahrscheinlichkeiten**: Was ein Tier mitbringt, ist kein Zufall. Widersprechen sich Zähmungen derselben NPC-ID, meldet der Generator das; dann wackelt die Annahme.
 - **Das Zauberbuch zeigt nur den höchsten Rang:** Ein höherer Rang widerlegt keinen niedrigeren.
 - **3 Melder** (17.10.2026, M5, #1): anfangs zwei, dann 10; mit einer Gilde als Spielerschaft wurde 10 kaum erreicht. Drei unabhängige Spieler sind für Spieldaten ein guter Beleg; anheben, wenn es viele Spieler gibt.
+- **Eine Regel für alles** (23.10.2026, umgesetzt mit #103): Alles, was wir selbst sammeln, sammeln auch andere, und Fremdes gilt erst ab 3 Meldern über mindestens zwei Absender (#15) – Lehrtier-Paare, Fähigkeiten und Ränge, Tiernamen, Familie, Einstufung und Stufen aus Sichtungen und Zähmungen, Fundort-Zellen in den Stammdaten **und im Spiel** (gezählt je Tier und Karte; darunter erscheint ein Tier weder in *Gebiet* noch in „X von Y“). *Unsicher* ab 2 Meldern gilt seit #136 für jede Datenart, nur im Spiel und nur mit „Unsichere Angaben zeigen“, gekennzeichnet mit „?“ direkt hinter dem Wert („Name?“, „Stufe 12?“, „Bär?“, „Rang 5?“, „lehrt nichts?“); es zählt dann in „X von Y“ mit. In die Stammdaten kommt Unsicheres nur als Lehrtier-Paar, sonst gelten sie als belegt (#124). Das Angriffstempo ist eine Fähigkeit wie jede andere: Ein neues Tempo legt das Addon zur Laufzeit an, eigenes sofort, fremdes ab 2 unsicher, ab 3 belegt. Beide Zahlen stehen an je einer Stelle (`ns.FOREIGN_SURE`, `ns.FOREIGN_UNSURE` in `Core/Init.lua`, dieselben oben in `tools/build-data.mjs`), weil sie mit der Zahl der Spieler steigen sollen.
+- **Fremde Ränge** (#103): Eine fremde Zähmung mit einem Zauber, den noch keine Fähigkeit kennt, wird über den eigenen Client in Name und Rang aufgelöst. Im Spiel wird daraus nur ein **neuer Rang einer bekannten Fähigkeit**, die man von Tieren lernt, ab 3 Meldern belegt, ab 2 unsicher (#136). **Ganz neue Fähigkeiten kommen nur über die Stammdaten**, nach Durchsicht beim Import (Abbruch bei neuen Fähigkeiten #37, Prüfung auf Jägerzauber): Das Addon kann einen Jägerzauber oder Unsinn nicht von einer Pet-Fähigkeit unterscheiden. Ein solcher Rang hat keine Pet-Stufe und keine TP, bis jemand die Wildtierausbildung öffnet, und **ein Rang ohne Pet-Stufe widerlegt nichts**.
 
 ## 11 Lernstand
 
@@ -262,7 +265,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Erst proben, dann bauen:** Unklare API-Fragen klärt eine Probe (`/fhp …`, Protokoll in den SavedVariables), Ergebnisse in [api-befunde.md](../technik/api-befunde.md).
 - **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung; Bugs zusätzlich nach Schwere (Skala in [arbeitsweise.md](arbeitsweise.md)).
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
-- **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>-beta` (bei einer Beta; ein echtes Release wie 1.0.0 ohne Zusatz, danach wieder Betas bis zum nächsten echten Release); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>-beta`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
+- **GitFlow:** Jede Änderung mit Issue in `feature/<Nr>-<titel>` von `develop`, per PR mit Merge-Commit zurück, Branch löschen; `main` nur Releases. Ein Release bekommt ein Issue und einen Branch `release/<version>` (eine Beta mit Zusatz, seit 1.0.0 zur Zielversion nummeriert, etwa `1.1.0-beta.1` → `1.1.0-beta.2` → `1.1.0`; ein echtes Release wie 1.0.0 ohne Zusatz, danach wieder Betas bis zum nächsten echten Release); dort Version und Release Notes, Abschlusstest, dann per PR zuerst nach `main` (Tag `v<version>`, etwa `v1.1.0-beta.1`), danach zurück nach `develop` (seit 18.10.2026; 0.6.0 bis 0.8.0 liefen ohne Release-Branch). Einzelheiten in [entwicklung.md](../technik/entwicklung.md).
 - **Bekanntes, das nicht zum Auftrag gehört,** wird genannt, nicht ungefragt angefasst.
 - **Forever ändert sich noch**, auch nach dem Start am 5.11.2026 (in der Beta wöchentlich); erhobene Daten können veralten.
 - Doku, Kommentare, Commits deutsch; README, NOTICE, CONTRIBUTING und die Anleitung `docs/guide/guide.md` englisch.
@@ -275,7 +278,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | M2 Entdecken | Modi, Reiter „Gebiet“, Fährten und Witterung (E1–E5, E7) | abgeschlossen (17.10.2026, Release 0.6.0); E8 zurückgestellt |
 | M3 Design | Farben, Hintergründe, Rahmen wie Original-Fenster (nur Aussehen) | zurückgestellt |
 | M4 Veröffentlichung | Release, neues öffentliches Repo, CurseForge; vorher Screenshots neu | abgeschlossen (17.10.2026): öffentliches Repo, Beta 0.8.0 auf CurseForge, automatischer Upload |
-| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026), Release 0.13.0-beta mit #55–#114 (29.10.2026, vor dem Start von WoW Forever ohne Test im Spiel; Test am Starttag 5.11.2026 bestanden), Release 1.0.0 mit #124 (05.11.2026, erstes Release ohne Beta) |
+| M5 Beta-Test | Teilen mit mehreren Spielern, Schwellen, Leistung, andere Sprachen | läuft (seit 17.10.2026); Release 0.9.0-beta mit #1–#5 (18.10.2026), Release 0.10.0-beta mit #12–#32 (18.10.2026), Release 0.11.0-beta mit #37–#80 (20.10.2026), Release 0.12.0-beta mit #49–#90 (22.10.2026), Release 0.13.0-beta mit #55–#114 (29.10.2026, vor dem Start von WoW Forever ohne Test im Spiel; Test am Starttag 5.11.2026 bestanden), Release 1.0.0 mit #124 (05.11.2026, erstes Release ohne Beta), Release 1.1.0-beta.1 mit #62–#139 (07.11.2026, erste nummerierte Beta) |
 
 Mit dem Release 1.0.0 ist der Beta-Hinweis aus dem Startdialog entfernt (`UI/ModeDialog.lua`, Texte in `Locales/deDE.lua`, Anleitung; #42, #115).
 

@@ -1,7 +1,8 @@
 # Paket bauen und hochladen (BigWigs-Packager): Bei jedem Tag „v*“ geht das ZIP nach CurseForge (Projekt-ID
-# aus dem TOC, Typ aus dem Tag-Namen: „-beta“ = Beta, ohne Zusatz = Release) und als GitHub-Release.
+# aus dem TOC, Typ aus dem Tag-Namen: „beta“ irgendwo darin = Beta, etwa v1.1.0-beta.1; ohne „alpha“ und
+# „beta“ = Release) und als GitHub-Release (Beta als Vorabversion).
 # Changelog ist CHANGELOG.md (.pkgmeta). Von Hand gestartet nur ein Probelauf ohne Upload; das ZIP hängt dann
-# als Artefakt am Lauf. Das ZIP heißt wie das Tag, etwa v0.10.0-beta.zip (-n, Regel des Nutzers, 18.10.2026);
+# als Artefakt am Lauf. Das ZIP heißt wie das Tag, etwa v1.1.0-beta.1.zip (-n, Regel des Nutzers, 18.10.2026);
 # Beta und Spielversion (Forever) hängen nicht am Namen, sondern an Tag und TOC.
 name: Release
 

@@ -1,0 +1,170 @@
+-- Forever Hunter Pets · Fremde Ränge (#103): Zauber aus fremden Zähmungen, die die Daten noch nicht kennen.
+-- Seit #114 werden solche Zähmungen gespeichert und geteilt. Hier wird jede unbekannte Zauber-ID über den eigenen
+-- Client in Name und Rang aufgelöst (C_Spell.GetSpellName, Rangtext wie in Core/Survey.lua). Das sind Daten, die der
+-- Client zur Laufzeit liefert; übertragen wird dafür nichts.
+--
+-- Ablage kontoweit: ForeverHunterPetsDB.spellNames[Zauber-ID] = { n = Name, r = Rang, l = Sprache des Clients },
+-- höchstens MAX_NAMES Einträge. Ohne Rangtext (passive Zauber wie das Angriffstempo) bleibt eine ID unaufgelöst.
+--
+-- Ein aufgelöster Rang wird zur Fähigkeit (ns.MergeSurveyAbilities, Core/Index.lua), wenn sein Name zu einer
+-- bekannten Fähigkeit passt, die man von Tieren lernt, und ns.FOREIGN_SURE fremde Melder über zwei Absender ihn beim
+-- Zähmen zeigten. Er kommt ohne Pet-Stufe und TP; die bringt erst die Wildtierausbildung. Ganz neue Fähigkeiten
+-- erscheinen im Spiel nie, sie kommen nur über die Stammdaten (Prüfung auf Jägerzauber beim Import, #37).
+local _, ns = ...
+
+local MAX_NAMES = 500
+
+-- Ränge, die ns.MergeSurveyAbilities schon aus fremden Zähmungen eingehängt hat: [Zauber-ID] = Rang. Sie gelten
+-- danach als bekannte Zauber, zählen hier aber weiter mit, damit ihre Belegung mit neuen Meldern steigen kann (#136).
+ns.foreignRankIds = ns.foreignRankIds or {}
+
+local function store()
+  if not ns.db then return nil end
+  if type(ns.db.spellNames) ~= "table" then ns.db.spellNames = {} end
+  return ns.db.spellNames
+end
+
+-- Unbekannte Zauber-IDs aus fremden Zähmungen: { [id] = { reps = { [Kürzel] = true }, n, npcs = { [npc] = true } } }
+local function unknownIds()
+  local out = {}
+  for _, s in ipairs((ns.db and ns.db.obs) or {}) do
+    local o = ns.ParseObservation(s)
+    if o and not o.own then
+      for id in pairs(o.spells) do
+        if not ns.IsKnownSpell(id) or ns.foreignRankIds[id] then
+          local e = out[id]
+          if not e then
+            e = { reps = {}, n = 0, npcs = {} }
+            out[id] = e
+          end
+          if not e.reps[o.rep] then e.reps[o.rep] = true; e.n = e.n + 1 end
+          e.npcs[o.npc] = true
+        end
+      end
+    end
+  end
+  return out
+end
+
+-- ---- Auflösen ----
+local tried = {}   -- in dieser Sitzung geladen und ohne Rang: nicht noch einmal fragen
+local function resolveOne(names, id, count)
+  if names[id] or tried[id] then return count, false end
+  local name
+  if C_Spell and C_Spell.GetSpellName then
+    local ok, v = pcall(C_Spell.GetSpellName, id)
+    name = ok and ns.clean(v) or nil
+  end
+  local rank = ns.SubtextRank and ns.SubtextRank(id)
+  if type(name) == "string" and name ~= "" and #name <= 60 and type(rank) == "number" and rank > 0 then
+    if count >= MAX_NAMES then return count, false end
+    names[id] = { n = name, r = rank, l = GetLocale and GetLocale() or "enUS" }
+    return count + 1, true
+  end
+  if ns.SpellDataCached and ns.SpellDataCached(id) then
+    tried[id] = true
+  elseif ns.RequestSpellData then
+    ns.RequestSpellData(id)
+  end
+  return count, false
+end
+
+-- Alle unbekannten IDs auflösen, die es noch nicht sind; danach die Fähigkeiten neu zusammenführen, wenn etwas dazukam
+function ns.ResolveForeignRanks()
+  local names = store()
+  if not names then return end
+  local count = 0
+  for _ in pairs(names) do count = count + 1 end
+  local added = false
+  for id in pairs(unknownIds()) do
+    local new
+    count, new = resolveOne(names, id, count)
+    added = added or new
+  end
+  if added and ns.MergeSurveyAbilities then ns.MergeSurveyAbilities() end
+end
+
+-- Kandidaten für ns.MergeSurveyAbilities: aufgelöste IDs ab ns.FOREIGN_UNSURE fremden Meldern über zwei Absender, mit
+-- ihrer Belegung (ns.ForeignConf: unsicher ab 2, belegt ab 3; #136) und den Familien der Tiere, die sie zeigten:
+-- { { id, name, rank, conf, fams = { [Familie] = true } }, … }. Unsichere zeigen die Ansichten nur mit dem Schalter.
+function ns.ForeignRankCandidates()
+  local names = ns.db and ns.db.spellNames
+  if type(names) ~= "table" or not next(names) then return {} end
+  local out = {}
+  for id, e in pairs(unknownIds()) do
+    local nm = names[id]
+    local conf = ns.ForeignConf(e.reps, e.n)
+    if type(nm) == "table" and type(nm.n) == "string" and type(nm.r) == "number" and conf then
+      local fams = {}
+      for npc in pairs(e.npcs) do
+        local fam = ns.BeastFamily(npc)
+        if fam then fams[fam] = true end
+      end
+      out[#out + 1] = { id = id, name = nm.n, rank = nm.r, conf = conf, fams = fams }
+    end
+  end
+  return out
+end
+
+-- Für /fhp teilen: unbekannte Zauber aus fremden Zähmungen – aufgelöst, davon unter der Schwelle (unter
+-- ns.FOREIGN_UNSURE, also auch mit dem Schalter nicht gezeigt)
+function ns.ForeignRankStatus()
+  local names = (ns.db and ns.db.spellNames) or {}
+  local total, resolved, below = 0, 0, 0
+  for id, e in pairs(unknownIds()) do
+    total = total + 1
+    if type(names[id]) == "table" then
+      resolved = resolved + 1
+      if not ns.ForeignConf(e.reps, e.n) then below = below + 1 end
+    end
+  end
+  return total, resolved, below
+end
+
+-- ---- Angriffstempo als Fähigkeit (#136) ----
+-- Ein abweichendes Tempo (nicht 2,0 s) aus Zähmungen und Sichtungen, für das es noch keine Tempo-Fähigkeit gibt, wird
+-- zur Laufzeit eine – wie im Generator (traitsFromObservations) mit Ersatz-ID −Tempo × 100. Eigenes gilt sofort,
+-- Fremdes nach ns.ForeignConf. Liefert { { speed, conf }, … }; gezählt wird nur neu, wenn sich der Bestand ändert.
+local NORMAL_SPEED = 2.0
+local speedCache, speedKey
+function ns.ObservedSpeedCandidates()
+  local obs, sights = (ns.db and ns.db.obs) or {}, (ns.db and ns.db.sights) or {}
+  local key = #obs .. ":" .. #sights
+  if speedCache and speedKey == key then return speedCache end
+  local bySpeed = {}   -- Tempo × 10 → { own, reps, n }
+  local function see(speed, own, rep)
+    if not speed or math.abs(speed - NORMAL_SPEED) < 0.05 then return end
+    local k = math.floor(speed * 10 + 0.5)
+    local e = bySpeed[k]
+    if not e then e = { own = false, reps = {}, n = 0 }; bySpeed[k] = e end
+    if own then e.own = true elseif not e.reps[rep] then e.reps[rep] = true; e.n = e.n + 1 end
+  end
+  for _, s in ipairs(obs) do
+    local o = ns.ParseObservation(s)
+    if o then see(o.speed, o.own, o.rep) end
+  end
+  for _, s in ipairs(sights) do
+    local o = ns.ParseSighting and ns.ParseSighting(s)
+    if o then see(o.speed, o.own, o.rep) end
+  end
+  local out = {}
+  for k, e in pairs(bySpeed) do
+    local conf = e.own and ns.CONF_SURE or ns.ForeignConf(e.reps, e.n)
+    if conf then out[#out + 1] = { speed = k / 10, conf = conf } end
+  end
+  speedCache, speedKey = out, key
+  return out
+end
+
+-- Beim Einloggen (wenn das Zauberbuch und die Daten stehen) und sobald der Client nachgeladene Daten meldet
+local soon = false
+local function resolveSoon(delay)
+  if soon then return end
+  soon = true
+  ns.After(delay, function()
+    soon = false
+    ns.SafeCall("foreignranks", ns.ResolveForeignRanks)
+  end)
+end
+ns.On("PLAYER_LOGIN", function() resolveSoon(10) end)
+ns.On("SPELL_DATA_LOAD_RESULT", function() resolveSoon(1) end)

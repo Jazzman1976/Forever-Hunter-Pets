@@ -1,6 +1,6 @@
 // Prüfung ohne Spiel: Syntax aller Lua-Dateien (luaparse), dann jedes Szenario aus tools/test/szenarien/ in einem
 // frischen Lua (fengari) mit nachgebildeter API (mock.lua) und den Dateien aus der TOC (Core, Locales, Data; UI nur
-// Syntax). fengari findet dabei auch ungültige Escapes wie "Interface\Icons", die luaparse übersieht.
+// Syntax, außer ein Szenario lädt eine UI-Datei mit „-- lädt: UI/…“). fengari findet dabei auch ungültige Escapes wie "Interface\Icons", die luaparse übersieht.
 // Einmal vorher: im Ordner tools/test „npm install“
 //   node tools/test/run.mjs                 alles
 //   node tools/test/run.mjs t114 t105      nur Szenarien, deren Dateiname so beginnt (Syntax immer)
@@ -62,9 +62,14 @@ function scenario(file) {
     return v;
   };
   run(fs.readFileSync(path.join(HERE, 'mock.lua'), 'utf8'), 'mock.lua');
+  // UI-Dateien lädt nur ein Szenario, das sie in einer Zeile „-- lädt: UI/Datei.lua …“ nennt (#120), nach Core,
+  // in der Reihenfolge der TOC
+  const code = fs.readFileSync(file, 'utf8');
+  const ui = (code.match(/^-- lädt: (.+)$/m)?.[1] ?? '').split(/\s+/).filter(Boolean);
   for (const f of toc) run(fs.readFileSync(path.join(ROOT, f), 'utf8'), f, true);
+  for (const f of ui) run(fs.readFileSync(path.join(ROOT, f), 'utf8'), f, true);
   run('NS.ReportError = function(where, err) ERRORS[#ERRORS + 1] = where .. ": " .. tostring(err) end', 'run.mjs');
-  run(fs.readFileSync(file, 'utf8'), path.basename(file));
+  run(code, path.basename(file));
   run('if #ERRORS > 0 then error("Fehler im Addon: " .. table.concat(ERRORS, " | ")) end', 'run.mjs');
   return global('CHECKS');
 }
