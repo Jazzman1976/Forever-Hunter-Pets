@@ -783,7 +783,7 @@ function ns.ShareStatus()
     :format(tames, unknown, sights, cells, nReps))
   if ns.ForeignRankStatus then
     local total, resolved, below = ns.ForeignRankStatus()
-    ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d (#103)")
+    ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d")
       :format(total, resolved, below))
   end
   local via = 0
