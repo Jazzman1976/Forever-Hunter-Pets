@@ -110,6 +110,7 @@ Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer)
 ## Geheime Werte
 
 In Kampf und Instanzen liefert die API „secret values“, die schon beim Vergleichen einen Fehler werfen. Nur `issecretvalue()` ist ein sicherer Test. Auslesen also nur außerhalb des Kampfs und durch `ns.clean()`.
+
 ## Pet-Rahmen (Test von #120, 07.11.2026)
 
 - **`GetPetExperience()`** liefert in Forever aktuelle und nötige EP des Pets; `UnitLevel("pet")` die Stufe. Leiste und Stufe folgen im Spiel ohne `/reload` (EP beim Töten, Stufenaufstieg, Pet wegschicken und rufen) über `UNIT_PET_EXPERIENCE`, `UNIT_LEVEL`, `UNIT_PET` und `PET_UI_UPDATE`.
