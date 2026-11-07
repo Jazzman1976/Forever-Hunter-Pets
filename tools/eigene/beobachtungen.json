@@ -226,6 +226,8 @@
   {"npc":1021,"stufe":24,"zauber":[1265066],"tempo":2,"zeit":1792699092,"melder":"758ea066"},
   {"npc":1125,"stufe":5,"zauber":[7371],"tempo":2,"zeit":1792701268,"melder":"758ea066"},
   {"npc":1201,"stufe":7,"zauber":[],"tempo":2,"zeit":1792701366,"melder":"758ea066"},
+  {"npc":1126,"stufe":7,"zauber":[7371],"tempo":2,"zeit":1793836800,"melder":"a9151ec2"},
+  {"npc":276189,"stufe":10,"zauber":[16828,1263113],"tempo":2.5,"zeit":1793836800,"melder":"a9151ec2"},
   {"npc":1126,"stufe":7,"zauber":[7371],"tempo":2,"zeit":1793870412,"melder":"99fad664"},
   {"npc":1125,"stufe":6,"zauber":[7371],"tempo":2,"zeit":1793871521,"melder":"99fad664"},
   {"npc":1201,"stufe":8,"zauber":[],"tempo":2,"zeit":1793877836,"melder":"99fad664"},
@@ -234,5 +236,18 @@
   {"npc":705,"stufe":1,"zauber":[],"tempo":2,"zeit":1793880517,"melder":"99fad664"},
   {"npc":704,"stufe":2,"zauber":[],"tempo":2,"zeit":1793880594,"melder":"99fad664"},
   {"npc":708,"stufe":3,"zauber":[7371],"tempo":2,"zeit":1793880660,"melder":"99fad664"},
-  {"npc":269075,"stufe":6,"zauber":[],"tempo":2,"zeit":1793880768,"melder":"99fad664"}
+  {"npc":269075,"stufe":6,"zauber":[],"tempo":2,"zeit":1793880768,"melder":"99fad664"},
+  {"npc":1131,"stufe":8,"zauber":[17253],"tempo":2,"zeit":1793889313,"melder":"99fad664"},
+  {"npc":1138,"stufe":7,"zauber":[17253],"tempo":2,"zeit":1793895723,"melder":"99fad664"},
+  {"npc":1127,"stufe":8,"zauber":[7371],"tempo":2,"zeit":1793896201,"melder":"99fad664"},
+  {"npc":1689,"stufe":10,"zauber":[7371],"tempo":2,"zeit":1793896374,"melder":"99fad664"},
+  {"npc":276111,"stufe":10,"zauber":[],"tempo":2,"zeit":1793896438,"melder":"99fad664"},
+  {"npc":1961,"stufe":11,"zauber":[16828],"tempo":2,"zeit":1793896742,"melder":"99fad664"},
+  {"npc":1196,"stufe":8,"zauber":[16827],"tempo":2,"zeit":1793907669,"melder":"99fad664"},
+  {"npc":1127,"stufe":8,"zauber":[7371],"tempo":2,"zeit":1793907937,"melder":"99fad664"},
+  {"npc":276101,"stufe":10,"zauber":[1265054],"tempo":null,"zeit":1793923200,"melder":"a9151ec2"},
+  {"npc":1130,"stufe":12,"zauber":[16828],"tempo":2,"zeit":1793975656,"melder":"99fad664"},
+  {"npc":260157,"stufe":9,"zauber":[],"tempo":null,"zeit":1793976629,"melder":"99fad664"},
+  {"npc":1133,"stufe":9,"zauber":[17255],"tempo":null,"zeit":1794002567,"melder":"99fad664"},
+  {"npc":1199,"stufe":6,"zauber":[1742,1263102],"tempo":1.5,"zeit":1794072423,"melder":"99fad664"}
 ]
