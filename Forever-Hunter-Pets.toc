@@ -36,4 +36,5 @@ UI\ModeDialog.lua
 UI\Settings.xml
 UI\Settings.lua
 UI\Tooltip.lua
+UI\PetXP.lua
 UI\Scent.lua

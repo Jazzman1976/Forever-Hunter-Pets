@@ -83,9 +83,11 @@ end)
 -- je Konto: Fensterposition, Knopf an der Minikarte (an/aus und sein Winkel am Ring in Grad),
 -- ob die Filter der Ansicht „Fähigkeiten“ die Sitzung überdauern, ob Tier-Tooltips ergänzt werden (mit Leerzeile
 -- davor, danach), ob Lehrtiere aus unsicheren oder unbelegten Quellen erscheinen und ob Beobachtungen
--- beim Zähmen mit anderen Spielern geteilt werden; den Lernstand von Hand ändern (manualEdit) ist standardmäßig aus
+-- beim Zähmen mit anderen Spielern geteilt werden; den Lernstand von Hand ändern (manualEdit) ist standardmäßig aus;
+-- Stufe und EP-Leiste am Pet-Rahmen (petFrame mit petFrameLevel und petFrameXP, #120)
 local DEFAULTS = { ui = { minimap = true, minimapAngle = 215, keepFilters = true, tooltip = true, tooltipGapBefore = true, tooltipGapAfter = false,
-  showUncertain = false, showUnproven = false, share = true, manualEdit = false, tooltipShowKnown = true } }
+  showUncertain = false, showUnproven = false, share = true, manualEdit = false, tooltipShowKnown = true,
+  petFrame = true, petFrameLevel = true, petFrameXP = true } }
 -- je Charakter: Lernstand { [Fähigkeit] = { Ränge } } und die zuletzt gewählten Filter
 -- (show: abgewählte Häkchen = false; zone, fam: ID, "current" oder nichts für „Alle“)
 local CHAR_DEFAULTS = { known = {}, filters = { show = {} } }
