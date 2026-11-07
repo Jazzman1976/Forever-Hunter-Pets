@@ -17,7 +17,7 @@ tools/eigene/*.json  ──>  tools/build-data.mjs  ──>  tools/data.json  �
 | `beobachtungen.json` | `[{ npc, stufe, zauber: [IDs], tempo, zeit, melder }]`, eine je Zähmung | Import aus `ForeverHunterPetsDB.obs` |
 | `zellen.json` | `{ npc: { uiMapID: "xyxy…" } }`, eigene Fundort-Zellen, zwei Zeichen je Zelle (Spalte, Zeile im Raster 50 × 50, Alphabet `0–9 A–Z a–n`) | Import aus `ForeverHunterPetsDB.loc` |
 | `zellen-fremd.json` | `{ npc: { uiMapID: { melder: "xyxy…" } } }`, Fundort-Zellen anderer Spieler je Melder, Format wie `zellen.json`; ausgeliefert wird eine Zelle ab 3 Meldern oder mit einem eigenen Kürzel | Import aus `ForeverHunterPetsDB.locIn` (Einträge ohne Melder entfallen) |
-| `eigene-melder.json` | Kürzel der eigenen Charaktere | Import aus `ForeverHunterPetsDB.myReps` |
+| `eigene-melder.json` | Kürzel der eigenen Charaktere (keine Konto-Hashes mehr, #62; die eigenen Kontoordner stehen privat in `.ignore/eigene-konten.json`) | Import aus `ForeverHunterPetsDB.myReps` |
 | `melder-wege.json` | `{ melder: [absender, …] }`, über welche Absender ein fremdes Kürzel ankam, nur Kürzel (#15); über alle importierten Dateien vereinigt. Fremde Melder zählen nur, wenn sie zusammen über mindestens zwei Absender kamen; ein Melder ohne Eintrag trägt nichts bei. Fehlt die Datei, zählt kein fremder Melder (#60) | Import aus `ForeverHunterPetsDB.via` (je Melder `"abs1abs2…"`, höchstens 4 Absender, höchstens 5000 Melder); die Datei entsteht erst, wenn es etwas zu vermerken gibt |
 | `korrekturen.json` | `[{ npc, name, ability, rank, zauber?, befund: bestätigt\|widerlegt, quelle, datum }]`; `zauber` ist die ID des Rangs und geht vor dem Namen | von Hand |
 | `fundorte.json` | `[{ npc, name, map, punkte: [[x, y], …] in Prozent, quelle, datum }]` | von Hand |
