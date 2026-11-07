@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0-beta.1 – 2026-11-07
+
+The first beta on the way to 1.1.0. Betas now count up towards the next full release: 1.1.0-beta.1, 1.1.0-beta.2, … and then 1.1.0.
+
+**Please restart the game** after updating – this version brings new files, and `/reload` is not enough.
+
+- **Your pet's level and experience at the pet frame:** a small level badge and an experience bar below the game's pet frame, with the exact numbers on hover. Both can be switched off in the settings (*Enable pet frame additions*).
+- **One rule for everything other players report:** what 2 other players have reported is *uncertain*, from 3 players on it counts as confirmed – the same for which beast teaches a rank, a beast's name, family and level, where it lives, *teaches nothing* and attack speed. Uncertain data is only shown with *Show uncertain data*, with a **?** right after the value. What only one other player has reported is kept, but no longer shown.
+- **New ranks found by others:** when other players tame a beast with a rank the addon doesn't know yet, your game looks up its name and rank. Once enough players saw it, the rank shows up in *Abilities* – with "pet level unknown" until someone finds out more.
+- **The beast page shows the right beast:** the 3D model no longer shows a different beast you looked at before, while the game is still loading the new one.
+- **Smaller fixes:** the beast page closes when you switch to explorer mode, and the German label of *Show finds of my other characters* is no longer cut off.
+- **Privacy:** the self-test of `/fhp share` no longer stores the names of other players, and its log is cleared after a day.
+- **More data from the game:** 177 beasts (was 175), 1059 spawn points (was 898), three new teaching beasts for Claw and Bite; Bite is now known for bears and Cower for boars. A few entries reported by only one other player were dropped under the new rule.
+
 ## 1.0.0 – 2026-11-05
 
 The first full release, now that WoW Forever is live. Thank you to everyone who hunted with the beta versions so far – what you found is in this version. New features will keep coming as beta versions first, until they are ready for the next full release.
