@@ -132,8 +132,8 @@ end
 -- NPC-ID; lädt beides nicht, bleibt das Familien-Icon stehen. Ziehen mit der Maus dreht das Modell.
 -- Steht ein Tier noch nicht im Kreaturen-Cache des Clients, lädt SetCreature nichts, ClearModel räumt das alte
 -- Modell nicht weg, und GetModelFileID nennt noch dessen Datei (#131). Deshalb bleibt das Modell versteckt, bis
--- wirklich ein neues geladen ist, und das Addon fragt RETRY_FOR Sekunden lang alle RETRY_EVERY Sekunden nach,
--- bis der Client das Tier kennt.
+-- eine andere Datei als die des zuletzt gezeigten Tiers geladen ist, und das Addon fragt RETRY_FOR Sekunden
+-- lang alle RETRY_EVERY Sekunden nach, bis der Client das Tier kennt.
 local RETRY_EVERY, RETRY_FOR = 1, 6
 local function createModel(parent, size)
   local holder = CreateFrame("Frame", nil, parent)
@@ -147,7 +147,6 @@ local function createModel(parent, size)
   if m then
     m:SetAllPoints()
     if m.EnableMouse then m:EnableMouse(false) end   -- die Maus gehört dem Rahmen darunter (Drehen)
-    pcall(m.SetScript, m, "OnModelLoaded", function() holder.gotModel = true end)
   end
   local facing = -0.5
   local function now() return GetTime and GetTime() or 0 end
@@ -158,11 +157,14 @@ local function createModel(parent, size)
     if file == 0 then return nil end
     return file
   end
-  -- Geladen heißt: ein neues Modell ist da. OnModelLoaded kam seit dem Versuch, oder die Datei ist eine andere als
-  -- vor dem Wechsel. Dasselbe Tier wie zuletzt darf dieselbe Datei haben.
+  -- Geladen heißt: die Datei ist eine andere als die des zuletzt gezeigten Tiers. Gemerkt wird sie beim Zeigen,
+  -- nicht beim Wechsel: Beim Wechsel ist die Seite noch versteckt, und dann ist auf GetModelFileID kein Verlass;
+  -- auch OnModelLoaded feuert im Spiel für das alte Modell (Test 07.11.2026). Dasselbe Tier wie zuletzt darf
+  -- dieselbe Datei haben; zwei verschiedene Tiere mit demselben Modell behalten das Familien-Icon.
   local function loaded(self)
-    if not fileId() then return false end
-    return self.gotModel or fileId() ~= self.oldFile or self.npc == self.shownNpc
+    local file = fileId()
+    if not file then return false end
+    return file ~= self.shownFile or self.npc == self.shownNpc
   end
   -- Modell zeigen oder verstecken; versteckt steht das Familien-Icon da, wenn es eins gibt
   local function show(self, on)
@@ -180,7 +182,6 @@ local function createModel(parent, size)
       return
     end
     pcall(m.ClearModel, m)
-    self.gotModel = false
     pcall(m[try[1]], m, try[2])
     pcall(m.SetFacing, m, facing)
     self.checkAt, self.checks = now() + 0.4, 0
@@ -194,7 +195,7 @@ local function createModel(parent, size)
     if self.hasIcon then self.icon:SetTexture(icon) end
     show(self, false)
     if not m then return end
-    self.oldFile, self.npc = fileId(), npcId
+    self.npc = npcId
     facing = -0.5
     self.tries = {}
     if beast.disp then self.tries[#self.tries + 1] = { "SetDisplayInfo", beast.disp } end
@@ -212,7 +213,7 @@ local function createModel(parent, size)
     -- geladen? Sonst nach ein paar Blicken den nächsten Weg versuchen, zuletzt nach einer Pause von vorn
     if self.checkAt and now() >= self.checkAt then
       if loaded(self) then
-        self.checkAt, self.retryAt, self.shownNpc = nil, nil, self.npc
+        self.checkAt, self.retryAt, self.shownNpc, self.shownFile = nil, nil, self.npc, fileId()
         show(self, true)
         pcall(m.SetFacing, m, facing)
       else
