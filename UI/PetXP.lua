@@ -8,6 +8,7 @@ local _, ns = ...
 local L = ns.L
 
 local BAR_H = 7
+local INSET_L, INSET_R = 3, 4          -- Einrückung gegenüber dem Rahmen der Fokusleiste, siehe createBar
 local CELLS = 5                        -- Zellen der Leiste: ein Trennstrich alle 20 % (Wunsch des Maintainers, 07.11.2026)
 local XP_COLOR = { 0.0, 0.39, 0.88 }   -- Blau wie die EP-Leiste des Spielers (Wunsch des Maintainers, 07.11.2026)
 local EDGE = { 0.60, 0.48, 0.32 }      -- Goldton des Pet-Rahmens, aus dem Screenshot gemessen; für Rand und Trennstriche
@@ -114,12 +115,14 @@ end
 local function createBar()
   local b = CreateFrame("StatusBar", nil, PetFrame)
   b:SetHeight(BAR_H)
-  -- unter der Mana- bzw. Fokusleiste des Pets, die Füllung gleich breit wie deren Füllung; der eigene Rand liegt
-  -- 2 px außen wie der Rand der Leisten darüber, deshalb 4 px Abstand nach oben
+  -- unter der Mana- bzw. Fokusleiste des Pets, die Füllung so breit wie die sichtbare Füllung darüber; der eigene
+  -- Rand liegt 2 px außen wie der Rand der Leisten darüber, deshalb 4 px Abstand nach oben. Der Rahmen der
+  -- Fokusleiste ist breiter als das, was man sieht: im Spiel gemessen (07.11.2026, #120) links 139,5 bis rechts 216,5,
+  -- die sichtbare Füllung (wie die Lebensleiste) 142,5 bis 212,5 – also 3 Einheiten links, 4 rechts einrücken
   local mana = PetFrameManaBar
   if mana then
-    b:SetPoint("TOPLEFT", mana, "BOTTOMLEFT", 0, -4)
-    b:SetPoint("TOPRIGHT", mana, "BOTTOMRIGHT", 0, -4)
+    b:SetPoint("TOPLEFT", mana, "BOTTOMLEFT", INSET_L, -4)
+    b:SetPoint("TOPRIGHT", mana, "BOTTOMRIGHT", -INSET_R, -4)
   else
     b:SetWidth(70)
     b:SetPoint("TOPLEFT", PetFrame, "BOTTOMLEFT", 46, 8)
