@@ -139,7 +139,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 3. **Every rank it teaches**, with the ability icon: *– you have it* (grey) if you have the rank, *– you lack it* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
 5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
-6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 players – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
+6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 players and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
 

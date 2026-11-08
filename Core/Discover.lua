@@ -307,6 +307,7 @@ function ns.TeachInfo(npc, discover)
     end
   end
   local empty, nEmpty = {}, 0   -- fremde Melder, deren Zähmung keinen Rang zeigte
+  local pending = {}            -- Ränge aus fremden Zähmungen unter der Schwelle (#144)
   for _, o in ipairs(ns.ObservationsOf(npc)) do
     local seen = {}
     fromObservation(o, seen, {})
@@ -325,7 +326,9 @@ function ns.TeachInfo(npc, discover)
           clear = true
           add(e.a, e.r, ns.CONF_SURE)
         elseif v == nil or v == "unsure" then
-          unsure = true   -- wie im Tooltip erst ab ns.FOREIGN_SURE Meldern belegt; unsichere kommen über die Daten unten
+          -- wie im Tooltip erst ab ns.FOREIGN_SURE Meldern belegt; unsichere kommen über die Daten unten. Noch
+          -- nicht unklar: Belegen die Daten den Rang schon, bestätigt die Meldung nur (#144, Stammdaten dominieren)
+          pending[e.r] = true
         end
       end
     end
@@ -338,6 +341,10 @@ function ns.TeachInfo(npc, discover)
         clear = true
         add(e.a, e.r, e.conf)
       end
+    end
+    -- fremde Ränge unter der Schwelle: unklar nur, wenn sie nicht schon belegt dastehen (#144)
+    for r in pairs(pending) do
+      if not (have[r] and have[r].conf == ns.CONF_SURE) then unsure = true end
     end
     -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
     -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
