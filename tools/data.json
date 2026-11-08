@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-08T10:20:02.382Z",
+ "generatedAt": "2026-11-08T10:27:55.509Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -5533,7 +5533,6 @@
    "source": "tame",
    "speed": null,
    "families": [
-    3,
     6
    ],
    "ranks": [
