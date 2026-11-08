@@ -13,7 +13,7 @@ The next full release, with everything from 1.1.0-beta.1 and one more fix. If yo
 - **Smaller fixes:** the beast page closes when you switch to explorer mode, and the German label of *Show finds of my other characters* is no longer cut off.
 - **Privacy:** the self-test of `/fhp share` no longer stores the names of other players, and its log is cleared after a day.
 - **New in this release – no false call for more proof:** the beast tooltip no longer says *Hunters need more proof of what this beast teaches* just because another player shared a taming of it, when the addon's data already confirms what it teaches.
-- **More data from the game:** 178 beasts (1.0.0: 175), 1102 spawn points (1.0.0: 898), three new teaching beasts for Claw and Bite, and Faster Attack III is now confirmed for one more beast. Bite is now known for bears, Cower for boars and bears. A few entries reported by only one other player were dropped under the new rule.
+- **More data from the game:** 178 beasts (1.0.0: 175), 1119 spawn points (1.0.0: 898), three new teaching beasts for Claw and Bite, and Faster Attack III is now confirmed for one more beast. Bite is now known for bears, Cower for boars and bears. A few entries reported by only one other player were dropped under the new rule.
 
 ## 1.1.0-beta.1 – 2026-11-07
 
