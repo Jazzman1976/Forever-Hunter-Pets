@@ -203,7 +203,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 ## 12 Teilen im Spiel
 
-- **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde und Gruppe zwischen Spielern, die gleichzeitig online sind; Antworten auf Grüße per Flüstern. Ein Gruß nach dem Einloggen holt Neues von anderen.
+- **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde und Gruppe zwischen Spielern, die gleichzeitig online sind; Antworten auf Grüße per Flüstern. Ein Gruß nach dem Einloggen und beim Beitritt in eine Gruppe holt Neues von anderen; wer in einer Gruppe oder per Flüstern gegrüßt wird, grüßt einmal zurück, damit der Austausch in beide Richtungen geht (#156).
 - **Kein Kanal mehr** (10.11.2026, #153): Bis 1.1.0 lief der Austausch über Gilde und Gruppe hinaus über den verborgenen Kanal `FHPetsNet`. Seit dem Start von Forever lehnt der Server Addon-Nachrichten darin ab; in der Beta ging es noch. `YELL`, das andere Addons in Classic-Clients statt eines Kanals nehmen, lehnt der Forever-Client ab. Es bleiben Gilde, Gruppe und Flüstern; Spieler außerhalb davon erreicht das Addon vorerst nicht. Plan für einen Weg über Flüstern: #154. Das Addon verlässt den alten Kanal beim Einloggen; damit ist auch #149 (der Kanal auf Platz 1) erledigt.
 - **Was:** Zähmungen (`O1`), Sichtungen (`S1`), Fundort-Zellen (`F1`), Gruß (`H1`). Nicht geteilt: Fährten, Fernnamen, Status, Lernstand.
 - **Sparsam:** gedrosselt (eine Nachricht je 2 s, Bündel alle 5 Minuten), nur was die Daten noch nicht kennen, Obergrenzen für Gespeichertes. Einzelheiten und Zahlen in [addon-technik.md](../technik/addon-technik.md).

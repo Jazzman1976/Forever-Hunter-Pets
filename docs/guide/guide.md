@@ -186,7 +186,7 @@ Every state names whose it is: *you have it* and *you lack it* are about you, th
 
 ## Sharing with other players
 
-Addons can't reach the internet, so players share in the game: over your guild and your group, and by whispering back when someone greets. Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. These are addon messages: nobody sees them in the chat. Messages are throttled, so traffic stays low.
+Addons can't reach the internet, so players share in the game: over your guild and your group, and by whispering back when someone greets. The addon greets when you log in and when you join a group or raid; whoever greets you in a group gets a greeting back, so both sides receive what the other one has. Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. These are addon messages: nobody sees them in the chat. Messages are throttled, so traffic stays low.
 
 Up to version 1.1.0 the addon also used a hidden chat channel (`FHPetsNet`) to reach players outside your guild, but WoW Forever doesn't allow addon messages in such channels. The addon now leaves that channel when you log in. Sharing with players outside your guild and group is not possible for now; a new way is planned. If it had taken the first place in your channel list, *General* stays where it moved to: drag it back to the top in the *Channels* settings of the chat window.
 

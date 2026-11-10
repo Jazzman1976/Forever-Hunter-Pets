@@ -13,8 +13,9 @@
 --                                              nur, was die mitgelieferten Daten nicht kennen
 --   F1;npc;uiMapID;zellen;melder               neue eigene Fundort-Zellen (Core/Places.lua), gebündelt
 --                                              höchstens alle 5 Minuten, bis zu 100 Zellen
---   H1;version;anzahl                          Gruß nach dem Einloggen; Antwort: einige Beobachtungen
---                                              per Flüstern an den, der gegrüßt hat
+--   H1;version;anzahl[;R]                      Gruß nach dem Einloggen und beim Beitritt in eine Gruppe;
+--                                              Antwort: einige Beobachtungen per Flüstern an den, der
+--                                              gegrüßt hat. R: Rückgruß (#156), der wird nicht erwidert
 -- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
 -- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Charaktere etwas gesehen haben.
 --
@@ -35,6 +36,7 @@ local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
 local MAX_REJECTS = 20        -- verschiedene verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
+local JOIN_DELAY = 5          -- Sekunden nach dem Beitritt in eine Gruppe bis zum Gruß (#156)
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
@@ -44,7 +46,9 @@ local queue, busy = {}, false
 local KINDS = { "O1", "S1", "F1", "H1" }
 local stats = { sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, last = nil, since = nil, replied = 0, skipped = 0 }
 local function count(t, k, n) t[k] = (t[k] or 0) + (n or 1) end
-local perSender, greeted = {}, {}
+-- greeted: wem schon geantwortet wurde; greetedOut: wem schon ein eigener Gruß geflüstert wurde (#156). Beide je
+-- Name (plain), nur für die Sitzung, keine Namen in den SavedVariables.
+local perSender, greeted, greetedOut = {}, {}, {}
 local selfName, selfRep
 local registered = false
 
@@ -482,6 +486,25 @@ local function reply(sender, target, open)
   end
 end
 
+-- ---- Gruß ----
+local function greeting(back)
+  local msg = ("H1;%s;%d"):format((tostring(ns.version):gsub(";", "")), ns.ObservationCount())
+  return back and msg .. ";R" or msg
+end
+
+-- Rückgruß (#156): Ein Gruß holt nur die Daten der anderen zum Grüßenden. Damit auch er seine teilt, flüstert ihm
+-- das Addon einmal je Sitzung den eigenen Gruß zurück, und er antwortet darauf wie auf jeden Gruß. Nur auf Grüße
+-- über Gruppe, Schlachtzug und Flüstern: Über die Gilde grüßt man beim Einloggen alle auf einmal, und jeder
+-- Rückgruß brächte eine ganze Antwort zurück – bei zehn Gildenmitgliedern mit dem Addon 300 Nachrichten, mehr als
+-- die Warteschlange fasst. Auf einen Rückgruß (R) und an jemanden, dem schon ein Gruß geflüstert wurde, wird nicht
+-- zurückgegrüßt; so endet jeder Austausch nach höchstens zwei Grüßen.
+local GREET_BACK = { PARTY = true, RAID = true, WHISPER = true }
+local function greetBack(key, target, kind, text)
+  if not GREET_BACK[kind] or greetedOut[key] or text:find("^H1;[^;]*;[^;]*;R") then return end
+  greetedOut[key] = true
+  enqueue(greeting(true), "WHISPER", target)
+end
+
 -- ---- Selbsttest (/fhp teilen test): ohne zweiten Spieler den echten Weg prüfen ----
 -- Schickt über jeden offenen Weg eine Testnachricht „T1;kennung;weg;beobachtung“ an sich selbst. Der Client
 -- gibt eigene Addon-Nachrichten in der Regel zurück; ankommen heißt: Warteschlange, Drosselung, Weg
@@ -684,7 +707,9 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
-    reply(key, sender, ns.clean(kind) == "CHANNEL")   -- zurückgeflüstert wird an den Namen, den der Client nannte
+    -- zurückgeflüstert wird an den Namen, den der Client nannte
+    reply(key, sender, ns.clean(kind) == "CHANNEL")
+    greetBack(key, sender, ns.clean(kind), text)
   else
     return
   end
@@ -709,9 +734,33 @@ end
 
 local function hello()
   if not enabled() then return end
-  local msg = ("H1;%s;%d"):format(tostring(ns.version):gsub(";", ""), ns.ObservationCount())
-  broadcast(msg)
+  broadcast(greeting())
 end
+
+-- Gruß beim Beitritt in eine Gruppe oder einen Schlachtzug (#156): Gegrüßt wird sonst nur beim Einloggen, und wer
+-- später dazukommt, bekäme nur, was ab dann neu entsteht. GROUP_ROSTER_UPDATE statt GROUP_JOINED, weil es das in
+-- jedem Client gibt; gegrüßt wird nur beim Wechsel von „ohne Gruppe“ zu „in einer Gruppe“, die Umwandlung in einen
+-- Schlachtzug grüßt nicht neu. Nicht in Kampf und Instanz: Ein liegengebliebener Gruß ginge nach dem Verlassen ins
+-- Leere (die Gruppe eines Schlachtfelds löst sich auf). Nicht über die Gilde, die hat beim Einloggen gegrüßt.
+local inGroup   -- nil bis zum Einloggen
+local function grouped()
+  return ((IsInRaid and ns.clean(IsInRaid())) or (IsInGroup and ns.clean(IsInGroup()))) and true or false
+end
+
+local function greetGroup()
+  if not enabled() or quiet() then return end
+  if IsInRaid and ns.clean(IsInRaid()) then enqueue(greeting(), "RAID")
+  elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(greeting(), "PARTY") end
+end
+
+ns.On("GROUP_ROSTER_UPDATE", function()
+  if inGroup == nil then return end
+  local now = grouped()
+  if now and not inGroup and enabled() and not quiet() then
+    ns.After(JOIN_DELAY, function() ns.SafeCall("share", greetGroup) end)
+  end
+  inGroup = now
+end)
 
 local function start()
   if not registered and C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
@@ -722,6 +771,7 @@ local function start()
 end
 
 ns.On("PLAYER_LOGIN", function()
+  inGroup = grouped()
   ns.SafeCall("share", claimOwn)
   ns.SafeCall("share", markLegacy)
   ns.SafeCall("share", start)
