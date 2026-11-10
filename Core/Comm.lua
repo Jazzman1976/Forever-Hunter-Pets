@@ -1,6 +1,10 @@
 -- Forever Hunter Pets · Beobachtungen im Spiel teilen. Addons kommen nicht ins Internet; die Daten
--- wandern als Addon-Nachrichten zwischen Spielern, die gleichzeitig online sind: über Gilde, Gruppe
--- und einen verborgenen Kanal. Abschaltbar in den Einstellungen („Beobachtungen teilen“).
+-- wandern als Addon-Nachrichten zwischen Spielern, die gleichzeitig online sind: über Gilde
+-- und Gruppe, Antworten auf Grüße per Flüstern. Abschaltbar in den Einstellungen („Beobachtungen teilen“).
+--
+-- Kein Kanal mehr (#153): Seit dem Start von Forever lehnt der Server Addon-Nachrichten im eigenen Kanal ab
+-- („Dieser Vorgang ist in diesem Kanal nicht erlaubt.“), obwohl SendAddonMessage 0 liefert. YELL nimmt der
+-- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit.
 --
 -- Nachrichten (Prefix FHPets, höchstens 255 Byte):
 --   O1;npc;stufe;zauberIDs;tempo;zeit;melder   eine Beobachtung, wie in ForeverHunterPetsDB.obs
@@ -21,7 +25,7 @@ local _, ns = ...
 local D = ns.Data
 
 local PREFIX = "FHPets"
-local CHANNEL = "FHPetsNet"
+local OLD_CHANNEL = "FHPetsNet"   -- bis 1.1.0 der Weg zu allen; wird beim Einloggen verlassen (#153)
 local INTERVAL = 2.0          -- Sekunden zwischen zwei Nachrichten (Blizzard drosselt bei etwa 1/s)
 local MAX_QUEUE = 80
 local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
@@ -36,8 +40,9 @@ local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
 -- Je Art (O1 Zähmung, S1 Sichtung, F1 Zellen, H1 Gruß): gesendet, empfangen, davon neu gespeichert, und warum
 -- verworfen. Liegt auch in ForeverHunterPetsDB.shareStats, damit ein Test nach /reload nachlesbar bleibt.
+-- Dazu je Weg (#153): vom Client angenommen und empfangen, ohne Selbsttest-Nachrichten.
 local KINDS = { "O1", "S1", "F1", "H1" }
-local stats = { sent = {}, recv = {}, new = {}, dropped = {}, last = nil, since = nil, replied = 0, skipped = 0 }
+local stats = { sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, last = nil, since = nil, replied = 0, skipped = 0 }
 local function count(t, k, n) t[k] = (t[k] or 0) + (n or 1) end
 local perSender, greeted = {}, {}
 local selfName, selfRep
@@ -219,9 +224,9 @@ local function quiet()
 end
 
 -- ---- Senden mit Drosselung ----
-local function channelIndex()
+local function oldChannelIndex()
   if not GetChannelName then return nil end
-  local ok, id = pcall(GetChannelName, CHANNEL)
+  local ok, id = pcall(GetChannelName, OLD_CHANNEL)
   id = ok and tonumber(ns.clean(id)) or 0
   return id > 0 and id or nil
 end
@@ -229,14 +234,15 @@ end
 local R = (Enum and Enum.SendAddonMessageResult) or {}
 local THROTTLED = { [R.AddonMessageThrottle or 3] = true, [R.ChannelThrottle or 8] = true }
 
--- Liefert, ob die Nachricht erledigt ist (gesendet oder verworfen), und was der Client sagte
+-- Liefert, ob die Nachricht erledigt ist (gesendet oder verworfen), was der Client sagte und ob er sie annahm
+-- (0 = Erfolg; ältere Clients lieferten true)
 local function sendNow(msg, kind, target)
   if not (C_ChatInfo and C_ChatInfo.SendAddonMessage) then return true, "keine SendAddonMessage" end
   local ok, res = pcall(C_ChatInfo.SendAddonMessage, PREFIX, msg, kind, target)
   if not ok then return true, "Fehler: " .. tostring(res) end   -- verwerfen, nicht endlos wiederholen
   res = ns.clean(res)
   if type(res) == "number" and THROTTLED[res] then return false, "gedrosselt (" .. res .. ")" end
-  return true, "Ergebnis " .. tostring(res)
+  return true, "Ergebnis " .. tostring(res), res == 0 or res == true or res == (R.Success or 0)
 end
 
 -- Ziel → GetTime() des letzten Flüsterns, für den Chat-Filter unten (#28). Abgesichert: Wirft etwas in pump, plant
@@ -252,10 +258,14 @@ pump = function()
   busy = true
   if enabled() and not quiet() then
     local item = queue[1]
-    local done, what = sendNow(item.msg, item.kind, item.target)
+    local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
     if item.onSent then item.onSent(what) end
     if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
+    if item.msg:sub(1, 3) ~= "T1;" then
+      if accepted then count(stats.sentWay, item.kind)
+      elseif done then count(stats.dropped, item.kind .. " vom Client abgelehnt (" .. what .. ")") end
+    end
     if done then table.remove(queue, 1) end
   end
   ns.After(INTERVAL, pump)
@@ -289,13 +299,11 @@ local function enqueue(msg, kind, target, onSent, low)
   if not busy then pump() end
 end
 
--- an alle Wege, die gerade offen sind
+-- an alle Wege, die gerade offen sind (ohne Kanal und ohne YELL, beides geht in Forever nicht, #153)
 local function broadcast(msg)
   if IsInGuild and ns.clean(IsInGuild()) then enqueue(msg, "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(msg, "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(msg, "PARTY") end
-  local ch = channelIndex()
-  if ch then enqueue(msg, "CHANNEL", ch) end
 end
 
 -- eigene Beobachtungen tragen beim Versand das eigene Kürzel, fremde behalten ihres
@@ -425,6 +433,7 @@ end
 -- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
 -- der Grüße aus dem Kanal in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa gleich viele Spieler,
 -- egal wie viele online sind. Wer nicht antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
+-- Seit #153 kommt über den Kanal nichts mehr an; die Bremse bleibt für einen künftigen offenen Weg.
 local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße aus dem Kanal und der letzten Antwort darauf
 local function noteGreeting()
   local now = GetTime()
@@ -442,10 +451,10 @@ local function mayReply()
   return true
 end
 
-local function reply(sender, target, fromChannel)
-  if fromChannel then noteGreeting() end
+local function reply(sender, target, open)
+  if open then noteGreeting() end
   if greeted[sender] then return end
-  if fromChannel and not mayReply() then stats.skipped = stats.skipped + 1; return end
+  if open and not mayReply() then stats.skipped = stats.skipped + 1; return end
   greeted[sender] = true
   stats.replied = stats.replied + 1
   target = target or sender
@@ -475,7 +484,7 @@ end
 
 -- ---- Selbsttest (/fhp teilen test): ohne zweiten Spieler den echten Weg prüfen ----
 -- Schickt über jeden offenen Weg eine Testnachricht „T1;kennung;weg;beobachtung“ an sich selbst. Der Client
--- gibt eigene Addon-Nachrichten in der Regel zurück; ankommen heißt: Warteschlange, Drosselung, Kanal
+-- gibt eigene Addon-Nachrichten in der Regel zurück; ankommen heißt: Warteschlange, Drosselung, Weg
 -- und Empfang funktionieren. Die Beobachtung darin wird wie eine fremde geprüft, aber nicht gespeichert.
 local test
 -- Alles landet auch in ForeverHunterPetsDB.probe, damit es nach /reload aus der Datei lesbar ist
@@ -526,8 +535,6 @@ function ns.ShareTest()
   if IsInGuild and ns.clean(IsInGuild()) then way("Gilde", "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then way("Schlachtzug", "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then way("Gruppe", "PARTY") end
-  local ch = channelIndex()
-  if ch then way("Kanal", "CHANNEL", ch) else ns.Print("Selbsttest: Kanal " .. CHANNEL .. " nicht beigetreten.") end
   way("Flüstern", "WHISPER", name)
   ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), #test.ways * 2 + 10))
   ns.After(#test.ways * INTERVAL + 10, testDone)
@@ -681,6 +688,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   else
     return
   end
+  count(stats.recvWay, tostring(ns.clean(kind)))
   -- Herkunft vermerken, auch bei „schon bekannt“: genau dann bestätigt ein zweiter Absender (#15). Abgesichert –
   -- das Vermerken darf den Empfang nie stören.
   if rep and (ok or why == "schon bekannt") and ns.db then pcall(noteVia, rep, sender) end
@@ -691,23 +699,12 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if ns.db then ns.db.shareStats = stats end
 end)
 
--- ---- Kanal und Gruß ----
-local function hideChannel()
-  if not (ChatFrame_RemoveChannel and NUM_CHAT_WINDOWS) then return end
-  for i = 1, NUM_CHAT_WINDOWS do
-    local frame = _G["ChatFrame" .. i]
-    if frame then pcall(ChatFrame_RemoveChannel, frame, CHANNEL) end
-  end
-end
-
-local function join()
-  if not enabled() or channelIndex() then hideChannel(); return end
-  if JoinTemporaryChannel then pcall(JoinTemporaryChannel, CHANNEL) end
-  ns.After(2, hideChannel)
-end
-
+-- ---- Alter Kanal und Gruß ----
+-- Bis 1.1.0 trat das Addon FHPetsNet bei. Der Client tritt gespeicherten Kanälen beim Einloggen selbst wieder bei,
+-- deshalb verlassen wir ihn nach 15 s und, falls er erst später kam, noch einmal nach 60 s (#153, #149). Immer,
+-- auch bei abgeschaltetem Teilen: Der Kanal nützt nichts mehr und belegt nur einen Platz in der Kanalliste.
 local function leave()
-  if channelIndex() and LeaveChannelByName then pcall(LeaveChannelByName, CHANNEL) end
+  if oldChannelIndex() and LeaveChannelByName then pcall(LeaveChannelByName, OLD_CHANNEL) end
 end
 
 local function hello()
@@ -721,8 +718,6 @@ local function start()
     registered = pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
   end
   if not enabled() then return end
-  -- spät beitreten, damit Allgemein, Handel und Co. ihre gewohnten Nummern behalten
-  ns.After(15, function() ns.SafeCall("share", join) end)
   ns.After(25, function() ns.SafeCall("share", hello) end)
 end
 
@@ -730,6 +725,8 @@ ns.On("PLAYER_LOGIN", function()
   ns.SafeCall("share", claimOwn)
   ns.SafeCall("share", markLegacy)
   ns.SafeCall("share", start)
+  ns.After(15, function() ns.SafeCall("share", leave) end)
+  ns.After(60, function() ns.SafeCall("share", leave) end)
 end)
 
 -- Fremde Bestände: Zähmungen, Sichtungen und Zellen anderer Spieler, mit der Zahl der Melder
@@ -767,6 +764,24 @@ local function perKind(t)
   return table.concat(parts, " · ")
 end
 
+-- Je Weg (#153): die üblichen immer, alles andere (etwa CHANNEL oder YELL) nur, wenn es vorkam
+local WAYS = { "GUILD", "PARTY", "RAID", "WHISPER" }
+local WAY_NAMES = { GUILD = "Gilde", PARTY = "Gruppe", RAID = "Schlachtzug", YELL = "Rufen", WHISPER = "Flüstern", CHANNEL = "Kanal" }
+local function perWay(t)
+  local parts, known = {}, {}
+  for _, w in ipairs(WAYS) do
+    known[w] = true
+    parts[#parts + 1] = WAY_NAMES[w] .. " " .. (t[w] or 0)
+  end
+  local extra = {}
+  for w, n in pairs(t) do
+    if not known[w] then extra[#extra + 1] = (WAY_NAMES[w] or w) .. " " .. n end
+  end
+  table.sort(extra)
+  for _, s in ipairs(extra) do parts[#parts + 1] = s end
+  return table.concat(parts, " · ")
+end
+
 -- /fhp teilen: kurzer Stand im Chat (Entwicklerwerkzeug, nur deutsch)
 function ns.ShareStatus()
   local own = 0
@@ -775,9 +790,8 @@ function ns.ShareStatus()
     if o and o.own then own = own + 1 end
   end
   local _, rep = me()
-  ns.Print(("Teilen %s · eigene Beobachtungen %d · Kanal %s · Warteschlange %d · dein Kürzel %s")
-    :format(enabled() and "an" or "aus", own, channelIndex() and ("Nr. " .. channelIndex()) or "nicht beigetreten",
-      #queue, rep or "?"))
+  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s")
+    :format(enabled() and "an" or "aus", own, #queue, rep or "?"))
   local tames, sights, cells, nReps, unknown = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, unknown, sights, cells, nReps))
@@ -792,6 +806,8 @@ function ns.ShareStatus()
   ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
   ns.Print("Empfangen: " .. perKind(stats.recv))
   ns.Print("Davon neu gespeichert: " .. perKind(stats.new))
+  ns.Print("Gesendet je Weg: " .. perWay(stats.sentWay))
+  ns.Print("Empfangen je Weg: " .. perWay(stats.recvWay))
   local why = {}
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
@@ -818,6 +834,5 @@ function ns.ShareChanged()
     start()
   else
     queue = {}
-    leave()
   end
 end

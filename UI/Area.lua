@@ -366,7 +366,7 @@ function ns.BuildArea(parent)
   end
 
   -- ---- Neu in dieser Zone (#66) ----
-  -- Wächst eine Zone, weil andere Jäger dort ein Tier entdeckt haben (fremde Zellen und Zähmungen über den Kanal
+  -- Wächst eine Zone, weil andere Jäger dort ein Tier entdeckt haben (fremde Zellen und Zähmungen, im Spiel geteilt,
   -- oder neue Stammdaten), soll das wie eine gute Nachricht wirken, nicht wie ein Rückschritt von „8 von 8“ auf
   -- „8 von 9“. Gemerkt werden je Charakter die Tiere, die man zuletzt in der Zone sah:
   -- ForeverHunterPetsCharDB.zoneSeen[uiMapID] = "npc,npc,…". Neu durch andere ist, was jetzt dasteht, beim letzten
