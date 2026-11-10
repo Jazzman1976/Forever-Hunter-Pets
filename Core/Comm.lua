@@ -31,6 +31,7 @@ local INTERVAL = 2.0          -- Sekunden zwischen zwei Nachrichten (Blizzard dr
 local MAX_QUEUE = 80
 local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
 local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
+local SIGHT_REPLY = 10        -- eigene Sichtungen als Antwort auf einen Gruß (#157); zusammen höchstens 40 Nachrichten
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
@@ -429,9 +430,10 @@ local function receiveSighting(body, sender)
 end
 
 -- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
--- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen, und nichts, was
--- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
--- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
+-- CELL_REPLY eigene Fundort-Bündel und bis zu SIGHT_REPLY eigene Sichtungen (#157). Weitergeleitet wird nichts
+-- Fremdes außer Beobachtungen, und nichts, was der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem
+-- Namen wie in me(): „Vorname Nachname“ → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen,
+-- Zellen und Sichtungen gehen weiter mit.
 --
 -- Damit die Antworten nicht mit der Zahl der Spieler wachsen (#52), gilt für Grüße aus dem Kanal (Gilde und Gruppe
 -- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
@@ -479,10 +481,14 @@ local function reply(sender, target, open)
   local n = 0
   for _, list in ipairs({ own, other }) do
     for i = #list, 1, -1 do
-      if n >= REPLY_MAX then return end
+      if n >= REPLY_MAX then break end
       local msg = outgoing(list[i])
       if msg then enqueue(msg, "WHISPER", target, nil, true); n = n + 1 end
     end
+  end
+  -- eigene Sichtungen, die die Daten nicht kennen, auch von Twinks (#157)
+  for _, s in ipairs(ns.OwnSightingsToShare and ns.OwnSightingsToShare(SIGHT_REPLY) or {}) do
+    enqueue("S1;" .. s, "WHISPER", target, nil, true)
   end
 end
 
