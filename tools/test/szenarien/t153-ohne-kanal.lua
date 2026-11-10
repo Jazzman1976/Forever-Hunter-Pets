@@ -1,6 +1,7 @@
--- #153: Der Server sperrt Addon-Nachrichten im Kanal FHPetsNet. Gesendet wird jetzt über Gilde, Gruppe und YELL,
--- nie über CHANNEL; der alte Kanal wird beim Einloggen verlassen und keiner betreten. Versand und Empfang werden
--- je Weg gezählt (ohne Selbsttest-Nachrichten), und Grüße per YELL laufen durch die Bremse aus #52.
+-- #153: Der Server sperrt Addon-Nachrichten im Kanal FHPetsNet, YELL lehnt der Client ab. Gesendet wird über Gilde
+-- und Gruppe, nie über CHANNEL oder YELL; der alte Kanal wird beim Einloggen verlassen und keiner betreten.
+-- Versand und Empfang werden je Weg gezählt (ohne Selbsttest-Nachrichten); was der Client ablehnt, zählt als
+-- verworfen.
 
 SENT = {}
 local refuse = {}   -- Weg → Ergebnis, das der Client einmal liefert
@@ -31,15 +32,15 @@ local function printed(pattern)
   end
 end
 
--- Einloggen: alten Kanal verlassen, keinem beitreten, Gruß über Gilde und YELL
+-- Einloggen: alten Kanal verlassen, keinem beitreten, Gruß nur über die Gilde
 Login({ ui = { share = true } })
 for _ = 1, 10 do RunTimers() end
 ok(left[1] == "FHPetsNet", "alter Kanal FHPetsNet beim Einloggen verlassen")
 ok(#left == 1, "nur einmal verlassen, der zweite Versuch findet ihn nicht mehr")
 ok(not joined, "keinem Kanal beigetreten")
 local h = sentVia("H1;")
-ok(h.GUILD == 1 and h.YELL == 1, "Gruß über Gilde und YELL")
-ok(h.CHANNEL == nil, "nichts über CHANNEL")
+ok(h.GUILD == 1, "Gruß über die Gilde")
+ok(h.CHANNEL == nil and h.YELL == nil, "nichts über CHANNEL oder YELL")
 
 -- Ohne Kanal in der Liste wird auch nichts verlassen
 channel = 0
@@ -55,61 +56,60 @@ for _ = 1, 10 do RunTimers() end
 ok(#left == 2, "auch bei abgeschaltetem Teilen wird der alte Kanal verlassen")
 ok(#SENT == before, "abgeschaltet wird nichts gesendet")
 
--- Empfang je Weg; Bremse aus #52 für Grüße per YELL, nicht für die Gilde
+-- Empfang je Weg; Bremse aus #52 für Grüße aus dem Kanal (ältere Versionen), nicht für die Gilde
 Login({ ui = { share = true } })
 for _ = 1, 10 do RunTimers() end
 local db = NS.db
-FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.2.0;0", "YELL", "Erster Jaeger")
+FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.0.0;0", "CHANNEL", "Erster Jaeger")
 local stats = db.shareStats
-ok(stats and stats.recvWay.YELL == 1, "Gruß per YELL als Weg YELL gezählt")
+ok(stats and stats.recvWay.CHANNEL == 1, "Gruß aus dem Kanal als Weg CHANNEL gezählt")
 local replied, skipped = stats.replied, stats.skipped
-FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.2.0;0", "YELL", "Zweiter Jaeger")
-ok(stats.skipped == skipped + 1 and stats.replied == replied, "zweiter Gruß per YELL kurz danach: keine Antwort (#52)")
+FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.0.0;0", "CHANNEL", "Zweiter Jaeger")
+ok(stats.skipped == skipped + 1 and stats.replied == replied, "zweiter Gruß aus dem Kanal kurz danach: keine Antwort (#52)")
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.1.0;0", "GUILD", "Gilden Jaeger")
 ok(stats.replied == replied + 1, "Gruß über die Gilde: immer eine Antwort")
 FireEvent("CHAT_MSG_ADDON", "FHPets", "O1;30;5;17253;;1792400000;abcdef01", "WHISPER", "Erster Jaeger")
-FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.0.0;0", "CHANNEL", "Alter Jaeger")
-ok(stats.recvWay.YELL == 2 and stats.recvWay.GUILD == 1 and stats.recvWay.WHISPER == 1 and stats.recvWay.CHANNEL == 1,
-  "Empfang je Weg: Rufen 2, Gilde 1, Flüstern 1, Kanal 1")
-FireEvent("CHAT_MSG_ADDON", "FHPets", "X9;unbekannt", "YELL", "Erster Jaeger")
-ok(stats.recvWay.YELL == 2, "unbekannte Nachrichten zählen nicht")
+ok(stats.recvWay.CHANNEL == 2 and stats.recvWay.GUILD == 1 and stats.recvWay.WHISPER == 1,
+  "Empfang je Weg: Kanal 2, Gilde 1, Flüstern 1")
+FireEvent("CHAT_MSG_ADDON", "FHPets", "X9;unbekannt", "GUILD", "Gilden Jaeger")
+ok(stats.recvWay.GUILD == 1, "unbekannte Nachrichten zählen nicht")
 
--- Selbsttest: Weg „Rufen“ über YELL, T1 zählt bei keinem Weg
+-- Selbsttest: Gilde und Flüstern, weder Kanal noch YELL; T1 zählt bei keinem Weg
 for _ = 1, 30 do RunTimers() end
 local sentWayBefore = {}
 for k, v in pairs(stats.sentWay) do sentWayBefore[k] = v end
-local recvBefore = stats.recvWay.YELL
+local recvBefore = stats.recvWay.GUILD
 NS.ShareTest()
 for _ = 1, 10 do RunTimers() end
 local t = sentVia("T1;")
-ok(t.YELL == 1 and t.CHANNEL == nil, "Selbsttest sendet über YELL, nicht über CHANNEL")
+ok(t.GUILD == 1 and t.WHISPER == 1, "Selbsttest über Gilde und Flüstern")
+ok(t.CHANNEL == nil and t.YELL == nil, "Selbsttest weder über CHANNEL noch über YELL")
 local echo
 for _, s in ipairs(SENT) do
-  if s.kind == "YELL" and s.msg:sub(1, 3) == "T1;" then echo = s.msg end
+  if s.kind == "GUILD" and s.msg:sub(1, 3) == "T1;" then echo = s.msg end
 end
-FireEvent("CHAT_MSG_ADDON", "FHPets", echo, "YELL", "Test Realm")
-ok(stats.recvWay.YELL == recvBefore, "Echo des Selbsttests zählt nicht beim Empfang")
+FireEvent("CHAT_MSG_ADDON", "FHPets", echo, "GUILD", "Test Realm")
+ok(stats.recvWay.GUILD == recvBefore, "Echo des Selbsttests zählt nicht beim Empfang")
 for k, v in pairs(stats.sentWay) do ok(sentWayBefore[k] == v, "Selbsttest zählt nicht beim Versand über " .. k) end
-for _ = 1, 10 do RunTimers() end
--- (die nachgebildeten Timer kennen keine Wartezeit: der Abschluss läuft vor dem Echo, deshalb nur der Weg)
+-- (die nachgebildeten Timer kennen keine Wartezeit: der Abschluss läuft vor dem Echo, deshalb nur die Wege)
 local probe = table.concat(db.probe, "\n")
-ok(probe:find("Selbsttest Rufen:", 1, true) and not probe:find("Selbsttest Kanal", 1, true), "Selbsttest meldet den Weg Rufen, keinen Kanal")
+ok(probe:find("Selbsttest Gilde:", 1, true) and probe:find("Selbsttest Flüstern:", 1, true), "Selbsttest meldet Gilde und Flüstern")
+ok(not probe:find("Selbsttest Kanal", 1, true) and not probe:find("Selbsttest Rufen", 1, true), "Selbsttest meldet weder Kanal noch Rufen")
 
 -- Lehnt der Client ab, zählt das nicht als gesendet, sondern als verworfen
-refuse.YELL = 4
-local yellBefore = stats.sentWay.YELL or 0
+refuse.GUILD = 4
+local guildBefore = stats.sentWay.GUILD or 0
 NS.ShareOwn("154;17;24423;2.0;1792400000;")
 for _ = 1, 10 do RunTimers() end
-ok((stats.sentWay.YELL or 0) == yellBefore, "abgelehntes YELL nicht als gesendet gezählt")
-ok(stats.dropped["YELL vom Client abgelehnt (Ergebnis 4)"] == 1, "abgelehntes YELL als verworfen gezählt")
-ok((stats.sentWay.GUILD or 0) >= 2, "Gilde weiter gezählt")
+ok((stats.sentWay.GUILD or 0) == guildBefore, "abgelehnte Nachricht nicht als gesendet gezählt")
+ok(stats.dropped["GUILD vom Client abgelehnt (Ergebnis 4)"] == 1, "abgelehnte Nachricht als verworfen gezählt")
 
 -- /fhp teilen: zwei Zeilen je Weg, Kanal nur, wenn etwas kam; keine Kanalnummer mehr im Kopf
 PRINTED = {}
 NS.ShareStatus()
 local recvLine = printed("^.-Empfangen je Weg: ")
-ok(recvLine and recvLine:find("Gilde 1 · Gruppe 0 · Schlachtzug 0 · Rufen 2 · Flüstern 1 · Kanal 1", 1, true),
+ok(recvLine and recvLine:find("Gilde 1 · Gruppe 0 · Schlachtzug 0 · Flüstern 1 · Kanal 2", 1, true),
   "Zeile „Empfangen je Weg“ mit allen Wegen")
 local sentLine = printed("^.-Gesendet je Weg: ")
-ok(sentLine and not sentLine:find("Kanal", 1, true), "Zeile „Gesendet je Weg“ ohne Kanal")
+ok(sentLine and not sentLine:find("Kanal", 1, true) and not sentLine:find("Rufen", 1, true), "Zeile „Gesendet je Weg“ ohne Kanal und Rufen")
 ok(not printed("Kanal Nr%.") and not printed("nicht beigetreten"), "keine Kanalnummer mehr im Kopf")

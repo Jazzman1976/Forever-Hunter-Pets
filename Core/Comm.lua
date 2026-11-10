@@ -1,10 +1,10 @@
 -- Forever Hunter Pets · Beobachtungen im Spiel teilen. Addons kommen nicht ins Internet; die Daten
--- wandern als Addon-Nachrichten zwischen Spielern, die gleichzeitig online sind: über Gilde, Gruppe
--- und per YELL an Spieler in Rufweite. Abschaltbar in den Einstellungen („Beobachtungen teilen“).
+-- wandern als Addon-Nachrichten zwischen Spielern, die gleichzeitig online sind: über Gilde
+-- und Gruppe, Antworten auf Grüße per Flüstern. Abschaltbar in den Einstellungen („Beobachtungen teilen“).
 --
 -- Kein Kanal mehr (#153): Seit dem Start von Forever lehnt der Server Addon-Nachrichten im eigenen Kanal ab
--- („Dieser Vorgang ist in diesem Kanal nicht erlaubt.“), obwohl SendAddonMessage 0 liefert. YELL ist eine Addon-
--- Nachricht wie die anderen: Sie kommt als CHAT_MSG_ADDON an, nie als Rufen im Chat, und niemand sieht sie.
+-- („Dieser Vorgang ist in diesem Kanal nicht erlaubt.“), obwohl SendAddonMessage 0 liefert. YELL nimmt der
+-- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit.
 --
 -- Nachrichten (Prefix FHPets, höchstens 255 Byte):
 --   O1;npc;stufe;zauberIDs;tempo;zeit;melder   eine Beobachtung, wie in ForeverHunterPetsDB.obs
@@ -34,7 +34,7 @@ local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzu
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
 local MAX_REJECTS = 20        -- verschiedene verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
-local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße per YELL, und so weit zurück zählen (#52)
+local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
@@ -299,12 +299,11 @@ local function enqueue(msg, kind, target, onSent, low)
   if not busy then pump() end
 end
 
--- an alle Wege, die gerade offen sind; YELL immer: Spieler in Rufweite (#153, statt des Kanals)
+-- an alle Wege, die gerade offen sind (ohne Kanal und ohne YELL, beides geht in Forever nicht, #153)
 local function broadcast(msg)
   if IsInGuild and ns.clean(IsInGuild()) then enqueue(msg, "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(msg, "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(msg, "PARTY") end
-  enqueue(msg, "YELL")
 end
 
 -- eigene Beobachtungen tragen beim Versand das eigene Kürzel, fremde behalten ihres
@@ -430,12 +429,12 @@ end
 -- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
 -- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
 --
--- Damit die Antworten nicht mit der Zahl der Spieler wachsen (#52), gilt für Grüße per YELL (bis 1.1.0 aus dem
--- Kanal; Gilde und Gruppe immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit
--- Wahrscheinlichkeit 1/n, n = Zahl solcher Grüße in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa
--- gleich viele Spieler, egal wie viele in der Nähe sind – in Städten rufen viele Jäger zugleich. Wer nicht
--- antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
-local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße per YELL und der letzten Antwort darauf
+-- Damit die Antworten nicht mit der Zahl der Spieler wachsen (#52), gilt für Grüße aus dem Kanal (Gilde und Gruppe
+-- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
+-- der Grüße aus dem Kanal in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa gleich viele Spieler,
+-- egal wie viele online sind. Wer nicht antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
+-- Seit #153 kommt über den Kanal nichts mehr an; die Bremse bleibt für einen künftigen offenen Weg.
+local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße aus dem Kanal und der letzten Antwort darauf
 local function noteGreeting()
   local now = GetTime()
   for i = #heardAt, 1, -1 do
@@ -536,7 +535,6 @@ function ns.ShareTest()
   if IsInGuild and ns.clean(IsInGuild()) then way("Gilde", "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then way("Schlachtzug", "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then way("Gruppe", "PARTY") end
-  way("Rufen", "YELL")
   way("Flüstern", "WHISPER", name)
   ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), #test.ways * 2 + 10))
   ns.After(#test.ways * INTERVAL + 10, testDone)
@@ -686,8 +684,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
-    local way = ns.clean(kind)
-    reply(key, sender, way == "YELL" or way == "CHANNEL")   -- zurückgeflüstert wird an den Namen, den der Client nannte
+    reply(key, sender, ns.clean(kind) == "CHANNEL")   -- zurückgeflüstert wird an den Namen, den der Client nannte
   else
     return
   end
@@ -767,8 +764,8 @@ local function perKind(t)
   return table.concat(parts, " · ")
 end
 
--- Je Weg (#153): die üblichen immer, alles andere (etwa CHANNEL von älteren Versionen) nur, wenn es vorkam
-local WAYS = { "GUILD", "PARTY", "RAID", "YELL", "WHISPER" }
+-- Je Weg (#153): die üblichen immer, alles andere (etwa CHANNEL oder YELL) nur, wenn es vorkam
+local WAYS = { "GUILD", "PARTY", "RAID", "WHISPER" }
 local WAY_NAMES = { GUILD = "Gilde", PARTY = "Gruppe", RAID = "Schlachtzug", YELL = "Rufen", WHISPER = "Flüstern", CHANNEL = "Kanal" }
 local function perWay(t)
   local parts, known = {}, {}
