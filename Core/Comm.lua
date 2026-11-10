@@ -12,7 +12,7 @@
 --   H1;version;anzahl                          Gruß nach dem Einloggen; Antwort: einige Beobachtungen
 --                                              per Flüstern an den, der gegrüßt hat
 -- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
--- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Spieler etwas gesehen haben.
+-- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Charaktere etwas gesehen haben.
 --
 -- Protokollregel (#12): Im Spiel laufen viele Versionen nebeneinander. Neue Felder kommen deshalb nur hinten
 -- an eine Nachricht, und wer ein Feld am Ende nicht kennt, liest die Nachricht trotzdem und übergeht es.
