@@ -241,7 +241,7 @@ ns.Locales.deDE = {
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
   ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",
   -- Pet-Rahmen: Stufe und EP-Leiste (#120)
-  ["Enable pet frame additions"] = "Pet Frame Erweiterungen aktivieren",
+  ["Pet frame additions"] = "Pet Frame Erweiterungen",
   ["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."] = "Ergänzt den Pet-Rahmen des Spiels um die Stufe deines Pets und eine Erfahrungsleiste. Fährst du mit der Maus über die Leiste, siehst du die genauen Zahlen.",
   ["Show current level"] = "Aktuelle Stufe anzeigen",
   ["Shows your pet's level in a small circle at the bottom left of the pet frame."] = "Zeigt die Stufe deines Pets in einem kleinen Kreis unten links am Pet-Rahmen.",

@@ -209,7 +209,7 @@ The addon adds two small things to the game's pet frame:
 - your pet's **level** in a small circle at the bottom left,
 - a slim **experience bar** below it. Hover over the bar for the exact numbers: level, experience and percent, and how much is left to the next level. At the highest level your pet can reach (your own level), the bar is full and the tooltip says *Max*.
 
-Both can be switched off in the settings, one by one or together (*Enable pet frame additions*). If another addon replaces the game's pet frame, nothing is shown.
+Both can be switched off in the settings, one by one or together (*Pet frame additions*). If another addon replaces the game's pet frame, nothing is shown.
 
 ## Settings
 
@@ -228,7 +228,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | – Also show ranks you have | on | also lists ranks you have, and *teaches nothing* |
 | Show uncertain data | off | what 2 other characters have reported (fewer than 3), marked **?** |
 | Manual editing | off | tick or untick learned ranks by hand |
-| Enable pet frame additions | on | level and experience bar at the game's pet frame |
+| Pet frame additions | on | level and experience bar at the game's pet frame |
 | – Show current level | on | your pet's level in a circle at the pet frame |
 | – Show experience bar | on | experience bar below the pet frame, numbers on hover |
 | Share observations | on | share with and receive from other players |

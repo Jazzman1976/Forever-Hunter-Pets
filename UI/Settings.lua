@@ -194,7 +194,7 @@ local function registerSettings()
   -- solange der Hauptschalter an ist; jede Änderung wirkt sofort
   local function petXP() ns.SafeCall("petxp", ns.UpdatePetXP) end
   local pet = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_PetFrame", "petFrame", ns.db.ui,
-    Settings.VarType.Boolean, L["Enable pet frame additions"], true)
+    Settings.VarType.Boolean, L["Pet frame additions"], true)
   pet:SetValueChangedCallback(petXP)
   local petInit = Settings.CreateCheckbox(category, pet,
     L["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."])
