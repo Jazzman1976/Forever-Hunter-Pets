@@ -1,6 +1,6 @@
 # Konzept: Ziele, Modelle, Entscheidungen
 
-Das Nachschlagewerk für den roten Faden: **was** das Addon sein soll, **wie** es gedacht ist und **warum** es so entschieden wurde. Stand 17.10.2026. Wie es gebaut ist, steht in [addon-technik.md](../technik/addon-technik.md); dieses Dokument verweist dorthin und auf den Code, statt ihn zu wiederholen. Die Anwender-Sicht steht in der englischen Anleitung [guide.md](../guide/guide.md).
+Das Nachschlagewerk für den roten Faden: **was** das Addon sein soll, **wie** es gedacht ist und **warum** es so entschieden wurde. Stand 10.11.2026. Wie es gebaut ist, steht in [addon-technik.md](../technik/addon-technik.md); dieses Dokument verweist dorthin und auf den Code, statt ihn zu wiederholen. Die Anwender-Sicht steht in der englischen Anleitung [guide.md](../guide/guide.md).
 
 Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. Entscheidungen werden nicht stillschweigend umgedreht; neue kommen hierher und nach [entscheidungen.md](entscheidungen.md) (dort mit Datum und Wortlaut).
 
@@ -209,7 +209,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026). Im öffentlichen Repo stehen fremde Einträge seit #48 mit gesalzenem Kürzel und nur dem Tag (20.10.2026).
 - **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen, Kanal verlassen.
 - **Leise:** Geht ein Grüßender offline, bevor die Antwort fertig ist, bricht sie ab, und die Meldungen „kein Spieler mit dem Namen …“ des Clients bleiben aus dem Chat (#28).
-- **Ungeprüft** mit mehreren Spielern – das gehört zu M5.
+- **Mit mehreren Spielern geprüft:** mit der Gilde bei #12 und #15 (18.10.2026); seit dem Release auf CurseForge im Betrieb, auch mit Spielern außerhalb der Gilde (M5).
 
 ## 13 Oberfläche
 
