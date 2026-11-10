@@ -186,7 +186,9 @@ Every state names whose it is: *you have it* and *you lack it* are about you, th
 
 ## Sharing with other players
 
-Addons can't reach the internet, so players share in the game: over your guild, your group and a hidden channel (`FHPetsNet`). Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. Messages are throttled, so the channel stays quiet.
+Addons can't reach the internet, so players share in the game: over your guild, your group and with players nearby who have the addon. Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. These are addon messages: nobody sees them in the chat, not even players without the addon. Messages are throttled, so traffic stays low.
+
+Up to version 1.1.0 the addon also used a hidden chat channel (`FHPetsNet`), but WoW Forever doesn't allow addon messages in such channels. The addon now leaves that channel when you log in. If it had taken the first place in your channel list, *General* stays where it moved to: drag it back to the top in the *Channels* settings of the chat window.
 
 What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different characters have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
 
@@ -240,7 +242,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp` | open or close the window |
 | `/fhp area` | progress of the zone you are in, in the chat |
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
-| `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), what was stored or dropped and why, and the last message from another player |
+| `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, nearby, whisper), what was stored or dropped and why, and the last message from another player |
 | `/fhp zones` | zones the addon has no map for |
 | `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 

@@ -94,10 +94,12 @@ Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer)
 - **Pet eines Spielers:** GUID `Pet-…`, `UnitPlayerControlled` = `true`, dieselbe Zeile vom Typ 16. Es wird schon über `UnitPlayerControlled` ausgeschlossen.
 - **Zähmen eines NPC-Begleiters:** `UI_ERROR_MESSAGE` mit der Fehler-ID **306** und „Kreatur wird bereits kontrolliert..“; keine Konstante in `_G` hat genau diesen Text, und `UNIT_SPELLCAST_FAILED` kommt dabei nicht. Das Ziel ist in dem Moment noch das Tier. Beim Pet eines Spielers kommt dagegen `UNIT_SPELLCAST_FAILED` (1515) und `UI_ERROR_MESSAGE` 57 „Ungültiges Ziel“ (`SPELL_FAILED_BAD_TARGETS`).
 
-## Addon-Nachrichten (Selbsttest `/fhp teilen test`, 14.10.2026)
+## Addon-Nachrichten (Selbsttest `/fhp teilen test`, 14.10.2026 in der Beta, 10.11.2026 live)
 
 - **Senden geht:** `C_ChatInfo.SendAddonMessage` liefert über Gilde, den eigenen Kanal (`JoinTemporaryChannel`) und Flüstern an sich selbst `0` (Erfolg). `RegisterAddonMessagePrefix` wirkt, und `IsAddonMessagePrefixRegistered` meldet `true`.
-- **Eigene Nachrichten kommen zurück:** Über alle drei Wege fast sofort als `CHAT_MSG_ADDON`.
+- **Eigene Nachrichten kommen zurück:** In der Beta über alle drei Wege fast sofort als `CHAT_MSG_ADDON`.
+- **Live ist der eigene Kanal für Addon-Nachrichten gesperrt** (10.11.2026, Addon 1.1.0, #153): `SendAddonMessage(…, "CHANNEL", Nummer)` liefert weiter `0`, der Charakter ist im Kanal, aber der Server antwortet mit „[Nr. FHPetsNet] Dieser Vorgang ist in diesem Kanal nicht erlaubt.“, und nichts kommt zurück, auch bei anderen nicht. Sichtbar ist die Meldung nur, wenn der Kanal in einem Chatfenster steht. Gilde und Flüstern kommen weiter zurück. `0` heißt also nur: Der Client hat die Nachricht angenommen. Seitdem sendet das Addon per `YELL` an Spieler in Rufweite.
+- **`YELL`:** ungeprüft, ob der Forever-Server es durchlässt, ob das Echo zurückkommt und wie weit es reicht; das Ergebnis des Tests zu #153 kommt hierher.
 - **Namen in Forever: „Vorname Nachname“.** Als Absender steht `Grimmbart Hesingway`, mit Leerzeichen und ohne Realm. `UnitFullName("player")` liefert die beiden Teile getrennt (`Grimmbart`, `Hesingway`). Ein Vergleich mit „Name-Realm“ schlägt deshalb fehl. Das Addon vergleicht ohne Leerzeichen und Bindestriche, immer den vollen Namen. Geflüstert wird an genau den Namen, den der Client als Absender nennt. An `Grimmbart-Hesingway` kam das Flüstern ebenfalls an.
 
 ## Karte und Einstellungen

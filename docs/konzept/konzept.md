@@ -25,7 +25,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 ## 2 Grundsätze (in dieser Rangfolge)
 
 1. **Nur eigene Daten und Client-Daten.** Keine fremden Datenquellen – nie im Repo, nie im Addon, auch nicht als Herkunftsangabe in Texten. Nichts aus fremden Addons (Code oder Tabellen). Lizenz: MIT für Code, erhobene Daten (auch von anderen Spielern geteilte) und Logo.
-2. **Wenig Kanal-Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Der verborgene Kanal darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Auf einen Gruß aus dem Kanal antworten deshalb im Schnitt nur ein bis zwei Spieler, egal wie viele online sind, und eigene Meldungen gehen vor Antworten (#52). Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
+2. **Wenig Verkehr, wenig Speicher, wenig Rechenzeit – vor Komfort** (16.10.2026). Das Teilen darf nicht ausarten: so wenig wie möglich, so viel wie nötig. Auf einen Gruß an alle in der Nähe (bis 1.1.0 aus dem Kanal) antworten deshalb im Schnitt nur ein bis zwei Spieler, egal wie viele online sind, und eigene Meldungen gehen vor Antworten (#52). Gezählt wird bei Bedarf (beim Öffnen einer Ansicht), nicht im Hintergrund.
 3. **Eigenes zählt sofort, überall** (16.10.2026). Was man selbst sichtet, zähmt oder erhebt, gilt im Addon sofort, nicht erst nach dem Import in die mitgelieferten Daten. Neue Stellen lesen nie nur `D.beasts`, `D.families` oder `a.teach`, sondern nehmen die Helfer, die Daten und eigene Funde zusammenführen ([§4](#zur-laufzeit-daten-und-eigene-funde-zusammen)).
 4. **Nicht spoilern.** Wer entdecken will, bekommt nichts verraten – das Addon fragt jeden Charakter beim ersten Start und zeigt bis dahin nichts.
 5. **Barrierefreiheit:** Kein Zustand nur über Farbe, immer auch ein Wort oder Symbol.
@@ -171,7 +171,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 - **Aus jeder Entfernung** (E7): Maus, Ziel, Plakette, „Adlerauge“, „Augen des Wildtiers“ und die Witterung an der Minikarte. Vorher erst ab 28 m – deshalb gab es kaum Fährten, vieles war sofort „gefunden“.
 - **Auch ohne Fundort** (Nutzer: „Tiere ohne Fundorte sollen Fährten haben. Das ist ja gerade der Sinn von Fährte“). Hat ein Tier nirgends einen Fundort, zählt seine Fährte in der Zone, in der man es sah. Sobald es irgendwo einen hat, zählt es nur noch dort – eine Fährte über eine Zonengrenze hinweg verschwindet dann.
-- **Name aus der Ferne:** Die Sichtung speichert erst ab 28 m. Damit ein Tier nicht „Unbekanntes Tier (#833)“ heißt, merkt sich die Fährte Name und Familie lokal (`trackNames`), **ohne zu teilen** (Kanal-Verkehr). Mit der ersten Sichtung fällt der Eintrag weg.
+- **Name aus der Ferne:** Die Sichtung speichert erst ab 28 m. Damit ein Tier nicht „Unbekanntes Tier (#833)“ heißt, merkt sich die Fährte Name und Familie lokal (`trackNames`), **ohne zu teilen** (Verkehr). Mit der ersten Sichtung fällt der Eintrag weg.
 - **Witterung** (`UI/Scent.lua`): Die Spur-Punkte auf der Minikarte zeigt der Client im GameTooltip (Besitzer `UIParent`), alle Namen in Zeile 1. Das Addon liest sie, solange der Tooltip offen und die Maus über der Minikarte ist, und gibt passenden Tieren der Zone still eine Fährte. **Angezeigt wird dort nichts** (Nutzer: zu überladen, der Tier-Tooltip reicht).
 - **Fährten stehen nicht auf der Karte**, nur Fundorte.
 
@@ -203,13 +203,14 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 ## 12 Teilen im Spiel
 
-- **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde, Gruppe und den verborgenen Kanal `FHPetsNet` zwischen Spielern, die gleichzeitig online sind. Ein Gruß nach dem Einloggen holt Neues von anderen.
+- **Warum im Spiel:** Addons kommen nicht ins Internet. Daten wandern als Addon-Nachrichten über Gilde, Gruppe und per `YELL` an Spieler in Rufweite zwischen Spielern, die gleichzeitig online sind. Ein Gruß nach dem Einloggen holt Neues von anderen.
+- **Rufweite statt Kanal** (10.11.2026, #153): Bis 1.1.0 lief der Austausch über Gilde und Gruppe hinaus über den verborgenen Kanal `FHPetsNet`. Seit dem Start von Forever lehnt der Server Addon-Nachrichten darin ab; in der Beta ging es noch. Andere Addons senden in Classic-Clients aus demselben Grund per `YELL`. Das erreicht nur Spieler in der Nähe, nicht das ganze Reich – Jäger treffen sich aber ohnehin, wo dieselben Tiere stehen, und Zähmungen reisen über Antworten auf Grüße weiter. Unsichtbar bleibt es: Eine Addon-Nachricht per `YELL` erscheint nicht im Chat. Das Addon verlässt den alten Kanal beim Einloggen; damit ist auch #149 (der Kanal auf Platz 1) erledigt.
 - **Was:** Zähmungen (`O1`), Sichtungen (`S1`), Fundort-Zellen (`F1`), Gruß (`H1`). Nicht geteilt: Fährten, Fernnamen, Status, Lernstand.
 - **Sparsam:** gedrosselt (eine Nachricht je 2 s, Bündel alle 5 Minuten), nur was die Daten noch nicht kennen, Obergrenzen für Gespeichertes. Einzelheiten und Zahlen in [addon-technik.md](../technik/addon-technik.md).
 - **Datenschutz:** Statt Namen ein Kürzel (Hash); gespeichert werden nur Kürzel. Die eigenen stehen in `myReps`, damit eigene Meldungen als eigene zählen. Das Kürzel ist pseudonym, nicht anonym; Geteiltes kann unter MIT in die Stammdaten kommen, darauf weisen README und Anleitung hin ([entscheidungen.md](entscheidungen.md), 17.10.2026). Im öffentlichen Repo stehen fremde Einträge seit #48 mit gesalzenem Kürzel und nur dem Tag (20.10.2026).
-- **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen, Kanal verlassen.
+- **Abschaltbar** („Beobachtungen teilen“, Standard an): dann nichts senden, nichts empfangen.
 - **Leise:** Geht ein Grüßender offline, bevor die Antwort fertig ist, bricht sie ab, und die Meldungen „kein Spieler mit dem Namen …“ des Clients bleiben aus dem Chat (#28).
-- **Mit mehreren Spielern geprüft:** mit der Gilde bei #12 und #15 (18.10.2026); seit dem Release auf CurseForge im Betrieb, auch mit Spielern außerhalb der Gilde (M5).
+- **Mit mehreren Spielern geprüft:** mit der Gilde bei #12 und #15 (18.10.2026); seit dem Release auf CurseForge im Betrieb (M5). Mit Spielern außerhalb der Gilde lief seit dem Start von Forever (5.11.2026) nichts, weil der Kanal gesperrt war (#153).
 
 ## 13 Oberfläche
 

@@ -250,7 +250,7 @@ local function known(o)
 end
 
 -- ---- Teilen: gesammelt, sparsam ----
--- Der verborgene Kanal soll nicht volllaufen. Geteilt wird nur, was nötig ist: nicht, was die Daten
+-- Das Teilen soll nicht volllaufen (Grundsatz 2 im Konzept). Geteilt wird nur, was nötig ist: nicht, was die Daten
 -- kennen; nicht, wenn schon ns.FOREIGN_SURE Melder das Tier gemeldet haben (mehr braucht die Melder-Regel,
 -- Core/Init.lua, nicht); je Tier einmal je Sitzung, außer die Stufe liegt außerhalb des Bekannten.
 -- Gesammelt wird höchstens alle SHARE_EVERY Sekunden verschickt, je Runde höchstens SHARE_MAX.
