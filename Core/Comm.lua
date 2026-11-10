@@ -4,7 +4,9 @@
 --
 -- Kein Kanal mehr (#153): Seit dem Start von Forever lehnt der Server Addon-Nachrichten im eigenen Kanal ab
 -- („Dieser Vorgang ist in diesem Kanal nicht erlaubt.“), obwohl SendAddonMessage 0 liefert. YELL nimmt der
--- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit.
+-- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit. Weil
+-- beides in der Beta ging, prüft das Addon YELL einmal je Sitzung und nutzt es, sobald der Client es wieder nimmt;
+-- den Kanal prüft der Selbsttest (#158).
 --
 -- Nachrichten (Prefix FHPets, höchstens 255 Byte):
 --   O1;npc;stufe;zauberIDs;tempo;zeit;melder   eine Beobachtung, wie in ForeverHunterPetsDB.obs
@@ -265,7 +267,7 @@ pump = function()
     local item = queue[1]
     local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
-    if item.onSent then item.onSent(what) end
+    if item.onSent then item.onSent(what, accepted, done) end
     if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
     if item.msg:sub(1, 3) ~= "T1;" then
       if accepted then count(stats.sentWay, item.kind)
@@ -304,11 +306,22 @@ local function enqueue(msg, kind, target, onSent, low)
   if not busy then pump() end
 end
 
--- an alle Wege, die gerade offen sind (ohne Kanal und ohne YELL, beides geht in Forever nicht, #153)
+-- YELL je Sitzung (#158): Seit dem Start von Forever lehnt der Client YELL ab (Ergebnis 4, #153); in der Beta ging
+-- es. Der Gruß beim Einloggen geht deshalb einmal je Sitzung zusätzlich per YELL. Nimmt der Client ihn an, ist YELL
+-- für die Sitzung offen, und broadcast() sendet auch dorthin; sonst bleibt es aus. Kosten: eine unsichtbare
+-- Nachricht je Sitzung. yell: nil ungeprüft, "probe" unterwegs, true an, false aus (yellWhy: was der Client sagte).
+local yell, yellWhy
+local function noteYell(what, accepted, done)
+  if not done then return end   -- gedrosselt: es wird wiederholt
+  if accepted then yell, yellWhy = true, nil else yell, yellWhy = false, what end
+end
+
+-- an alle Wege, die gerade offen sind (ohne Kanal, der ist gesperrt, #153; YELL nur, wenn der Client es nimmt)
 local function broadcast(msg)
   if IsInGuild and ns.clean(IsInGuild()) then enqueue(msg, "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(msg, "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(msg, "PARTY") end
+  if yell == true then enqueue(msg, "YELL") end
 end
 
 -- eigene Beobachtungen tragen beim Versand das eigene Kürzel, fremde behalten ihres
@@ -439,7 +452,7 @@ end
 -- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
 -- der Grüße aus dem Kanal in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa gleich viele Spieler,
 -- egal wie viele online sind. Wer nicht antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
--- Seit #153 kommt über den Kanal nichts mehr an; die Bremse bleibt für einen künftigen offenen Weg.
+-- Seit #153 kommt über den Kanal nichts mehr an; die Bremse gilt auch für Grüße per YELL, sobald das wieder geht (#158).
 local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße aus dem Kanal und der letzten Antwort darauf
 local function noteGreeting()
   local now = GetTime()
@@ -535,16 +548,39 @@ local function testDone()
   for _, h in ipairs(test.heard) do testOut("  empfangen: " .. h) end
   for _, w in ipairs(test.ways) do
     local r = test.back[w]
-    local sent = test.sent[w] and ("gesendet, " .. test.sent[w]) or "nicht gesendet (Warteschlange, Kampf oder Instanz?)"
+    local sent = test.sent[w] and ("gesendet, " .. test.sent[w])
+      or test.why[w] or "nicht gesendet (Warteschlange, Kampf oder Instanz?)"
     if r then
       testOut(("Selbsttest %s: %s, zurück nach %.1f s, Prüfung %s"):format(w, sent, r.after, r.ok and "bestanden" or "NICHT bestanden"))
     else
       testOut(("Selbsttest %s: %s, nicht zurückgekommen"):format(w, sent))
     end
   end
+  if test.channel then
+    local n = test.channel.notices
+    testOut("Selbsttest Kanal, Meldungen des Servers: " .. (#n > 0 and table.concat(n, ", ") or "keine"))
+    if LeaveChannelByName then pcall(LeaveChannelByName, OLD_CHANNEL) end
+  end
   ns.SaveProbe(test.log)
   test = nil
 end
+
+-- Kanal im Selbsttest (#158): Ob der Server Addon-Nachrichten im Kanal wieder durchlässt, zeigt nur das Echo oder
+-- eine Meldung des Servers, und dafür muss man im Kanal sein. Der Selbsttest tritt FHPetsNet deshalb kurz bei, sendet
+-- nach CHANNEL_WAIT Sekunden, merkt sich die Meldungen des Servers zu diesem Kanal (nur ihre Art, keine Namen) und
+-- verlässt ihn am Ende wieder. Kommt der Kanal zurück, schaltet ihn das Addon nicht von selbst ein (Platzfrage, #149).
+local CHANNEL_WAIT = 3
+local function channelNotice(event, kind, _, _, chanString, _, _, _, _, baseName)
+  if not (test and test.channel) then return end
+  kind, chanString, baseName = ns.clean(kind), ns.clean(chanString), ns.clean(baseName)
+  local ours = baseName == OLD_CHANNEL or (type(chanString) == "string" and chanString:find(OLD_CHANNEL, 1, true))
+  local n = test.channel.notices
+  if ours and type(kind) == "string" and #n < 10 then
+    n[#n + 1] = ("%s%s nach %.1f s"):format(kind:sub(1, 40), event, GetTime() - test.started)
+  end
+end
+ns.On("CHAT_MSG_CHANNEL_NOTICE", function(...) channelNotice("", ...) end)
+ns.On("CHAT_MSG_CHANNEL_NOTICE_USER", function(...) channelNotice(" (Spieler)", ...) end)
 
 function ns.ShareTest()
   if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
@@ -554,19 +590,37 @@ function ns.ShareTest()
   local id = ("%04x"):format(math.random(0, 65535))
   -- eine erfundene, aber gültige Beobachtung: Großer Fleischreißer, Stufe 17, Demoralisierendes Kreischen 1
   local sample = ("154;17;24423;2.0;%d;7e570001"):format(time and time() or MIN_TIME)
-  test = { id = id, started = GetTime(), back = {}, ways = {}, sent = {}, heard = {}, log = {} }
+  test = { id = id, started = GetTime(), back = {}, ways = {}, sent = {}, why = {}, heard = {}, log = {} }
   testOut("=== Selbsttest Teilen " .. (date and date("%Y-%m-%d %H:%M:%S") or "") .. " · Addon " .. ns.version .. " ===")
-  local function way(label, kind, target)
+  local t = test
+  local function send(label, kind, target, also)
+    enqueue(("T1;%s;%s;%s"):format(id, label, sample), kind, target, function(what, accepted, done)
+      t.sent[label] = what
+      if also then also(what, accepted, done) end
+    end)
+  end
+  local function way(label, kind, target, also)
     test.ways[#test.ways + 1] = label
-    local t = test
-    enqueue(("T1;%s;%s;%s"):format(id, label, sample), kind, target, function(what) t.sent[label] = what end)
+    send(label, kind, target, also)
   end
   if IsInGuild and ns.clean(IsInGuild()) then way("Gilde", "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then way("Schlachtzug", "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then way("Gruppe", "PARTY") end
   way("Flüstern", "WHISPER", name)
-  ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), #test.ways * 2 + 10))
-  ns.After(#test.ways * INTERVAL + 10, testDone)
+  way("Rufen", "YELL", nil, noteYell)   -- nimmt der Client YELL wieder an, ist es ab jetzt offen (#158)
+  if JoinTemporaryChannel then
+    test.ways[#test.ways + 1] = "Kanal"
+    test.channel = { notices = {} }
+    pcall(JoinTemporaryChannel, OLD_CHANNEL)
+    ns.After(CHANNEL_WAIT, function()
+      if test ~= t then return end
+      local ch = oldChannelIndex()
+      if ch then send("Kanal", "CHANNEL", ch) else t.why.Kanal = "nicht beigetreten" end
+    end)
+  end
+  local wait = #test.ways * INTERVAL + 10 + CHANNEL_WAIT
+  ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), wait))
+  ns.After(wait, testDone)
 end
 
 local function receiveTest(text)
@@ -714,7 +768,7 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
     -- zurückgeflüstert wird an den Namen, den der Client nannte
-    reply(key, sender, ns.clean(kind) == "CHANNEL")
+    reply(key, sender, ns.clean(kind) == "CHANNEL" or ns.clean(kind) == "YELL")
     greetBack(key, sender, ns.clean(kind), text)
   else
     return
@@ -735,12 +789,18 @@ end)
 -- deshalb verlassen wir ihn nach 15 s und, falls er erst später kam, noch einmal nach 60 s (#153, #149). Immer,
 -- auch bei abgeschaltetem Teilen: Der Kanal nützt nichts mehr und belegt nur einen Platz in der Kanalliste.
 local function leave()
+  if test and test.channel then return end   -- der Selbsttest ist gerade im Kanal und verlässt ihn selbst (#158)
   if oldChannelIndex() and LeaveChannelByName then pcall(LeaveChannelByName, OLD_CHANNEL) end
 end
 
 local function hello()
   if not enabled() then return end
-  broadcast(greeting())
+  local msg = greeting()
+  broadcast(msg)
+  if yell == nil then
+    yell = "probe"
+    enqueue(msg, "YELL", nil, noteYell)
+  end
 end
 
 -- Gruß beim Beitritt in eine Gruppe oder einen Schlachtzug (#156): Gegrüßt wird sonst nur beim Einloggen, und wer
@@ -846,8 +906,9 @@ function ns.ShareStatus()
     if o and o.own then own = own + 1 end
   end
   local _, rep = me()
-  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s")
-    :format(enabled() and "an" or "aus", own, #queue, rep or "?"))
+  local rufen = yell == true and "an" or yell == false and ("aus (" .. tostring(yellWhy) .. ")") or "ungeprüft"
+  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s · Rufen: %s")
+    :format(enabled() and "an" or "aus", own, #queue, rep or "?", rufen))
   local tames, sights, cells, nReps, unknown = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, unknown, sights, cells, nReps))
@@ -890,5 +951,6 @@ function ns.ShareChanged()
     start()
   else
     queue = {}
+    if yell == "probe" then yell = nil end   -- die Probe lag noch in der Warteschlange
   end
 end

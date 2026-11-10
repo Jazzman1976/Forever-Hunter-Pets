@@ -1,5 +1,6 @@
 -- #153: Der Server sperrt Addon-Nachrichten im Kanal FHPetsNet, YELL lehnt der Client ab. Gesendet wird über Gilde
--- und Gruppe, nie über CHANNEL oder YELL; der alte Kanal wird beim Einloggen verlassen und keiner betreten.
+-- und Gruppe, nie über CHANNEL; der alte Kanal wird beim Einloggen verlassen und keiner betreten. YELL nur als Probe
+-- einmal je Sitzung, und Kanal und Rufen im Selbsttest (#158, Szenario t158-yell).
 -- Versand und Empfang werden je Weg gezählt (ohne Selbsttest-Nachrichten); was der Client ablehnt, zählt als
 -- verworfen.
 
@@ -7,6 +8,7 @@ SENT = {}
 local refuse = {}   -- Weg → Ergebnis, das der Client einmal liefert
 C_ChatInfo.SendAddonMessage = function(_, msg, kind, target)
   SENT[#SENT + 1] = { msg = msg, kind = kind, target = target }
+  if kind == "YELL" then return 4 end   -- wie live seit dem Start von Forever
   local r = refuse[kind]
   refuse[kind] = nil
   return r or 0
@@ -40,7 +42,8 @@ ok(#left == 1, "nur einmal verlassen, der zweite Versuch findet ihn nicht mehr")
 ok(not joined, "keinem Kanal beigetreten")
 local h = sentVia("H1;")
 ok(h.GUILD == 1, "Gruß über die Gilde")
-ok(h.CHANNEL == nil and h.YELL == nil, "nichts über CHANNEL oder YELL")
+ok(h.CHANNEL == nil, "nichts über CHANNEL")
+ok(h.YELL == 1, "YELL nur einmal als Probe (#158)")
 
 -- Ohne Kanal in der Liste wird auch nichts verlassen
 channel = 0
@@ -83,7 +86,7 @@ NS.ShareTest()
 for _ = 1, 10 do RunTimers() end
 local t = sentVia("T1;")
 ok(t.GUILD == 1 and t.WHISPER == 1, "Selbsttest über Gilde und Flüstern")
-ok(t.CHANNEL == nil and t.YELL == nil, "Selbsttest weder über CHANNEL noch über YELL")
+ok(t.CHANNEL == nil, "Selbsttest ohne Beitritt nicht über CHANNEL")
 local echo
 for _, s in ipairs(SENT) do
   if s.kind == "GUILD" and s.msg:sub(1, 3) == "T1;" then echo = s.msg end
@@ -94,7 +97,7 @@ for k, v in pairs(stats.sentWay) do ok(sentWayBefore[k] == v, "Selbsttest zählt
 -- (die nachgebildeten Timer kennen keine Wartezeit: der Abschluss läuft vor dem Echo, deshalb nur die Wege)
 local probe = table.concat(db.probe, "\n")
 ok(probe:find("Selbsttest Gilde:", 1, true) and probe:find("Selbsttest Flüstern:", 1, true), "Selbsttest meldet Gilde und Flüstern")
-ok(not probe:find("Selbsttest Kanal", 1, true) and not probe:find("Selbsttest Rufen", 1, true), "Selbsttest meldet weder Kanal noch Rufen")
+ok(probe:find("Selbsttest Kanal: nicht beigetreten", 1, true), "Selbsttest meldet den Kanal als nicht beigetreten")
 
 -- Lehnt der Client ab, zählt das nicht als gesendet, sondern als verworfen
 refuse.GUILD = 4
@@ -112,4 +115,5 @@ ok(recvLine and recvLine:find("Gilde 1 · Gruppe 0 · Schlachtzug 0 · Flüstern
   "Zeile „Empfangen je Weg“ mit allen Wegen")
 local sentLine = printed("^.-Gesendet je Weg: ")
 ok(sentLine and not sentLine:find("Kanal", 1, true) and not sentLine:find("Rufen", 1, true), "Zeile „Gesendet je Weg“ ohne Kanal und Rufen")
+ok(printed("Rufen: aus %(Ergebnis 4%)"), "Kopf: Rufen aus (Ergebnis 4)")
 ok(not printed("Kanal Nr%.") and not printed("nicht beigetreten"), "keine Kanalnummer mehr im Kopf")
