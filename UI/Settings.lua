@@ -178,7 +178,7 @@ local function registerSettings()
     Settings.CreateCheckbox(category, s, text)
   end
   conf("ForeverHunterPets_ShowUncertain", "showUncertain", L["Show uncertain data"],
-    (L["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."]):format(ns.FOREIGN_UNSURE, ns.FOREIGN_SURE))
+    (L["Also shows what only %d other characters have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."]):format(ns.FOREIGN_UNSURE, ns.FOREIGN_SURE))
   -- unbelegt heißt geschätzt; solange die Daten keine Schätzung enthalten, fehlt der Schalter
   if ns.HasUnproven() then
     conf("ForeverHunterPets_ShowUnproven", "showUnproven", L["Show unproven beasts"],
@@ -194,7 +194,7 @@ local function registerSettings()
   -- solange der Hauptschalter an ist; jede Änderung wirkt sofort
   local function petXP() ns.SafeCall("petxp", ns.UpdatePetXP) end
   local pet = Settings.RegisterAddOnSetting(category, "ForeverHunterPets_PetFrame", "petFrame", ns.db.ui,
-    Settings.VarType.Boolean, L["Enable pet frame additions"], true)
+    Settings.VarType.Boolean, L["Pet frame additions"], true)
   pet:SetValueChangedCallback(petXP)
   local petInit = Settings.CreateCheckbox(category, pet,
     L["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."])
@@ -214,7 +214,7 @@ local function registerSettings()
     Settings.VarType.Boolean, L["Share observations"], true)
   share:SetValueChangedCallback(function() ns.SafeCall("share", ns.ShareChanged) end)
   Settings.CreateCheckbox(category, share,
-    (L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."]):format(ns.FOREIGN_SURE))
+    (L["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different characters saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."]):format(ns.FOREIGN_SURE))
   Settings.RegisterAddOnCategory(category)
   ns.settingsCategory = category
 end
