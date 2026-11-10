@@ -784,6 +784,54 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if ns.db then ns.db.shareStats = stats end
 end)
 
+-- ---- Jäger aus der Wer-Liste grüßen (#154) ----
+-- Der einzige Weg zu Spielern außerhalb von Gilde und Gruppe (#153): Kommt eine Wer-Liste (WHO_LIST_UPDATE, nach
+-- /fhp suchen oder einem /who des Spielers), flüstert das Addon jedem Jäger darin einmal je Sitzung den Gruß. Wer
+-- das Addon hat, antwortet mit seinen Daten und grüßt zurück (#156), und die eigenen gehen zu ihm. Erkannt an
+-- filename == "HUNTER", angeflüstert wird fullName („Vorname Nachname“, Probe vom 10.11.2026). Nicht man selbst,
+-- nicht die eigene Gilde (die hat beim Einloggen einen Gruß bekommen), keiner zweimal (greetedOut). Höchstens
+-- SEARCH_PER_LIST je Liste und SEARCH_MAX je Sitzung. Gesucht wird nur auf Befehl, nie im Hintergrund: Die Suche ist
+-- für den Client eine Spieleraktion und wird gebremst („1 Sek. warten“), und ständiges Anflüstern Fremder wäre zu
+-- viel Verkehr. Die Ergebnisse kommen erst mit WHO_LIST_UPDATE, nicht direkt nach SendWho.
+local SEARCH_PER_LIST, SEARCH_MAX = 20, 100
+local searchGreeted = 0
+
+local function greetWhoList()
+  if not enabled() or quiet() or searchGreeted >= SEARCH_MAX then return end
+  if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
+  local okN, n = pcall(C_FriendList.GetNumWhoResults)
+  n = okN and tonumber(ns.clean(n)) or 0
+  local okG, guild = pcall(GetGuildInfo, "player")
+  guild = okG and ns.clean(guild) or nil
+  local name, per = me(), 0
+  for i = 1, math.min(n, 50) do
+    if per >= SEARCH_PER_LIST or searchGreeted >= SEARCH_MAX then break end
+    local ok, info = pcall(C_FriendList.GetWhoInfo, i)
+    if ok and type(info) == "table" and ns.clean(info.filename) == "HUNTER" then
+      local full, theirGuild = ns.clean(info.fullName), ns.clean(info.fullGuildName)
+      local sameGuild = type(guild) == "string" and guild ~= "" and theirGuild == guild
+      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) and not greetedOut[plain(full)] then
+        greetedOut[plain(full)] = true
+        enqueue(greeting(), "WHISPER", full)
+        per, searchGreeted = per + 1, searchGreeted + 1
+      end
+    end
+  end
+end
+ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
+
+-- /fhp suchen: eine Suche nach Jägern, mit dem Klassennamen in der Sprache des Clients; den Rest macht greetWhoList
+function ns.ShareSearch()
+  local L = ns.L
+  if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
+  if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
+  if searchGreeted >= SEARCH_MAX then ns.Print((L["Already greeted %d hunters this session."]):format(searchGreeted)); return end
+  if not (C_FriendList and C_FriendList.SendWho) then return end
+  local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
+  pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
+  ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+end
+
 -- ---- Alter Kanal und Gruß ----
 -- Bis 1.1.0 trat das Addon FHPetsNet bei. Der Client tritt gespeicherten Kanälen beim Einloggen selbst wieder bei,
 -- deshalb verlassen wir ihn nach 15 s und, falls er erst später kam, noch einmal nach 60 s (#153, #149). Immer,
@@ -929,7 +977,8 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
-  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d"):format(stats.replied, stats.skipped))
+  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d")
+    :format(stats.replied, stats.skipped, searchGreeted))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
     local total = 0
