@@ -262,7 +262,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 ## 15 Arbeitsweise
 
-- **Agil, ein Inkrement nach dem anderen**, jedes für sich im Spiel prüfbar; Commit erst nach dem Test im Spiel (macht der Maintainer).
+- **Agil, ein Inkrement nach dem anderen**, jedes für sich im Spiel prüfbar. Im `feature/…`-Branch wird jederzeit committet, auch vor dem Test; PR und Merge erst nach dem Test im Spiel (macht der Maintainer; seit 21.10.2026, vorher Commit erst nach dem Test).
 - **Erst proben, dann bauen:** Unklare API-Fragen klärt eine Probe (`/fhp …`, Protokoll in den SavedVariables), Ergebnisse in [api-befunde.md](../technik/api-befunde.md).
 - **Jeder Vorschlag wird bewertet:** Mehrwert, Komplexität, Risiko – in dieser Reihenfolge, je 1–10, mit Begründung; Bugs zusätzlich nach Schwere (Skala in [arbeitsweise.md](arbeitsweise.md)).
 - **Prüfen ohne Spiel:** `luaparse` und `fengari` mit nachgebildeter WoW-API; Aussehen nur im Spiel – bei UI-Änderungen sagen, dass die Optik ungeprüft ist.
