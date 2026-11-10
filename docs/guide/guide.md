@@ -257,4 +257,4 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 **A beast shows no status in the tooltip.** Status is shown in explorer mode only, and only for beasts that live in this zone or that you tracked here.
 
-**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds the short codes of players who shared with you – please don't post it publicly.
+**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds a short history of sharing over your last 30 sessions (counts only, no names) and the short codes of players who shared with you – please don't post it publicly.

@@ -77,9 +77,9 @@ NS.ShareStatus()
 ok(printed("Rufen: an"), "/fhp teilen: Rufen an")
 
 -- Grüße per YELL laufen durch die Bremse aus #52, ohne Rückgruß
-local stats = NS.db.shareStats or {}
+local stats = NS.db.shareLog[#NS.db.shareLog]
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.2.0;0", "YELL", "Erster Rufer")
-stats = NS.db.shareStats
+stats = NS.db.shareLog[#NS.db.shareLog]
 local replied, skipped = stats.replied, stats.skipped
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.2.0;0", "YELL", "Zweiter Rufer")
 ok(stats.skipped == skipped + 1 and stats.replied == replied, "zweiter Gruß per YELL kurz danach: keine Antwort (#52)")

@@ -64,7 +64,7 @@ Login({ ui = { share = true } })
 for _ = 1, 10 do RunTimers() end
 local db = NS.db
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.0.0;0", "CHANNEL", "Erster Jaeger")
-local stats = db.shareStats
+local stats = db.shareLog[#db.shareLog]
 ok(stats and stats.recvWay.CHANNEL == 1, "Gruß aus dem Kanal als Weg CHANNEL gezählt")
 local replied, skipped = stats.replied, stats.skipped
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.0.0;0", "CHANNEL", "Zweiter Jaeger")

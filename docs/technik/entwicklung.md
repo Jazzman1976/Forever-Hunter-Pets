@@ -56,7 +56,7 @@ Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die 
 
 `/fhp start` zeigt den Startdialog noch einmal, auch wenn der Charakter schon gewählt hat (Entwicklerwerkzeug, nicht in der Befehlsübersicht); Schließen ändert dann nichts, eine Wahl setzt den Modus. Ganz zurück auf „noch nicht gewählt“: `/run ForeverHunterPetsCharDB.modeChosen = nil`, danach `/fhp`.
 
-`/fhp api` schreibt ein API-Protokoll dorthin (`ForeverHunterPetsDB.probe`). So kommt Spielausgabe in eine Datei, ohne dass jemand Chatzeilen abtippt. Das Protokoll (auch das des Selbsttests `/fhp teilen test`) trägt einen Zeitpunkt (`probeAt`) und wird beim Laden gelöscht, wenn es älter als ein Tag ist (#68); es enthält keine Spielernamen, nur Kürzel.
+`/fhp api` schreibt ein API-Protokoll dorthin (`ForeverHunterPetsDB.probe`). So kommt Spielausgabe in eine Datei, ohne dass jemand Chatzeilen abtippt. Das Protokoll (auch das des Selbsttests `/fhp teilen test`) trägt einen Zeitpunkt (`probeAt`) und wird beim Laden gelöscht, wenn es älter als ein Tag ist (#68); es enthält keine Spielernamen, nur Kürzel. Den Verlauf des Teilens über die letzten 30 Sitzungen (#160) liest man in derselben Datei unter `ForeverHunterPetsDB.shareLog`, Felder in [addon-technik.md](addon-technik.md) unter „Sichtbar“. Er zeigt nach einem Release, ob neue Wege ankommen: empfangene Rückgrüße (`backRecv`), geflüsterte Grüße (`whisperGreets`), Treffer der Suche (`hits`) und welche Versionen die anderen haben (`versions`).
 
 ## Prüfen ohne Spiel
 

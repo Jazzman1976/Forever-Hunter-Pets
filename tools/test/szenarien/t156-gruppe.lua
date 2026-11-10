@@ -69,10 +69,10 @@ run()
 ok(greetings("PARTY") == 1, "Beitritt im Kampf: kein Gruß")
 
 -- Gruß über PARTY von X: Antwort und genau ein Rückgruß an X, mit R
-local stats = NS.db.shareStats or {}
+local stats = NS.db.shareLog[#NS.db.shareLog]
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.1.0;3", "PARTY", "Erster Jaeger")
 run()
-stats = NS.db.shareStats
+stats = NS.db.shareLog[#NS.db.shareLog]
 ok(greetings("WHISPER", "Erster Jaeger") == 1, "Gruß über PARTY: ein Rückgruß an den Grüßenden")
 local back
 for _, s in ipairs(SENT) do if s.kind == "WHISPER" and s.msg:sub(1, 3) == "H1;" then back = s.msg end end

@@ -39,9 +39,15 @@ function ns.ReportError(where, err)
   ns.Print("|cffff7359" .. (L["Error in %s:"]):format(where) .. "|r " .. tostring(err))
 end
 
+-- Jeder Fehler geht auch an den Verlauf des Teilens (ns.NoteError, #160), der ihn zählt – der Chat zeigt ihn nur einmal
+local function failed(where, err)
+  if ns.NoteError then pcall(ns.NoteError, where, err) end
+  ns.ReportError(where, err)
+end
+
 function ns.SafeCall(where, fn, ...)
   local ok, err = pcall(fn, ...)
-  if not ok then ns.ReportError(where, err) end
+  if not ok then failed(where, err) end
   return ok
 end
 
@@ -83,7 +89,7 @@ end
 ev:SetScript("OnEvent", function(_, event, ...)
   for _, fn in ipairs(handlers[event] or {}) do
     local ok, err = pcall(fn, ...)
-    if not ok then ns.ReportError(event, err) end
+    if not ok then failed(event, err) end
   end
 end)
 

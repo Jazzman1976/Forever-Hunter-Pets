@@ -69,7 +69,7 @@ ok(g["Erste Jaegerin"] == 1 and g["Zweiter Jäger"] == 1, "keiner zweimal")
 FireEvent("CHAT_MSG_ADDON", "FHPets", "H1;1.2.0;4;R", "WHISPER", "Erste Jaegerin")
 run()
 ok(greeted()["Erste Jaegerin"] == 1, "auf den Rückgruß kein zweiter Gruß")
-ok(NS.db.shareStats.replied >= 1, "auf den Rückgruß eine Antwort")
+ok(NS.db.shareLog[#NS.db.shareLog].replied >= 1, "auf den Rückgruß eine Antwort")
 
 -- Höchstens 20 je Liste
 who = {}
