@@ -6,6 +6,7 @@
   {"npc":5873,"name":"Totem der Steinhaut","karten":[1426],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-11-05"},
   {"npc":5919,"name":"Totem der Steinhaut II","karten":[1413],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-10-22"},
   {"npc":5921,"name":"Totem der Erdstärke II","karten":[1426],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-10-22"},
+  {"npc":6250,"name":"Kriecher","karten":[1436],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-11-10"},
   {"npc":271867,"name":"Pachimari","karten":[1426],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-11-05"},
   {"npc":272328,"name":"Mini-Diablo","karten":[1426],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-11-05"},
   {"npc":272329,"name":"Zergling","karten":[1426],"grund":"besitzer","quelle":"Tooltip nennt einen Besitzer (Begleiter eines NPCs), eigener Treffer im Spiel","datum":"2026-11-05"},
