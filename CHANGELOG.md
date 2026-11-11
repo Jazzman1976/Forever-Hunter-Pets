@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 – 2026-11-11
+
+Sharing reaches beyond your guild again. Since WoW Forever went live, the hidden chat channel the addon used to reach other players has been blocked, so sharing only worked within your guild and group. This release opens new ways. Players with 1.1.0 already answer every greeting – the more of you update, the more data flows.
+
+No game restart needed – `/reload` is enough.
+
+- **New: `/fhp search`** looks for hunters who are online and sends each of them a greeting once per session – an invisible addon message. Those who have the addon share with you, and you with them. A `/who` of your own works the same way. The addon never searches by itself, and greets at most 20 hunters per search and 100 per session. The game's *Who* window opens when you search.
+- **Greeting when you join a group or raid:** the addon now greets your group when you join, not only when you log in. Whoever greets you in a group or by whisper gets a greeting back, so both sides receive what the other one has.
+- **Your sightings travel too:** when someone greets you, your answer now includes up to 10 beasts you sighted that the addon's data doesn't know yet – also those of your other characters, on other realms or the other faction.
+- **Ready for the old ways to come back:** once per session the addon checks whether WoW Forever allows yelling to players nearby again, and uses it if so. `/fhp share test` briefly checks the old channel and leaves it again.
+- **Sharing history:** your account file keeps a short history of sharing over your last 30 sessions – counts only, no names – so we can see whether the new ways work. `/fhp share` now also shows how many hunters answered your searches and which addon versions you heard from.
+- **More data from the game:** 190 beasts (1.1.0: 178), 1209 spawn points (1.1.0: 1122), and new teaching beasts.
+
 ## 1.1.0 – 2026-11-08
 
 The next full release, with everything from 1.1.0-beta.1 and one more fix. If you used the beta, only the last two points are new for you. New features will keep coming as beta versions first, until they are ready for the next full release.
