@@ -4,7 +4,9 @@
 --
 -- Kein Kanal mehr (#153): Seit dem Start von Forever lehnt der Server Addon-Nachrichten im eigenen Kanal ab
 -- („Dieser Vorgang ist in diesem Kanal nicht erlaubt.“), obwohl SendAddonMessage 0 liefert. YELL nimmt der
--- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit.
+-- Client gar nicht erst an (Ergebnis 4). Ein Weg zu Spielern außerhalb von Gilde und Gruppe fehlt damit. Weil
+-- beides in der Beta ging, prüft das Addon YELL einmal je Sitzung und nutzt es, sobald der Client es wieder nimmt;
+-- den Kanal prüft der Selbsttest (#158).
 --
 -- Nachrichten (Prefix FHPets, höchstens 255 Byte):
 --   O1;npc;stufe;zauberIDs;tempo;zeit;melder   eine Beobachtung, wie in ForeverHunterPetsDB.obs
@@ -13,8 +15,9 @@
 --                                              nur, was die mitgelieferten Daten nicht kennen
 --   F1;npc;uiMapID;zellen;melder               neue eigene Fundort-Zellen (Core/Places.lua), gebündelt
 --                                              höchstens alle 5 Minuten, bis zu 100 Zellen
---   H1;version;anzahl                          Gruß nach dem Einloggen; Antwort: einige Beobachtungen
---                                              per Flüstern an den, der gegrüßt hat
+--   H1;version;anzahl[;R]                      Gruß nach dem Einloggen und beim Beitritt in eine Gruppe;
+--                                              Antwort: einige Beobachtungen per Flüstern an den, der
+--                                              gegrüßt hat. R: Rückgruß (#156), der wird nicht erwidert
 -- Der Melder ist ein Kürzel aus acht Hexziffern, gerechnet aus dem vollen Namen. Gespeichert werden nie
 -- Namen, nur die Kürzel – sie zählen, wie viele verschiedene Charaktere etwas gesehen haben.
 --
@@ -30,21 +33,41 @@ local INTERVAL = 2.0          -- Sekunden zwischen zwei Nachrichten (Blizzard dr
 local MAX_QUEUE = 80
 local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
 local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
+local SIGHT_REPLY = 10        -- eigene Sichtungen als Antwort auf einen Gruß (#157); zusammen höchstens 40 Nachrichten
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
 local MAX_REJECTS = 20        -- verschiedene verworfene Nachrichten, roh in ForeverHunterPetsDB.shareRejects
 local REPLY_EVERY = 300       -- Sekunden: höchstens eine Antwort auf Grüße aus dem Kanal, und so weit zurück zählen (#52)
+local JOIN_DELAY = 5          -- Sekunden nach dem Beitritt in eine Gruppe bis zum Gruß (#156)
 
 local queue, busy = {}, false
 -- Zähler dieser Sitzung für /fhp teilen (M4, Plan Veröffentlichung V1): rein lokal, kein zusätzlicher Verkehr.
 -- Je Art (O1 Zähmung, S1 Sichtung, F1 Zellen, H1 Gruß): gesendet, empfangen, davon neu gespeichert, und warum
--- verworfen. Liegt auch in ForeverHunterPetsDB.shareStats, damit ein Test nach /reload nachlesbar bleibt.
--- Dazu je Weg (#153): vom Client angenommen und empfangen, ohne Selbsttest-Nachrichten.
+-- verworfen. Dazu je Weg (#153): vom Client angenommen und empfangen, ohne Selbsttest-Nachrichten.
+-- Verlauf (#160): Jede Sitzung ist ein Eintrag in ForeverHunterPetsDB.shareLog, die letzten LOG_MAX über alle
+-- Charaktere (bis dahin lag nur die laufende Sitzung in shareStats). So lässt sich nach einem Release nachsehen, ob
+-- Rückgruß und Suche ankommen. Ohne Namen: nur Kürzel, Zahlen, Versionen, Gründe. Felder in newStats().
 local KINDS = { "O1", "S1", "F1", "H1" }
-local stats = { sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, last = nil, since = nil, replied = 0, skipped = 0 }
+local LOG_MAX = 30
+local HIT_WINDOW = 120        -- Sekunden: Antwortet ein per Suche Gegrüßter so bald, ist das ein Treffer (#160)
+local function newStats()
+  return {
+    at = time and time() or 0, last = nil, v = ns.version, rep = nil, yell = "ungeprüft",
+    sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, lastIn = nil, replied = 0, skipped = 0,
+    groupGreets = 0, backSent = 0, backRecv = 0, whisperGreets = 0,      -- Gruß (#156): Beitritt, Rückgruß, geflüstert ohne R
+    searches = 0, whoLists = 0, searchGreeted = 0, hits = 0,           -- Suche (#154) und Treffer
+    versions = {}, senders = {}, errors = {}, queueMax = 0, throttled = 0,
+  }
+end
+local stats = newStats()
 local function count(t, k, n) t[k] = (t[k] or 0) + (n or 1) end
-local perSender, greeted = {}, {}
+-- nur für die Sitzung: wer per Suche gegrüßt wurde (Zeit), wessen Version und welche Absender je Weg schon zählen
+local searchedAt, versionOf, senderSeen = {}, {}, {}
+local function active() stats.last = time and time() or 0 end
+-- greeted: wem schon geantwortet wurde; greetedOut: wem schon ein eigener Gruß geflüstert wurde (#156). Beide je
+-- Name (plain), nur für die Sitzung, keine Namen in den SavedVariables.
+local perSender, greeted, greetedOut = {}, {}, {}
 local selfName, selfRep
 local registered = false
 
@@ -260,8 +283,9 @@ pump = function()
     local item = queue[1]
     local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
-    if item.onSent then item.onSent(what) end
-    if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)) end
+    if item.onSent then item.onSent(what, accepted, done) end
+    if done and what:find("^Ergebnis") then count(stats.sent, item.msg:sub(1, 2)); active() end
+    if not done then stats.throttled = stats.throttled + 1 end
     if item.msg:sub(1, 3) ~= "T1;" then
       if accepted then count(stats.sentWay, item.kind)
       elseif done then count(stats.dropped, item.kind .. " vom Client abgelehnt (" .. what .. ")") end
@@ -296,14 +320,27 @@ local function enqueue(msg, kind, target, onSent, low)
     end
     table.insert(queue, at, item)
   end
+  if #queue > stats.queueMax then stats.queueMax = #queue end
   if not busy then pump() end
 end
 
--- an alle Wege, die gerade offen sind (ohne Kanal und ohne YELL, beides geht in Forever nicht, #153)
+-- YELL je Sitzung (#158): Seit dem Start von Forever lehnt der Client YELL ab (Ergebnis 4, #153); in der Beta ging
+-- es. Der Gruß beim Einloggen geht deshalb einmal je Sitzung zusätzlich per YELL. Nimmt der Client ihn an, ist YELL
+-- für die Sitzung offen, und broadcast() sendet auch dorthin; sonst bleibt es aus. Kosten: eine unsichtbare
+-- Nachricht je Sitzung. yell: nil ungeprüft, "probe" unterwegs, true an, false aus (yellWhy: was der Client sagte).
+local yell, yellWhy
+local function noteYell(what, accepted, done)
+  if not done then return end   -- gedrosselt: es wird wiederholt
+  if accepted then yell, yellWhy = true, nil else yell, yellWhy = false, what end
+  stats.yell = yell and "an" or ("aus (" .. tostring(yellWhy) .. ")")
+end
+
+-- an alle Wege, die gerade offen sind (ohne Kanal, der ist gesperrt, #153; YELL nur, wenn der Client es nimmt)
 local function broadcast(msg)
   if IsInGuild and ns.clean(IsInGuild()) then enqueue(msg, "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(msg, "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(msg, "PARTY") end
+  if yell == true then enqueue(msg, "YELL") end
 end
 
 -- eigene Beobachtungen tragen beim Versand das eigene Kürzel, fremde behalten ihres
@@ -425,15 +462,16 @@ local function receiveSighting(body, sender)
 end
 
 -- Auf einen Gruß ein paar Beobachtungen zurück: eigene zuerst, dann die neuesten; dazu bis zu
--- CELL_REPLY eigene Fundort-Bündel. Weitergeleitet wird nichts Fremdes außer Beobachtungen, und nichts, was
--- der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem Namen wie in me(): „Vorname Nachname“
--- → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen gehen weiter mit.
+-- CELL_REPLY eigene Fundort-Bündel und bis zu SIGHT_REPLY eigene Sichtungen (#157). Weitergeleitet wird nichts
+-- Fremdes außer Beobachtungen, und nichts, was der Grüßende selbst gemeldet hat (#12). Sein Kürzel kommt aus dem
+-- Namen wie in me(): „Vorname Nachname“ → „Vorname-Nachname“. Twinks tragen ein anderes Kürzel, deren Zähmungen,
+-- Zellen und Sichtungen gehen weiter mit.
 --
 -- Damit die Antworten nicht mit der Zahl der Spieler wachsen (#52), gilt für Grüße aus dem Kanal (Gilde und Gruppe
 -- immer): höchstens eine Antwort je REPLY_EVERY Sekunden, und auch dann nur mit Wahrscheinlichkeit 1/n, n = Zahl
 -- der Grüße aus dem Kanal in den letzten REPLY_EVERY Sekunden. So antworten im Schnitt etwa gleich viele Spieler,
 -- egal wie viele online sind. Wer nicht antwortet, verbraucht kein Budget und merkt sich den Grüßenden nicht.
--- Seit #153 kommt über den Kanal nichts mehr an; die Bremse bleibt für einen künftigen offenen Weg.
+-- Seit #153 kommt über den Kanal nichts mehr an; die Bremse gilt auch für Grüße per YELL, sobald das wieder geht (#158).
 local heardAt, lastReply = {}, nil   -- GetTime() der gehörten Grüße aus dem Kanal und der letzten Antwort darauf
 local function noteGreeting()
   local now = GetTime()
@@ -475,11 +513,35 @@ local function reply(sender, target, open)
   local n = 0
   for _, list in ipairs({ own, other }) do
     for i = #list, 1, -1 do
-      if n >= REPLY_MAX then return end
+      if n >= REPLY_MAX then break end
       local msg = outgoing(list[i])
       if msg then enqueue(msg, "WHISPER", target, nil, true); n = n + 1 end
     end
   end
+  -- eigene Sichtungen, die die Daten nicht kennen, auch von Twinks (#157)
+  for _, s in ipairs(ns.OwnSightingsToShare and ns.OwnSightingsToShare(SIGHT_REPLY) or {}) do
+    enqueue("S1;" .. s, "WHISPER", target, nil, true)
+  end
+end
+
+-- ---- Gruß ----
+local function greeting(back)
+  local msg = ("H1;%s;%d"):format((tostring(ns.version):gsub(";", "")), ns.ObservationCount())
+  return back and msg .. ";R" or msg
+end
+
+-- Rückgruß (#156): Ein Gruß holt nur die Daten der anderen zum Grüßenden. Damit auch er seine teilt, flüstert ihm
+-- das Addon einmal je Sitzung den eigenen Gruß zurück, und er antwortet darauf wie auf jeden Gruß. Nur auf Grüße
+-- über Gruppe, Schlachtzug und Flüstern: Über die Gilde grüßt man beim Einloggen alle auf einmal, und jeder
+-- Rückgruß brächte eine ganze Antwort zurück – bei zehn Gildenmitgliedern mit dem Addon 300 Nachrichten, mehr als
+-- die Warteschlange fasst. Auf einen Rückgruß (R) und an jemanden, dem schon ein Gruß geflüstert wurde, wird nicht
+-- zurückgegrüßt; so endet jeder Austausch nach höchstens zwei Grüßen.
+local GREET_BACK = { PARTY = true, RAID = true, WHISPER = true }
+local function greetBack(key, target, kind, text)
+  if not GREET_BACK[kind] or greetedOut[key] or text:find("^H1;[^;]*;[^;]*;R") then return end
+  greetedOut[key] = true
+  stats.backSent = stats.backSent + 1
+  enqueue(greeting(true), "WHISPER", target)
 end
 
 -- ---- Selbsttest (/fhp teilen test): ohne zweiten Spieler den echten Weg prüfen ----
@@ -506,16 +568,39 @@ local function testDone()
   for _, h in ipairs(test.heard) do testOut("  empfangen: " .. h) end
   for _, w in ipairs(test.ways) do
     local r = test.back[w]
-    local sent = test.sent[w] and ("gesendet, " .. test.sent[w]) or "nicht gesendet (Warteschlange, Kampf oder Instanz?)"
+    local sent = test.sent[w] and ("gesendet, " .. test.sent[w])
+      or test.why[w] or "nicht gesendet (Warteschlange, Kampf oder Instanz?)"
     if r then
       testOut(("Selbsttest %s: %s, zurück nach %.1f s, Prüfung %s"):format(w, sent, r.after, r.ok and "bestanden" or "NICHT bestanden"))
     else
       testOut(("Selbsttest %s: %s, nicht zurückgekommen"):format(w, sent))
     end
   end
+  if test.channel then
+    local n = test.channel.notices
+    testOut("Selbsttest Kanal, Meldungen des Servers: " .. (#n > 0 and table.concat(n, ", ") or "keine"))
+    if LeaveChannelByName then pcall(LeaveChannelByName, OLD_CHANNEL) end
+  end
   ns.SaveProbe(test.log)
   test = nil
 end
+
+-- Kanal im Selbsttest (#158): Ob der Server Addon-Nachrichten im Kanal wieder durchlässt, zeigt nur das Echo oder
+-- eine Meldung des Servers, und dafür muss man im Kanal sein. Der Selbsttest tritt FHPetsNet deshalb kurz bei, sendet
+-- nach CHANNEL_WAIT Sekunden, merkt sich die Meldungen des Servers zu diesem Kanal (nur ihre Art, keine Namen) und
+-- verlässt ihn am Ende wieder. Kommt der Kanal zurück, schaltet ihn das Addon nicht von selbst ein (Platzfrage, #149).
+local CHANNEL_WAIT = 3
+local function channelNotice(event, kind, _, _, chanString, _, _, _, _, baseName)
+  if not (test and test.channel) then return end
+  kind, chanString, baseName = ns.clean(kind), ns.clean(chanString), ns.clean(baseName)
+  local ours = baseName == OLD_CHANNEL or (type(chanString) == "string" and chanString:find(OLD_CHANNEL, 1, true))
+  local n = test.channel.notices
+  if ours and type(kind) == "string" and #n < 10 then
+    n[#n + 1] = ("%s%s nach %.1f s"):format(kind:sub(1, 40), event, GetTime() - test.started)
+  end
+end
+ns.On("CHAT_MSG_CHANNEL_NOTICE", function(...) channelNotice("", ...) end)
+ns.On("CHAT_MSG_CHANNEL_NOTICE_USER", function(...) channelNotice(" (Spieler)", ...) end)
 
 function ns.ShareTest()
   if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
@@ -525,19 +610,37 @@ function ns.ShareTest()
   local id = ("%04x"):format(math.random(0, 65535))
   -- eine erfundene, aber gültige Beobachtung: Großer Fleischreißer, Stufe 17, Demoralisierendes Kreischen 1
   local sample = ("154;17;24423;2.0;%d;7e570001"):format(time and time() or MIN_TIME)
-  test = { id = id, started = GetTime(), back = {}, ways = {}, sent = {}, heard = {}, log = {} }
+  test = { id = id, started = GetTime(), back = {}, ways = {}, sent = {}, why = {}, heard = {}, log = {} }
   testOut("=== Selbsttest Teilen " .. (date and date("%Y-%m-%d %H:%M:%S") or "") .. " · Addon " .. ns.version .. " ===")
-  local function way(label, kind, target)
+  local t = test
+  local function send(label, kind, target, also)
+    enqueue(("T1;%s;%s;%s"):format(id, label, sample), kind, target, function(what, accepted, done)
+      t.sent[label] = what
+      if also then also(what, accepted, done) end
+    end)
+  end
+  local function way(label, kind, target, also)
     test.ways[#test.ways + 1] = label
-    local t = test
-    enqueue(("T1;%s;%s;%s"):format(id, label, sample), kind, target, function(what) t.sent[label] = what end)
+    send(label, kind, target, also)
   end
   if IsInGuild and ns.clean(IsInGuild()) then way("Gilde", "GUILD") end
   if IsInRaid and ns.clean(IsInRaid()) then way("Schlachtzug", "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then way("Gruppe", "PARTY") end
   way("Flüstern", "WHISPER", name)
-  ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), #test.ways * 2 + 10))
-  ns.After(#test.ways * INTERVAL + 10, testDone)
+  way("Rufen", "YELL", nil, noteYell)   -- nimmt der Client YELL wieder an, ist es ab jetzt offen (#158)
+  if JoinTemporaryChannel then
+    test.ways[#test.ways + 1] = "Kanal"
+    test.channel = { notices = {} }
+    pcall(JoinTemporaryChannel, OLD_CHANNEL)
+    ns.After(CHANNEL_WAIT, function()
+      if test ~= t then return end
+      local ch = oldChannelIndex()
+      if ch then send("Kanal", "CHANNEL", ch) else t.why.Kanal = "nicht beigetreten" end
+    end)
+  end
+  local wait = #test.ways * INTERVAL + 10 + CHANNEL_WAIT
+  ns.Print(("Selbsttest läuft über %s; Ergebnis in etwa %d Sekunden."):format(table.concat(test.ways, ", "), wait))
+  ns.After(wait, testDone)
 end
 
 local function receiveTest(text)
@@ -659,6 +762,33 @@ local function keepReject(text, why, kind)
   while #list > MAX_REJECTS do table.remove(list, 1) end
 end
 
+-- Für den Verlauf (#160), nach jeder gelesenen Nachricht eines anderen: verschiedene Absender je Weg, Treffer der
+-- Suche (Antwort innerhalb von HIT_WINDOW s, je Name einmal), bei einem Gruß die Version (je Absender einmal, höchstens
+-- 10 verschiedene) und ob es ein Rückgruß oder ein geflüsterter Gruß ohne R war.
+local function noteHeard(key, kind, text)
+  active()
+  local seen = senderSeen[kind] or {}
+  senderSeen[kind] = seen
+  if not seen[key] then seen[key] = true; count(stats.senders, kind) end
+  local at = searchedAt[key]
+  if at then
+    searchedAt[key] = nil
+    if GetTime() - at <= HIT_WINDOW then stats.hits = stats.hits + 1 end
+  end
+  if text:sub(1, 3) ~= "H1;" then return end
+  if text:find("^H1;[^;]*;[^;]*;R") then stats.backRecv = stats.backRecv + 1
+  elseif kind == "WHISPER" then stats.whisperGreets = stats.whisperGreets + 1 end
+  if versionOf[key] then return end
+  local v = (text:match("^H1;([^;]*)") or ""):sub(1, 20)
+  if v == "" then v = "?" end
+  local n = 0
+  for _ in pairs(stats.versions) do n = n + 1 end
+  if stats.versions[v] or n < 10 then
+    versionOf[key] = v
+    count(stats.versions, v)
+  end
+end
+
 ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   if not enabled() then return end
   prefix, text, sender = ns.clean(prefix), ns.clean(text), ns.clean(sender)
@@ -684,7 +814,9 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
     ok = true
-    reply(key, sender, ns.clean(kind) == "CHANNEL")   -- zurückgeflüstert wird an den Namen, den der Client nannte
+    -- zurückgeflüstert wird an den Namen, den der Client nannte
+    reply(key, sender, ns.clean(kind) == "CHANNEL" or ns.clean(kind) == "YELL")
+    greetBack(key, sender, ns.clean(kind), text)
   else
     return
   end
@@ -695,23 +827,105 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
   count(stats.recv, t)
   if ok then count(stats.new, t) else count(stats.dropped, t .. " " .. tostring(why)) end
   if not ok and not EXPECTED[why] then keepReject(text, why, kind) end
-  stats.last = { at = time and time() or 0, t = t, way = tostring(ns.clean(kind)) }
-  if ns.db then ns.db.shareStats = stats end
+  stats.lastIn = { at = time and time() or 0, t = t, way = tostring(ns.clean(kind)) }
+  pcall(noteHeard, key, tostring(ns.clean(kind)), text)
 end)
+
+-- ---- Jäger aus der Wer-Liste grüßen (#154) ----
+-- Der einzige Weg zu Spielern außerhalb von Gilde und Gruppe (#153): Kommt eine Wer-Liste (WHO_LIST_UPDATE, nach
+-- /fhp suchen oder einem /who des Spielers), flüstert das Addon jedem Jäger darin einmal je Sitzung den Gruß. Wer
+-- das Addon hat, antwortet mit seinen Daten und grüßt zurück (#156), und die eigenen gehen zu ihm. Erkannt an
+-- filename == "HUNTER", angeflüstert wird fullName („Vorname Nachname“, Probe vom 10.11.2026). Nicht man selbst,
+-- nicht die eigene Gilde (die hat beim Einloggen einen Gruß bekommen), keiner zweimal (greetedOut). Höchstens
+-- SEARCH_PER_LIST je Liste und SEARCH_MAX je Sitzung. Gesucht wird nur auf Befehl, nie im Hintergrund: Die Suche ist
+-- für den Client eine Spieleraktion und wird gebremst („1 Sek. warten“), und ständiges Anflüstern Fremder wäre zu
+-- viel Verkehr. Die Ergebnisse kommen erst mit WHO_LIST_UPDATE, nicht direkt nach SendWho.
+local SEARCH_PER_LIST, SEARCH_MAX = 20, 100
+
+local function greetWhoList()
+  if not enabled() or quiet() or stats.searchGreeted >= SEARCH_MAX then return end
+  if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
+  stats.whoLists = stats.whoLists + 1
+  local okN, n = pcall(C_FriendList.GetNumWhoResults)
+  n = okN and tonumber(ns.clean(n)) or 0
+  local okG, guild = pcall(GetGuildInfo, "player")
+  guild = okG and ns.clean(guild) or nil
+  local name, per = me(), 0
+  for i = 1, math.min(n, 50) do
+    if per >= SEARCH_PER_LIST or stats.searchGreeted >= SEARCH_MAX then break end
+    local ok, info = pcall(C_FriendList.GetWhoInfo, i)
+    if ok and type(info) == "table" and ns.clean(info.filename) == "HUNTER" then
+      local full, theirGuild = ns.clean(info.fullName), ns.clean(info.fullGuildName)
+      local sameGuild = type(guild) == "string" and guild ~= "" and theirGuild == guild
+      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) and not greetedOut[plain(full)] then
+        greetedOut[plain(full)] = true
+        searchedAt[plain(full)] = GetTime()
+        enqueue(greeting(), "WHISPER", full)
+        per, stats.searchGreeted = per + 1, stats.searchGreeted + 1
+      end
+    end
+  end
+end
+ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
+
+-- /fhp suchen: eine Suche nach Jägern, mit dem Klassennamen in der Sprache des Clients; den Rest macht greetWhoList
+function ns.ShareSearch()
+  local L = ns.L
+  if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
+  if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
+  if stats.searchGreeted >= SEARCH_MAX then ns.Print((L["Already greeted %d hunters this session."]):format(stats.searchGreeted)); return end
+  if not (C_FriendList and C_FriendList.SendWho) then return end
+  local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
+  pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
+  stats.searches = stats.searches + 1
+  ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+end
 
 -- ---- Alter Kanal und Gruß ----
 -- Bis 1.1.0 trat das Addon FHPetsNet bei. Der Client tritt gespeicherten Kanälen beim Einloggen selbst wieder bei,
 -- deshalb verlassen wir ihn nach 15 s und, falls er erst später kam, noch einmal nach 60 s (#153, #149). Immer,
 -- auch bei abgeschaltetem Teilen: Der Kanal nützt nichts mehr und belegt nur einen Platz in der Kanalliste.
 local function leave()
+  if test and test.channel then return end   -- der Selbsttest ist gerade im Kanal und verlässt ihn selbst (#158)
   if oldChannelIndex() and LeaveChannelByName then pcall(LeaveChannelByName, OLD_CHANNEL) end
 end
 
 local function hello()
   if not enabled() then return end
-  local msg = ("H1;%s;%d"):format(tostring(ns.version):gsub(";", ""), ns.ObservationCount())
+  local msg = greeting()
   broadcast(msg)
+  if yell == nil then
+    yell = "probe"
+    enqueue(msg, "YELL", nil, noteYell)
+  end
 end
+
+-- Gruß beim Beitritt in eine Gruppe oder einen Schlachtzug (#156): Gegrüßt wird sonst nur beim Einloggen, und wer
+-- später dazukommt, bekäme nur, was ab dann neu entsteht. GROUP_ROSTER_UPDATE statt GROUP_JOINED, weil es das in
+-- jedem Client gibt; gegrüßt wird nur beim Wechsel von „ohne Gruppe“ zu „in einer Gruppe“, die Umwandlung in einen
+-- Schlachtzug grüßt nicht neu. Nicht in Kampf und Instanz: Ein liegengebliebener Gruß ginge nach dem Verlassen ins
+-- Leere (die Gruppe eines Schlachtfelds löst sich auf). Nicht über die Gilde, die hat beim Einloggen gegrüßt.
+local inGroup   -- nil bis zum Einloggen
+local function grouped()
+  return ((IsInRaid and ns.clean(IsInRaid())) or (IsInGroup and ns.clean(IsInGroup()))) and true or false
+end
+
+local function greetGroup()
+  if not enabled() or quiet() then return end
+  if IsInRaid and ns.clean(IsInRaid()) then enqueue(greeting(), "RAID")
+  elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(greeting(), "PARTY")
+  else return end
+  stats.groupGreets = stats.groupGreets + 1
+end
+
+ns.On("GROUP_ROSTER_UPDATE", function()
+  if inGroup == nil then return end
+  local now = grouped()
+  if now and not inGroup and enabled() and not quiet() then
+    ns.After(JOIN_DELAY, function() ns.SafeCall("share", greetGroup) end)
+  end
+  inGroup = now
+end)
 
 local function start()
   if not registered and C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
@@ -721,7 +935,41 @@ local function start()
   ns.After(25, function() ns.SafeCall("share", hello) end)
 end
 
+-- Verlauf (#160): je Einloggen ein neuer Eintrag, höchstens LOG_MAX; shareStats (bis 1.1.0) entfällt
+local function openLog()
+  if not ns.db then return end
+  local log = type(ns.db.shareLog) == "table" and ns.db.shareLog or {}
+  ns.db.shareLog = log
+  stats = newStats()
+  stats.rep = select(2, me())
+  if yell == true or yell == false then stats.yell = yell and "an" or ("aus (" .. tostring(yellWhy) .. ")") end
+  searchedAt, versionOf, senderSeen = {}, {}, {}
+  log[#log + 1] = stats
+  while #log > LOG_MAX do table.remove(log, 1) end
+  ns.db.shareStats = nil
+end
+
+-- Fehler im Teilen (#160): Init meldet jeden Fehler hierher, auch die, die der Chat nur einmal zeigt. Gezählt werden
+-- die Stellen des Teilens, je Stelle mit dem ersten Text (gekürzt), höchstens ERR_MAX Stellen.
+local ERR_MAX = 5
+local SHARE_WHERE = { share = true, CHAT_MSG_ADDON = true, CHAT_MSG_SYSTEM = true, WHO_LIST_UPDATE = true,
+  GROUP_ROSTER_UPDATE = true, CHAT_MSG_CHANNEL_NOTICE = true, CHAT_MSG_CHANNEL_NOTICE_USER = true }
+function ns.NoteError(where, err)
+  if not SHARE_WHERE[where] then return end
+  local e = stats.errors[where]
+  if not e then
+    local n = 0
+    for _ in pairs(stats.errors) do n = n + 1 end
+    if n >= ERR_MAX then return end
+    e = { n = 0, first = tostring(err):sub(1, 200) }
+    stats.errors[where] = e
+  end
+  e.n = e.n + 1
+end
+
 ns.On("PLAYER_LOGIN", function()
+  ns.SafeCall("share", openLog)
+  inGroup = grouped()
   ns.SafeCall("share", claimOwn)
   ns.SafeCall("share", markLegacy)
   ns.SafeCall("share", start)
@@ -790,8 +1038,9 @@ function ns.ShareStatus()
     if o and o.own then own = own + 1 end
   end
   local _, rep = me()
-  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s")
-    :format(enabled() and "an" or "aus", own, #queue, rep or "?"))
+  local rufen = yell == true and "an" or yell == false and ("aus (" .. tostring(yellWhy) .. ")") or "ungeprüft"
+  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s · Rufen: %s")
+    :format(enabled() and "an" or "aus", own, #queue, rep or "?", rufen))
   local tames, sights, cells, nReps, unknown = foreignStock()
   ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
     :format(tames, unknown, sights, cells, nReps))
@@ -812,7 +1061,13 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
-  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d"):format(stats.replied, stats.skipped))
+  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d, davon geantwortet: %d")
+    :format(stats.replied, stats.skipped, stats.searchGreeted, stats.hits))
+  local versions = {}
+  for v, n in pairs(stats.versions) do versions[#versions + 1] = v .. " " .. n end
+  table.sort(versions)
+  ns.Print(("Versionen gehört: %s · Verlauf: %d Sitzungen (ForeverHunterPetsDB.shareLog)")
+    :format(#versions > 0 and table.concat(versions, " · ") or "keine", #((ns.db and ns.db.shareLog) or {})))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
     local total = 0
@@ -820,9 +1075,9 @@ function ns.ShareStatus()
     ns.Print(("Verworfene Nachrichten roh aufgehoben: %d verschiedene, %d Empfänge (ForeverHunterPetsDB.shareRejects)")
       :format(#rejects, total))
   end
-  if stats.last then
-    local ago = (time and time() or 0) - stats.last.at
-    ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.last.t] or stats.last.t, stats.last.way, ago))
+  if stats.lastIn then
+    local ago = (time and time() or 0) - stats.lastIn.at
+    ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.lastIn.t] or stats.lastIn.t, stats.lastIn.way, ago))
   else
     ns.Print("Noch nichts von anderen Spielern empfangen.")
   end
@@ -834,5 +1089,6 @@ function ns.ShareChanged()
     start()
   else
     queue = {}
+    if yell == "probe" then yell = nil end   -- die Probe lag noch in der Warteschlange
   end
 end

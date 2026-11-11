@@ -249,6 +249,23 @@ local function known(o)
   return b.min ~= nil and o.level >= b.min and o.level <= (b.max or b.min) and speedKnown(o)
 end
 
+-- Bis zu n eigene Sichtungen (aller eigenen Charaktere) für die Antwort auf einen Gruß (#157), die neuesten zuerst,
+-- höchstens eine je Tier, nur was die mitgelieferten Daten nicht kennen – dieselbe Regel wie beim Senden einer
+-- Sichtung. So kommen auch Sichtungen von Twinks auf anderen Realms über die Gilde des Hauptcharakters weiter.
+function ns.OwnSightingsToShare(n)
+  local out, seen = {}, {}
+  local list = (ns.db and ns.db.sights) or {}
+  for i = #list, 1, -1 do
+    if #out >= n then break end
+    local o = ns.ParseSighting(list[i])
+    if o and o.own and #o.rep == 8 and not seen[o.npc] and not known(o) and not ns.BlockedSighting(o.npc, o.level) then
+      seen[o.npc] = true
+      out[#out + 1] = list[i]
+    end
+  end
+  return out
+end
+
 -- ---- Teilen: gesammelt, sparsam ----
 -- Das Teilen soll nicht volllaufen (Grundsatz 2 im Konzept). Geteilt wird nur, was nötig ist: nicht, was die Daten
 -- kennen; nicht, wenn schon ns.FOREIGN_SURE Melder das Tier gemeldet haben (mehr braucht die Melder-Regel,
