@@ -114,7 +114,11 @@ ns.Locales.deDE = {
   ["enemy faction territory"] = "Gebiet der Gegenfraktion",
   ["Error in %s:"] = "Fehler in %s:",
   ["Open with %s"] = "Öffnen mit %s",
-  ["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp survey (survey status), /fhp area (progress in this zone)"] = "Befehle: /fhp (öffnen oder schließen), /fhp zonen (Gebiete ohne Karte), /fhp api (API-Probe), /fhp karte (Karten-Probe), /fhp zaehmen (Zähm-Probe), /fhp besitzer (Besitzer-Probe), /fhp teilen (Stand beim Teilen), /fhp erhebung (Stand der Erhebung), /fhp gebiet (Fortschritt in diesem Gebiet)",
+  ["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp search (greet other hunters), /fhp survey (survey status), /fhp area (progress in this zone)"] = "Befehle: /fhp (öffnen oder schließen), /fhp zonen (Gebiete ohne Karte), /fhp api (API-Probe), /fhp karte (Karten-Probe), /fhp zaehmen (Zähm-Probe), /fhp besitzer (Besitzer-Probe), /fhp teilen (Stand beim Teilen), /fhp suchen (andere Jäger grüßen), /fhp erhebung (Stand der Erhebung), /fhp gebiet (Fortschritt in diesem Gebiet)",
+  ["Sharing is switched off (settings: Share observations)."] = "Teilen ist ausgeschaltet (Einstellungen: Beobachtungen teilen).",
+  ["Not in combat or in an instance."] = "Nicht im Kampf und nicht in einer Instanz.",
+  ["Already greeted %d hunters this session."] = "Diese Sitzung schon %d Jäger gegrüßt.",
+  ["Searching for hunters online. Those who have the addon get a greeting and share with you."] = "Suche Jäger, die online sind. Wer das Addon hat, wird gegrüßt und teilt mit dir.",
   -- Einstellungen und Knopf an der Minikarte
   ["Minimap button"] = "Minikartenbutton",
   ["Shows a button at the minimap that opens Forever Hunter Pets. Hold Ctrl and drag to move it around the minimap."] = "Zeigt an der Minikarte einen Button, der Forever Hunter Pets öffnet. Mit gedrückter Strg-Taste lässt er sich am Rand der Minikarte verschieben.",
@@ -143,12 +147,12 @@ ns.Locales.deDE = {
   -- Belegung der Lehrtiere
   ["Show uncertain data"] = "Unsichere Angaben zeigen",
   ["Show unproven beasts"] = "Unbelegte Angaben zeigen",
-  ["Also shows what only %d other players have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."] = "Zeigt auch, was bisher erst %d andere Spieler gemeldet haben (bestätigt ab %d): Lehrtiere, Ränge, Angriffstempo, Name, Familie und Stufe eines Tiers, Fundorte, „lehrt nichts“. Es ist überall mit „?“ gekennzeichnet.",
+  ["Also shows what only %d other characters have reported so far (confirmed from %d): teaching beasts, ranks, attack speed, name, family and level of a beast, spawn points, “teaches nothing”. It is marked with “?” everywhere."] = "Zeigt auch, was bisher erst %d andere Charaktere gemeldet haben (bestätigt ab %d): Lehrtiere, Ränge, Angriffstempo, Name, Familie und Stufe eines Tiers, Fundorte, „lehrt nichts“. Es ist überall mit „?“ gekennzeichnet.",
   ["Also lists beasts that are only estimated and have not been seen yet. In all views and in the tooltip they are marked with “!”."] = "Zeigt auch Tiere, die nur geschätzt und noch nicht im Spiel gesehen sind. In allen Ansichten und im Tooltip sind sie mit „!“ gekennzeichnet.",
-  ["Uncertain – reported by fewer than %d other players"] = "Unsicher – von weniger als %d anderen Spielern gemeldet",
+  ["Uncertain – reported by fewer than %d other characters"] = "Unsicher – von weniger als %d anderen Charakteren gemeldet",
   ["Unproven – estimated, not seen yet"] = "Unbelegt – geschätzt, noch nicht gesehen",
   ["seen in the game"] = "im Spiel gesehen",
-  ["reported by only a few players"] = "erst von wenigen Spielern gemeldet",
+  ["reported by only a few characters"] = "erst von wenigen Charakteren gemeldet",
   ["estimated"] = "geschätzt",
   ["No confirmed beast for this rank. 1 uncertain or unproven beast is hidden; you can show it in the settings."] = "Kein belegtes Tier für diesen Rang. 1 unsicheres oder unbelegtes Tier ist ausgeblendet; die Einstellungen können es zeigen.",
   ["No confirmed beast for this rank. %d uncertain or unproven beasts are hidden; you can show them in the settings."] = "Kein belegtes Tier für diesen Rang. %d unsichere oder unbelegte Tiere sind ausgeblendet; die Einstellungen können sie zeigen.",
@@ -161,7 +165,7 @@ ns.Locales.deDE = {
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel
   ["Share observations"] = "Beobachtungen teilen",
-  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and a hidden channel). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different players saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und ein verborgener Kanal). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald %d verschiedene Spieler dasselbe gesehen haben. Bestätigte Daten kommen unter der MIT-Lizenz in die Daten des Addons. Ausgeschaltet wird nichts gesendet oder empfangen.",
+  ["When you target or tame a beast, the addon notes what you see and shares it with other players of the addon (guild, group and other hunters who greet). Sent are: the beast with its name, level and family, the abilities and attack speed it brought along, where you saw it (rounded to about 100 m), the time, and a short code instead of your name. What others report counts once %d different characters saw the same. Confirmed data becomes part of the addon's data under the MIT license. Switched off, nothing is sent or received."] = "Wenn du ein Tier anvisierst oder zähmst, merkt sich das Addon, was du siehst, und teilt es mit anderen Spielern des Addons (Gilde, Gruppe und andere Jäger, die grüßen). Gesendet werden: das Tier mit Name, Stufe und Familie, die Fähigkeiten und das Angriffstempo, die es mitbrachte, wo du es gesehen hast (auf etwa 100 m gerundet), die Zeit und ein kurzes Kürzel statt deines Namens. Was andere melden, zählt, sobald %d verschiedene Charaktere dasselbe gesehen haben. Bestätigte Daten kommen unter der MIT-Lizenz in die Daten des Addons. Ausgeschaltet wird nichts gesendet oder empfangen.",
   -- Lehrtiere nach Jägerstufe
   ["Tameable at your level (%d)"] = "Zähmbar auf deiner Stufe (%d)",
   ["Above your level (%d)"] = "Erst ab höherer Stufe (%d)",
@@ -241,7 +245,7 @@ ns.Locales.deDE = {
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
   ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",
   -- Pet-Rahmen: Stufe und EP-Leiste (#120)
-  ["Enable pet frame additions"] = "Pet Frame Erweiterungen aktivieren",
+  ["Pet frame additions"] = "Pet Frame Erweiterungen",
   ["Adds your pet's level and an experience bar to the game's pet frame. Hover over the bar for the exact numbers."] = "Ergänzt den Pet-Rahmen des Spiels um die Stufe deines Pets und eine Erfahrungsleiste. Fährst du mit der Maus über die Leiste, siehst du die genauen Zahlen.",
   ["Show current level"] = "Aktuelle Stufe anzeigen",
   ["Shows your pet's level in a small circle at the bottom left of the pet frame."] = "Zeigt die Stufe deines Pets in einem kleinen Kreis unten links am Pet-Rahmen.",

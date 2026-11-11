@@ -93,7 +93,7 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
 ![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 
-**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other players have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
+**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other characters have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
 
 - **Explorer mode:** each beast carries its status, and the checkbox follows it:
 
@@ -139,7 +139,7 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 3. **Every rank it teaches**, with the ability icon: *– you have it* (grey) if you have the rank, *– you lack it* (green) if not.
 4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
 5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
-6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 players and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
+6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 characters and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
 In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
 
@@ -186,20 +186,22 @@ Every state names whose it is: *you have it* and *you lack it* are about you, th
 
 ## Sharing with other players
 
-Addons can't reach the internet, so players share in the game: over your guild, your group and a hidden channel (`FHPetsNet`). Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. Messages are throttled, so the channel stays quiet.
+Addons can't reach the internet, so players share in the game: over your guild and your group, and by whispering back when someone greets. The addon greets when you log in and when you join a group or raid; whoever greets you in a group gets a greeting back, so both sides receive what the other one has. Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. These are addon messages: nobody sees them in the chat. Messages are throttled, so traffic stays low.
 
-What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different players have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
+Up to version 1.1.0 the addon also used a hidden chat channel (`FHPetsNet`) to reach players outside your guild, but WoW Forever doesn't allow addon messages in such channels. The addon now leaves that channel when you log in. To share with hunters outside your guild and group, type **`/fhp search`**: the addon looks for hunters who are online (the *Who* window opens) and sends each of them a greeting once per session – an invisible addon message. Those who have the addon share with you, and you with them. A `/who` of your own works the same way. The addon never searches by itself. Once per session the addon checks whether it may yell to players nearby (an invisible addon message, as in the beta) and uses that way as soon as WoW Forever allows it again. If it had taken the first place in your channel list, *General* stays where it moved to: drag it back to the top in the *Channels* settings of the chat window.
+
+What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different characters have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
 
 Switch **Share observations** off and nothing is sent or received.
 
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different players** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other players found does not show up in *Area* yet.
-- **Uncertain:** what **2 other players** have reported is *uncertain* – which beast teaches a rank, a new rank or attack speed, a beast's name, family or level, where it lives, *teaches nothing*. It is hidden by default; switch on *Show uncertain data* and it appears marked **?** right after the value (*Rank 5?*, *Level 12?*), and it counts in *X of Y*. What only one other player reports is kept, but not shown.
-- **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 players saw it (2 with *Show uncertain data*, marked **?**), it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
+- **What other players report** counts once **3 different characters** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Characters, not people: the game does not show which characters belong to one account, so someone with several characters counts once per character. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other characters found does not show up in *Area* yet.
+- **Uncertain:** what **2 other characters** have reported is *uncertain* – which beast teaches a rank, a new rank or attack speed, a beast's name, family or level, where it lives, *teaches nothing*. It is hidden by default; switch on *Show uncertain data* and it appears marked **?** right after the value (*Rank 5?*, *Level 12?*), and it counts in *X of Y*. What only one other character reports is kept, but not shown.
+- **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 characters saw it (2 with *Show uncertain data*, marked **?**), it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
-- **Names, family and level** of a beast appear as soon as you have seen it yourself, otherwise once 3 other players have reported the same (for the name: 3 players with your client's language). Until then you see what the shipped data or your own tracks know, or *Unknown beast (#ID)*.
+- **Names, family and level** of a beast appear as soon as you have seen it yourself, otherwise once 3 other characters have reported the same (for the name: 3 characters with your client's language). Until then you see what the shipped data or your own tracks know, or *Unknown beast (#ID)*.
 - **WoW Forever is new** and still changes. Where nothing is known, the addon says so instead of guessing.
 
 ## Pet frame
@@ -209,7 +211,7 @@ The addon adds two small things to the game's pet frame:
 - your pet's **level** in a small circle at the bottom left,
 - a slim **experience bar** below it. Hover over the bar for the exact numbers: level, experience and percent, and how much is left to the next level. At the highest level your pet can reach (your own level), the bar is full and the tooltip says *Max*.
 
-Both can be switched off in the settings, one by one or together (*Enable pet frame additions*). If another addon replaces the game's pet frame, nothing is shown.
+Both can be switched off in the settings, one by one or together (*Pet frame additions*). If another addon replaces the game's pet frame, nothing is shown.
 
 ## Settings
 
@@ -226,9 +228,9 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | Beast tooltips | on | the addon's lines in beast tooltips |
 | – Empty line before / after | on / off | separates the lines from other addons |
 | – Also show ranks you have | on | also lists ranks you have, and *teaches nothing* |
-| Show uncertain data | off | what 2 other players have reported (fewer than 3), marked **?** |
+| Show uncertain data | off | what 2 other characters have reported (fewer than 3), marked **?** |
 | Manual editing | off | tick or untick learned ranks by hand |
-| Enable pet frame additions | on | level and experience bar at the game's pet frame |
+| Pet frame additions | on | level and experience bar at the game's pet frame |
 | – Show current level | on | your pet's level in a circle at the pet frame |
 | – Show experience bar | on | experience bar below the pet frame, numbers on hover |
 | Share observations | on | share with and receive from other players |
@@ -240,7 +242,8 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp` | open or close the window |
 | `/fhp area` | progress of the zone you are in, in the chat |
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
-| `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), what was stored or dropped and why, and the last message from another player |
+| `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
+| `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session) |
 | `/fhp zones` | zones the addon has no map for |
 | `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 
@@ -254,4 +257,4 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
 **A beast shows no status in the tooltip.** Status is shown in explorer mode only, and only for beasts that live in this zone or that you tracked here.
 
-**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds the short codes of players who shared with you – please don't post it publicly.
+**Where is my data?** In `WTF\Account\<account>\SavedVariables\Forever-Hunter-Pets.lua` (shared by your characters) and in each character's `SavedVariables` folder (mode, learning progress, filters, explorer finds). The account file also holds a short history of sharing over your last 30 sessions (counts only, no names) and the short codes of players who shared with you – please don't post it publicly.
