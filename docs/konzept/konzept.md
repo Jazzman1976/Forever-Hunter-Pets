@@ -293,9 +293,7 @@ Seit 17.10.2026 stehen die Meilensteine als [Milestones](https://github.com/Jazz
 | --- | --- |
 | [guide/guide.md](../guide/guide.md) | Anleitung für Spieler (englisch) |
 | [konzept/entscheidungen.md](entscheidungen.md) | jede Entscheidung mit Datum und Wortlaut |
-| [konzept/arbeitsweise.md](arbeitsweise.md) | wie gearbeitet wird und warum |
-| [konzept/entdeckermodus-entwurf.md](entdeckermodus-entwurf.md) | **Entwurf, nichts entschieden:** Entdeckermodus verständlich und lohnend machen (Stufenmodell, Belohnungen, Ideen) |
-| [technik/addon-technik.md](../technik/addon-technik.md) | Dateien, Ablauf, Formate, Grenzen im Detail |
+| [konzept/arbeitsweise.md](arbeitsweise.md) | wie gearbeitet wird und warum || [technik/addon-technik.md](../technik/addon-technik.md) | Dateien, Ablauf, Formate, Grenzen im Detail |
 | [technik/datenformat.md](../technik/datenformat.md) | Felder in `tools/eigene/`, `tools/data.json`, `Data.lua` |
 | [technik/quellen.md](../technik/quellen.md) | Sammelwege, Belegung, Grenzen der Daten, Rechte |
 | [technik/entwicklung.md](../technik/entwicklung.md) | Einrichten, Prüfen ohne Spiel, Ablauf |
