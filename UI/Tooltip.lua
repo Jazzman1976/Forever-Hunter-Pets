@@ -62,7 +62,7 @@ local function statusLine(id, guid)
   if not quiet() and ns.UnitClose("mouseover") then
     ns.AddCells(id, map, cell)
   end
-  return ns.StatusText(id, map)   -- nil bei unentdeckt oder ohne Fundort in der Zone: keine Zeile, wie im Reiter
+  return ns.StatusText(id, map)   -- nil bei „Noch nie gesehen“: keine Zeile
 end
 
 local function addLines(tooltip, guid)
@@ -73,17 +73,8 @@ local function addLines(tooltip, guid)
   local status = id and statusLine(id, guid)
   local list
   if ns.Discovering() then
-    -- Entdeckermodus: nur, was eine eigene Zähmung bei diesem Tier gezeigt hat
-    local own = id and ns.TeachInfo(id, true)
-    if own and #own > 0 then
-      -- das angeborene Angriffstempo vorn, wie im Komplettmodus
-      list = {}
-      for _, pass in ipairs({ false, true }) do
-        for _, x in ipairs(own) do
-          if ns.Learnable(x.a) == pass then list[#list + 1] = { a = x.a, r = x.r, conf = ns.CONF_SURE } end
-        end
-      end
-    end
+    -- Entdeckermodus: erst, wenn das Tier studiert ist, dann aus den kompletten Daten wie im Komplettmodus (#169)
+    list = id and ns.Studied(id) and ns.BeastTeaches(id)
   else
     list = id and ns.BeastInfo(id) and ns.BeastTeaches(id)
   end

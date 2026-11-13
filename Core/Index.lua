@@ -249,9 +249,16 @@ local function dataCoords(npcId, zoneId)
   return pts
 end
 
--- Im Entdeckermodus nur die eigenen Zellen – keine mitgelieferten, keine fremden Fundorte.
+-- Studiert in dieser Zone (Status „known“)? Dann zeigt der Entdeckermodus dort alle bekannten Fundorte (#170).
+local function studiedIn(npcId, zoneId)
+  return ns.BeastStatus ~= nil and ns.BeastStatus(npcId, zoneId) == "known"
+end
+
+-- Im Entdeckermodus nur die eigenen Zellen – keine mitgelieferten, keine fremden Fundorte –, bis das Tier in dieser
+-- Zone studiert ist; dann alle bekannten wie im Komplettmodus (#170). Die Karte unterscheidet nicht, woher ein
+-- Fundort stammt (Maintainer, 13.11.2026).
 function ns.Coords(npcId, zoneId)
-  if ns.Discovering and ns.Discovering() then
+  if ns.Discovering and ns.Discovering() and not studiedIn(npcId, zoneId) then
     return ns.CellPoints and ns.CellPoints(npcId, zoneId, true) or {}
   end
   local cells = ns.CellPoints and ns.CellPoints(npcId, zoneId) or {}
@@ -263,11 +270,15 @@ function ns.Coords(npcId, zoneId)
 end
 
 -- Zonen eines Tiers mit der Zahl der Fundorte, aus Daten und Zellen: { [Zone] = Zahl }. Im Entdeckermodus nur
--- eigene Zellen; full = true immer alles (für die Zählung „X von Y“ in Core/Discover.lua).
+-- eigene Zellen, in Zonen, in denen das Tier studiert ist, alle (#170, wie ns.Coords); full = true immer alles (für
+-- die Zählung „X von Y“ in Core/Discover.lua und für ns.BeastStatus, das deshalb nicht hierher zurückruft).
 function ns.ZoneCounts(npcId, full)
   local out = {}
   if not full and ns.Discovering and ns.Discovering() then
     for z, n in pairs(ns.CellMaps and ns.CellMaps(npcId, true) or {}) do out[z] = n end
+    for z, n in pairs(ns.ZoneCounts(npcId, true)) do
+      if studiedIn(npcId, z) then out[z] = n end
+    end
     return out
   end
   for z, packed in pairs(D.coords[npcId] or {}) do out[z] = #packed / 6 end
@@ -450,14 +461,14 @@ function ns.Teachers(a, r, zone)
     local b = ns.BeastInfo(x.id) or { cls = 0 }
     if not listed[x.id] then consider(x.id, b, x.conf, #a.teach + 1) end
   end
-  -- Entdeckermodus: nur Lehrtiere, bei denen eine eigene Zähmung den Rang zeigte; die übrigen zählen als
-  -- unentdeckt (list.undiscovered), damit man weiß, dass es etwas zu finden gibt
+  -- Entdeckermodus: nur Lehrtiere, die man studiert hat, mit der Belegung aus den kompletten Daten (#169; bis 1.2.0
+  -- nur, wenn eine eigene Zähmung genau diesen Rang zeigte). Die übrigen zählen als unentdeckt (list.undiscovered),
+  -- damit man weiß, dass es etwas zu finden gibt
   list.undiscovered = 0
   if ns.Discovering and ns.Discovering() then
     local own = { hidden = 0, undiscovered = 0 }
     for _, t in ipairs(list) do
-      if ns.OwnSeen and ns.OwnSeen(t.id, a, r) then
-        t.conf = ns.CONF_SURE
+      if ns.Studied and ns.Studied(t.id) then
         own[#own + 1] = t
       else
         own.undiscovered = own.undiscovered + 1

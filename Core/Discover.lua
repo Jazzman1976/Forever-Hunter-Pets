@@ -2,10 +2,10 @@
 -- Konzept: docs/konzept/konzept.md (5 Die zwei Modi, 6 Status eines Tiers)
 --
 -- Status eines Tiers je NPC-ID und je Zone – jede Zone ist ein eigenes Jagdrevier:
---   „unknown“  unentdeckt
+--   „unknown“  noch nie gesehen
 --   „track“    Fährte aufgenommen: in dieser Zone gesichtet (Ziel, Maus, Plakette)
 --   „found“    gefunden: in dieser Zone aus etwa 10 m gesehen (eigene Fundort-Zelle)
---   „known“    bekannt: in dieser Zone gefunden und alle Fähigkeiten bekannt (eigene Zähmung)
+--   „known“    studiert: in dieser Zone gefunden und selbst gezähmt (ns.Studied), auch wenn es nichts lehrt
 -- Was ein Tier lehrt, ist Wissen über die NPC-ID und gilt in allen Zonen. Ein Tier gehört nur zu Zonen, in
 -- denen es einen echten Fundort hat (Daten oder Zelle) – eine Sichtung über eine Zonengrenze hinweg zählt dort
 -- nicht. Gezählt wird bei Bedarf, nichts im Hintergrund.
@@ -73,7 +73,9 @@ end
 
 -- Selbst gezähmt in dieser Zone: Die Zähmung notiert die Zone (seenIn), und „Wildtier zähmen“ reicht nur etwa
 -- 30 m – wer zähmt, war dem Tier nah. Das gilt als Fundort, auch wenn eine ältere Zähmung keine Zelle speicherte
--- (vor dem 16.10.2026 nur aus 10 m; Junger Fleischreißer).
+-- (vor dem 16.10.2026 nur aus 10 m; Junger Fleischreißer). Nur ungefähr: Eine Zähmung speichert ihre Zone nicht,
+-- gezählt wird jede Zone, in der man das Tier gesehen hat. Deshalb zählt das nur dafür, wo ein Tier lebt
+-- (ns.LivesIn, ns.TamedZones), nicht als eigener Fund für den Status (#170).
 local function tamedIn(npc, map)
   if not seenIn(npc, map) then return false end
   for _, o in ipairs(ns.ObservationsOf(npc)) do
@@ -166,7 +168,11 @@ local function ownCells(npc, map)
   return cells and #cells / 2 or 0
 end
 
-local function ownTamed(npc)
+-- Hat der Charakter das Tier studiert? Heute heißt das: selbst gezähmt (je nach „Funde anderer Charaktere“ auch
+-- ein anderer Charakter des Kontos, ns.OwnTame); später auch mit Wildtierkunde betrachtet (#183). Hängt an der
+-- NPC-ID, nicht an der Zone: Was ein Tier lehrt, gilt überall (#169). Der Status je Zone („known“) braucht dazu
+-- noch den eigenen Fund in dieser Zone.
+function ns.Studied(npc)
   for _, o in ipairs(ns.ObservationsOf(npc)) do
     if ns.OwnTame(o) then return true end
   end
@@ -178,8 +184,11 @@ function ns.BeastStatus(npc, map)
   if not ns.LivesIn(npc, map) then
     return trackOnly(npc, map) and "track" or "unknown"
   end
-  if ownCells(npc, map) > 0 or tamedIn(npc, map) then
-    return ownTamed(npc) and "known" or "found"
+  -- Gefunden (und damit auch studiert) ist ein Tier in einer Zone nur mit einer eigenen Zelle dort. Seit dem
+  -- 16.10.2026 speichert jede Zähmung eine; eine Zähmung anderswo und eine Fährte hier reichen nicht (#170: sonst
+  -- stand „Tier studiert“ mit allen Fundorten in jeder Zone, in der man das Tier nur von Weitem sah).
+  if ownCells(npc, map) > 0 then
+    return ns.Studied(npc) and "known" or "found"
   end
   if seenIn(npc, map) then return "track" end
   return "unknown"
@@ -219,17 +228,21 @@ function ns.NoteTrack(npc, map)
 end
 
 -- ---- Texte, überall gleich (Reiter „Gebiet“, Tier-Tooltip, Witterung) ----
--- Status-Tags des Entdeckermodus (Nutzer, 17.10.2026): „Fährte aufgenommen“, „Tier gefunden“, „Fähigkeiten
--- bekannt“ – Jäger-Sprache, ohne Icon. Im Komplettmodus gibt es keinen Status: Dort zählt nicht, was der Spieler
+-- Status-Tags des Entdeckermodus (Nutzer, 17.10.2026; seit #171 „Noch nie gesehen“ und „Tier studiert“, vorher
+-- „? unentdeckt“ und „Fähigkeiten bekannt“): „Noch nie gesehen“, „Fährte aufgenommen“, „Tier gefunden“, „Tier
+-- studiert“ – Jäger-Sprache, ohne Icon. Im Komplettmodus gibt es keinen Status: Dort zählt nicht, was der Spieler
 -- selbst gesehen hat, sondern was überhaupt bekannt ist (docs/konzept/entscheidungen.md).
-local STATUS_WORD = { track = "tracked", found = "beast found", known = "abilities known" }
+local STATUS_WORD = { unknown = "never seen", track = "tracked", found = "beast found", known = "beast studied" }
 function ns.StatusWord(st)
   return STATUS_WORD[st] and ns.L[STATUS_WORD[st]] or nil
 end
--- Tag des Tiers in dieser Zone; nil im Komplettmodus, bei unentdeckt oder ohne Fundort in der Zone
+-- Tag des Tiers in dieser Zone; nil im Komplettmodus und bei „Noch nie gesehen“ (der Tier-Tooltip zeigt dann keine
+-- Status-Zeile, #186)
 function ns.StatusText(npc, map)
   if not ns.Discovering() then return nil end
-  return ns.StatusWord(ns.BeastStatus(npc, map))
+  local st = ns.BeastStatus(npc, map)
+  if st == "unknown" then return nil end
+  return ns.StatusWord(st)
 end
 
 -- „? unklar“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
@@ -289,12 +302,16 @@ end
 
 -- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts
 -- (dann info.conf = ns.CONF_UNSURE, wenn das nur 2 fremde Melder sagen, #136).
--- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
--- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“
--- (#40, vorher reichte eine einzige fremde Zähmung).
--- Zweiter Wert (nur Komplettmodus): Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch
--- Belege (Hinweiszeile im Tooltip, #40).
+-- Grundlage sind die kompletten Daten: Stammdaten, eigene Zähmungen und fremde; wie im Tooltip nur, was die
+-- Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“ (#40, vorher
+-- reichte eine einzige fremde Zähmung).
+-- discover = true (Entdeckermodus): nil, solange das Tier nicht studiert ist (ns.Studied), danach dieselben
+-- kompletten Daten (#169: dieselben Daten wie im Komplettmodus, nur das Wann ist anders; bis 1.2.0 nur die eigene
+-- Zähmung, dann fehlten etwa Ränge, die das Tier erst auf höherer Stufe mitbringt).
+-- Zweiter Wert: Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch Belege
+-- (Hinweiszeile im Tooltip, #40).
 function ns.TeachInfo(npc, discover)
+  if discover and not ns.Studied(npc) then return nil, false end
   local out, have, clear, unsure = {}, {}, false, false
   local function add(a, r, conf)
     local e = have[r]
@@ -314,7 +331,7 @@ function ns.TeachInfo(npc, discover)
     if ns.OwnTame(o) then
       clear = true
       for _, e in ipairs(seen) do add(e.a, e.r, ns.CONF_SURE) end
-    elseif not discover then
+    else
       -- mit einem unbekannten Zauber zeigte sie vielleicht doch etwas (#114)
       if #seen == 0 and not empty[o.rep] and not ns.HasUnknownSpell(o) then
         empty[o.rep] = true
@@ -333,29 +350,27 @@ function ns.TeachInfo(npc, discover)
       end
     end
   end
-  if not discover then
-    -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
-    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
-      if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
-      if ns.ShowConf(e.conf) then
-        clear = true
-        add(e.a, e.r, e.conf)
-      end
+  -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
+  for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
+    if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
+    if ns.ShowConf(e.conf) then
+      clear = true
+      add(e.a, e.r, e.conf)
     end
-    -- fremde Ränge unter der Schwelle: unklar nur, wenn sie nicht schon belegt dastehen (#144)
-    for r in pairs(pending) do
-      if not (have[r] and have[r].conf == ns.CONF_SURE) then unsure = true end
-    end
-    -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
-    -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
-    if nEmpty > 0 then
-      local conf = ns.ForeignConf(empty, nEmpty)
-      if conf == ns.CONF_SURE then
-        clear = true
-      elseif not clear then
-        unsure = true
-        if ns.ForeignShown(conf) then clear = true; out.conf = conf end
-      end
+  end
+  -- fremde Ränge unter der Schwelle: unklar nur, wenn sie nicht schon belegt dastehen (#144)
+  for r in pairs(pending) do
+    if not (have[r] and have[r].conf == ns.CONF_SURE) then unsure = true end
+  end
+  -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
+  -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
+  if nEmpty > 0 then
+    local conf = ns.ForeignConf(empty, nEmpty)
+    if conf == ns.CONF_SURE then
+      clear = true
+    elseif not clear then
+      unsure = true
+      if ns.ForeignShown(conf) then clear = true; out.conf = conf end
     end
   end
   if not clear then return nil, unsure end
@@ -370,18 +385,19 @@ end
 -- ---- Fortschritt einer Zone ----
 -- { beasts, beastsKnown, track, found, known, teachers, teachersKnown, ranks, ranksFound, cells, points }
 -- Y aus allem, was bekannt ist (Daten, Zellen, Zähmungen, Fährten). Ränge: nur die, die ein Lehrtier der Zone
--- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Fähigkeiten bekannt“
+-- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Tier studiert“
 -- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
---   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown und ranksFound selbst
---                   identifiziert.
+--   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown = studierte Lehrtiere,
+--                   ranksFound = Ränge, die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169).
 --   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
 --                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
 --                   Einstellungen ausblenden, zählt weder in X noch in Y.
--- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone.
+-- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone, shown die, die
+-- die Karte zeigt (Entdeckermodus: studierte Tiere alle, sonst die eigenen Zellen, #170).
 function ns.ZoneProgress(map)
   local discover = ns.Discovering()
   local p = { beasts = 0, beastsKnown = 0, track = 0, found = 0, known = 0, teachers = 0, teachersKnown = 0,
-    ranks = 0, ranksFound = 0, cells = 0, points = 0 }
+    ranks = 0, ranksFound = 0, cells = 0, points = 0, shown = 0 }
   local teaches = {}   -- npc → { [r] = Belegung }
   local info = {}      -- npc → ns.TeachInfo(npc, false) (Komplettmodus)
   local abilityOf, order = {}, {}   -- Rang → Fähigkeit und Platz in den Daten, für die Kacheln (#19)
@@ -442,7 +458,10 @@ function ns.ZoneProgress(map)
       p.beastsKnown = p.beastsKnown + 1
     end
     p.cells = p.cells + ownCells(npc, map)
-    p.points = p.points + (ns.ZoneCounts(npc, true)[map] or 0)
+    local points = ns.ZoneCounts(npc, true)[map] or 0
+    p.points = p.points + points
+    -- so viele, wie die Karte für das Tier zeigt (ns.Coords): studiert alle, sonst die eigenen (#170)
+    p.shown = p.shown + ((not discover or st == "known") and points or ownCells(npc, map))
     if teaches[npc] then
       p.teachers = p.teachers + 1
       local known = not discover or st == "known"
@@ -460,7 +479,7 @@ function ns.ZoneProgress(map)
         if not discover then
           ranksFound[r] = true
         elseif st == "known" then
-          -- selbst identifiziert: eine eigene Zähmung zeigte diesen Rang
+          -- studiert: die kompletten Daten nennen diesen Rang (#169, bis 1.2.0 nur die eigene Zähmung)
           for _, e in ipairs(ns.TeachInfo(npc, true) or {}) do
             if e.r == r then ranksFound[r] = true end
           end

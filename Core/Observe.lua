@@ -201,14 +201,6 @@ function ns.ForeignShown(conf)
   return conf ~= nil and ns.ShowConf(conf)
 end
 
--- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
-function ns.OwnSeen(npcId, a, r)
-  for _, o in ipairs(index()[npcId] or {}) do
-    if ns.OwnTame(o) and verdict(o, a, r) == "seen" then return true end
-  end
-  return false
-end
-
 -- Belegung nach Beobachtungen: gesehen → belegt, widerlegt → ausgeblendet, unsicher → höchstens unsicher, sonst wie
 -- in den Daten
 function ns.EffectiveConf(npcId, a, r, conf)
@@ -301,7 +293,7 @@ end
 -- ---- Meldung „Entdeckt“ (#51) ----
 -- Nur im Entdeckermodus und nur für die Zone, in der man zähmte. Vorher (bevor Zelle, Zone und Zähmung
 -- gespeichert sind) und nachher dieselbe Zählung wie im Reiter „Gebiet“ (ns.ZoneProgress), damit Chat und
--- Reiter dieselben Zahlen zeigen. Neue Rang-Kacheln gehen vor; sonst zählt, ob das Tier „Fähigkeiten bekannt“
+-- Reiter dieselben Zahlen zeigen. Neue Rang-Kacheln gehen vor; sonst zählt, ob das Tier „Tier studiert“
 -- wurde. Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten.
 local function discoverState(npc, map)
   if not (map and ns.Discovering()) then return nil end
@@ -326,7 +318,7 @@ local function announceDiscovery(npc, map, before)
     ns.Print((L["Discovered: %s – %s: %d of %d ranks"]):format(table.concat(parts, ", "), ns.ZoneName(map),
       p.ranksFound, p.ranks))
   elseif before.status ~= "known" and ns.BeastStatus(npc, map) == "known" then
-    ns.Print((L["Discovered: abilities of %s known – %s: %d of %d beasts"]):format(ns.BeastName(npc),
+    ns.Print((L["Discovered: %s studied – %s: %d of %d beasts"]):format(ns.BeastName(npc),
       ns.ZoneName(map), p.beastsKnown, p.beasts))
   end
 end
