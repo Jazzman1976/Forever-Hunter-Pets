@@ -255,7 +255,8 @@ end
 
 -- Stand eines Rangs aus Sicht des Jägers: "known" ist abgehakt, "available" kann er jetzt lernen
 -- (ein Lehrtier bis zu seiner Stufe, oder beim Tierausbilder), sonst "unavailable". Die Lehrtiere
--- sind schon auf die gewählte Zone gekürzt, „verfügbar“ heißt dann: in dieser Zone.
+-- sind schon auf die gewählte Zone gekürzt, „verfügbar“ heißt dann: in dieser Zone. Im Entdeckermodus zählen die noch
+-- nicht studierten Lehrtiere mit (undiscoveredMin, #192), sonst wäre dort fast nichts erreichbar.
 -- Zähmen lässt sich ein Tier höchstens auf der eigenen Stufe. Das gilt auch für Angeborenes
 -- (Angriffstempo); „bekannt“ wird es nie, weil es sich nicht lehren lässt.
 local function status(e, level)
@@ -268,6 +269,8 @@ local function status(e, level)
     for _, t in ipairs(e.teachers) do
       if not level or (t.beast.min or 0) <= level then return "available" end
     end
+    local min = e.teachers.undiscoveredMin
+    if min and (not level or min <= level) then return "available" end
   end
   return "unavailable"
 end
