@@ -40,14 +40,14 @@ local function famAndLevel(npc)
   return fam, level
 end
 
--- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „? unklar“ bzw. „lehrt nichts“.
+-- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „Keine Daten bekannt“ bzw. „lehrt nichts“.
 -- Nicht Belegtes mit „?“ bzw. „!“ hinter dem Rang, wie im Tooltip des Tiers (#40).
 local function teachTooltip(owner, npc)
   GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
   GameTooltip:SetText(ns.BeastName(npc))
   local info = ns.TeachInfo(npc, ns.Discovering())
   if not info then
-    GameTooltip:AddLine(L["? unclear"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(ns.NoData(), 0.8, 0.8, 0.8)
   elseif #info == 0 then
     GameTooltip:AddLine(L["teaches nothing"] .. ns.ConfMark(info.conf), 0.8, 0.8, 0.8)
   else

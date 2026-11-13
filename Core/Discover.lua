@@ -245,13 +245,22 @@ function ns.StatusText(npc, map)
   return ns.StatusWord(st)
 end
 
--- „? unklar“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
+-- „Keine Daten bekannt“ mit rotem X davor (#172): ein Baustein für jede Stelle, an der niemand weiß, was ein Tier
+-- lehrt oder welches Tier einen Rang lehrt (Reiter „Fähigkeiten“ und „Gebiet“, beide Modi). Das X unterscheidet
+-- sich in der Form vom Fragezeichen bei „Noch nie gesehen“ (#171), und es steht kein „?“ davor; so hält es
+-- niemand für einen Status. Vorher „? unbekannt“ bzw. „? unklar“.
+local NO_DATA_ICON = "Interface\\RAIDFRAME\\ReadyCheck-NotReady"
+function ns.NoData(text)
+  return ("|T%s:14:14|t "):format(NO_DATA_ICON) .. (text or ns.L["No data known"])
+end
+
+-- „Keine Daten bekannt“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
 -- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter).
 -- Nicht Belegtes trägt hinter dem Icon dasselbe „?“ bzw. „!“ wie im Tooltip (#40).
 function ns.TeachText(npc)
   local L = ns.L
   local info = ns.TeachInfo(npc, ns.Discovering())
-  if not info then return L["? unclear"] end
+  if not info then return ns.NoData() end
   if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf) end
   local parts = {}
   for _, e in ipairs(info) do
