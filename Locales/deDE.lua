@@ -202,10 +202,9 @@ ns.Locales.deDE = {
   ["Also counts what your other characters on this account have sighted, found and tamed. Switched off, this character discovers everything on its own."] = "Zählt auch, was deine anderen Charaktere auf diesem Konto gesichtet, gefunden und gezähmt haben. Ausgeschaltet entdeckt dieser Charakter alles selbst.",
   -- Entdecken: Modi in den Ansichten (E3)
   ["%d not studied yet"] = "%d noch nicht studiert",
-  -- „Keine Daten bekannt“ mit rotem X (ns.NoData, #172), vorher „? unbekannt“ und „? unklar“
-  ["No data known"] = "Keine Daten bekannt",
-  ["No data"] = "Keine Daten",   -- kurz, nur in der Zeile im Reiter „Gebiet“ (sonst schnitt sie ab)
-  ["No data known – nobody has found a beast that teaches it yet."] = "Keine Daten bekannt – noch niemand hat ein Tier gefunden, das es beibringt.",
+  -- „Keine Daten“ mit rotem X (ns.NoData, #172), vorher „? unbekannt“ und „? unklar“
+  ["No data"] = "Keine Daten",
+  ["No data – nobody has found a beast that teaches it yet."] = "Keine Daten – noch niemand hat ein Tier gefunden, das es beibringt.",
   ["hidden beast"] = "verborgenes Tier",
   ["and %d more hidden beasts"] = "und %d weitere verborgene Tiere",
   -- Entdecken: Reiter „Gebiet“ (E4)

@@ -210,7 +210,7 @@ local function metaText(e)
   if r.level and r.level > 0 and a.kind ~= "trait" then parts[#parts + 1] = (L["from pet level %d"]):format(r.level) end
   if r.tp then parts[#parts + 1] = (L["%d TP"]):format(r.tp) end
   if a.source == "tame" then
-    -- ohne Lehrtier ist der Rang eine Aufgabe: ein Wort statt „0 Tiere“. „Keine Daten bekannt“ mit rotem X:
+    -- ohne Lehrtier ist der Rang eine Aufgabe: ein Wort statt „0 Tiere“. „Keine Daten“ mit rotem X:
     -- niemand kennt eins (#172); im Entdeckermodus dazu, wie viele bekannt, aber selbst noch nicht studiert sind
     local n, open = #e.teachers, e.teachers.undiscovered or 0
     if n > 0 then parts[#parts + 1] = n == 1 and L["1 beast"] or (L["%d beasts"]):format(n) end
@@ -249,7 +249,7 @@ local function hintText(e)
       return (hidden == 1 and L["No confirmed beast for this rank. 1 uncertain or unproven beast is hidden; you can show it in the settings."]
         or L["No confirmed beast for this rank. %d uncertain or unproven beasts are hidden; you can show them in the settings."]):format(hidden)
     end
-    return ns.NoData(L["No data known – nobody has found a beast that teaches it yet."])
+    return ns.NoData(L["No data – nobody has found a beast that teaches it yet."])
   end
   return L["Tameable beasts that know this rank, the easiest to reach first:"]
 end

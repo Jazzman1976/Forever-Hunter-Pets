@@ -1,5 +1,5 @@
 -- #173: Entdeckermodus – bei „Tier gefunden“ steht schon, *ob* ein Tier etwas lehrt („lehrt etwas“, „lehrt nichts“,
--- sonst „Keine Daten bekannt“), bei der Fährte nichts; ein studiertes Tier zeigt seine Lehre in jedem Status.
+-- sonst „Keine Daten“), bei der Fährte nichts; ein studiertes Tier zeigt seine Lehre in jedem Status.
 -- Riesiger Waldschreiter (2323) lehrt nach den Stammdaten Ducken 2 (1753) und lebt im Dämmerwald (1439).
 local L = NS.L
 local MAP, OTHER, DUCK2 = 1439, 1440, 1753
@@ -33,8 +33,7 @@ end
 ok(NS.BeastStatus(TRACK, MAP) == "track", "Fährte")
 
 local function text(npc) return NS.TeachText(npc, NS.BeastStatus(npc, MAP)) end
-local SHORT = NS.NoData(L["No data"])   -- Zeile im Reiter „Gebiet“: kurz „Keine Daten“
-ok(NS.TeachSummary(NODATA) == NS.NoData(), "Tooltips: voller Text „Keine Daten bekannt“")
+local SHORT = NS.NoData()
 ok(text(TEACHES) == L["teaches something"], "gefunden, Daten nennen einen Rang: " .. tostring(text(TEACHES)))
 ok(select(2, NS.TeachSummary(TEACHES)) == "something", "Art: something")
 ok(text(NOTHING) == L["teaches nothing"], "gefunden, 3 fremde Zähmungen ohne Rang: " .. tostring(text(NOTHING)))

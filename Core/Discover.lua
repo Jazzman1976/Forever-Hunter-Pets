@@ -245,28 +245,26 @@ function ns.StatusText(npc, map)
   return ns.StatusWord(st)
 end
 
--- „Keine Daten bekannt“ mit rotem X davor (#172): ein Baustein für jede Stelle, an der niemand weiß, was ein Tier
+-- „Keine Daten“ mit rotem X davor (#172): ein Baustein für jede Stelle, an der niemand weiß, was ein Tier
 -- lehrt oder welches Tier einen Rang lehrt (Reiter „Fähigkeiten“ und „Gebiet“, beide Modi). Das X unterscheidet
 -- sich in der Form vom Fragezeichen bei „Noch nie gesehen“ (#171), und es steht kein „?“ davor; so hält es
--- niemand für einen Status. Vorher „? unbekannt“ bzw. „? unklar“.
--- In der Zeile im Reiter „Gebiet“ kurz „Keine Daten“ (ns.NoData(ns.L["No data"]), Maintainer, 13.11.2026): Dort
--- schnitt „Keine Daten bekannt“ bei langen Zeilen ab. In „Fähigkeiten“ und in allen Tooltips der volle Text.
+-- niemand für einen Status. Vorher „? unbekannt“ bzw. „? unklar“. Überall derselbe Text (Maintainer, 13.11.2026):
+-- Zuerst hieß es „Keine Daten bekannt“, das schnitt die Zeile im Reiter „Gebiet“ ab.
 local NO_DATA_ICON = "Interface\\RAIDFRAME\\ReadyCheck-NotReady"
 function ns.NoData(text)
-  return ("|T%s:14:14|t "):format(NO_DATA_ICON) .. (text or ns.L["No data known"])
+  return ("|T%s:14:14|t "):format(NO_DATA_ICON) .. (text or ns.L["No data"])
 end
 
 -- Entdeckermodus, „Tier gefunden“ und noch nicht studiert (#173): nur *ob* das Tier etwas lehrt, *was*, bleibt dem
 -- Zähmen. Grundlage sind die kompletten Daten mit denselben Einstellungen zur Belegung (ns.TeachInfo(npc, false)).
 -- „lehrt etwas“ (auch ein Tier nur mit Angriffstempo, passend zum Zähler und zu dem, was nach dem Studieren dasteht;
--- Maintainer, 13.11.2026), „lehrt nichts“ oder „Keine Daten bekannt“. Sind alle Angaben unsicher, trägt „lehrt
+-- Maintainer, 13.11.2026), „lehrt nichts“ oder „Keine Daten“. Sind alle Angaben unsicher, trägt „lehrt
 -- etwas“ das „?“ bzw. „!“ der sichersten, wie „lehrt nichts?“ (#136).
 -- Zweiter Wert: "something", "nothing" oder "none" (der Tier-Tooltip blendet „lehrt nichts“ nach der Einstellung aus).
--- short: für die Zeile im Reiter „Gebiet“, dort „Keine Daten“ statt „Keine Daten bekannt“.
-function ns.TeachSummary(npc, short)
+function ns.TeachSummary(npc)
   local L = ns.L
   local info = ns.TeachInfo(npc, false)
-  if not info then return ns.NoData(short and L["No data"] or nil), "none" end
+  if not info then return ns.NoData(), "none" end
   if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf), "nothing" end
   local best = ns.CONF_REFUTED
   for _, e in ipairs(info) do
@@ -275,21 +273,21 @@ function ns.TeachSummary(npc, short)
   return L["teaches something"] .. ns.ConfMark(best), "something"
 end
 
--- „Keine Daten bekannt“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
+-- „Keine Daten“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
 -- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter).
 -- Nicht Belegtes trägt hinter dem Icon dasselbe „?“ bzw. „!“ wie im Tooltip (#40).
 -- st: Status des Tiers in der Zone (ns.BeastStatus). Entdeckermodus (#173): ein studiertes Tier zeigt seine Lehre in
 -- jedem Status (sie hängt an der NPC-ID), sonst „Tier gefunden“ nur ob es etwas lehrt (ns.TeachSummary) und
--- Fährte und „Noch nie gesehen“ nichts (nil; bis #173 „? unklar“). Weiß niemand etwas, kurz „Keine Daten“ (Zeile).
+-- Fährte und „Noch nie gesehen“ nichts (nil; bis #173 „? unklar“).
 function ns.TeachText(npc, st)
   local L = ns.L
   local discover = ns.Discovering()
   if discover and not ns.Studied(npc) then
-    if st == "found" then return (ns.TeachSummary(npc, true)) end
+    if st == "found" then return (ns.TeachSummary(npc)) end
     return nil
   end
   local info = ns.TeachInfo(npc, discover)
-  if not info then return ns.NoData(L["No data"]) end
+  if not info then return ns.NoData() end
   if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf) end
   local parts = {}
   for _, e in ipairs(info) do

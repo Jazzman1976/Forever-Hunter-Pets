@@ -40,7 +40,7 @@ local function famAndLevel(npc)
   return fam, level
 end
 
--- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „Keine Daten bekannt“ bzw. „lehrt nichts“.
+-- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „Keine Daten“ bzw. „lehrt nichts“.
 -- Nicht Belegtes mit „?“ bzw. „!“ hinter dem Rang, wie im Tooltip des Tiers (#40).
 -- Entdeckermodus, noch nicht studiert (#173): bei „Tier gefunden“ nur, ob es etwas lehrt (ns.TeachSummary), bei der
 -- Fährte nichts. st: Status in der Zone (nil bei den Kacheln, dort stehen nur studierte Tiere).
