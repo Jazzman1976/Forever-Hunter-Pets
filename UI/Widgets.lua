@@ -4,6 +4,9 @@ local _, ns = ...
 local W = {}
 ns.W = W
 
+-- weiße Kreisscheibe des Clients, wird eingefärbt: Karten-Pins und der Punkt im Kästchen (#174)
+W.DISK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+
 function W.Fill(frame, r, g, b, a, layer)
   local t = frame:CreateTexture(nil, layer or "BACKGROUND")
   t:SetAllPoints()
@@ -60,6 +63,15 @@ function W.CheckBox(parent)
   box.check:SetSize(22, 22)
   box.check:SetPoint("CENTER", 1, 1)
   box.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+  -- Punkt statt Haken (#174, Reiter „Gebiet“, Entdeckermodus: „Tier gefunden“), im Goldgelb des Hakens; versteckt,
+  -- bis jemand ihn braucht – „Fähigkeiten“ nutzt ihn nicht. Klein (5 px, Maintainer nach dem Test: mit 8 px zu
+  -- wuchtig), damit der Haken deutlich wichtiger aussieht
+  box.dot = box:CreateTexture(nil, "OVERLAY")
+  box.dot:SetSize(5, 5)
+  box.dot:SetPoint("CENTER")
+  box.dot:SetTexture(W.DISK)
+  box.dot:SetVertexColor(1, 0.82, 0)
+  box.dot:Hide()
   return box
 end
 

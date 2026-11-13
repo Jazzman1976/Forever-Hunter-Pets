@@ -6,7 +6,7 @@ local W = ns.W
 local D = ns.Data
 
 local MAX_PINS = 150
-local DISK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"   -- weiße Kreisscheibe, wird eingefärbt
+local DISK = W.DISK   -- weiße Kreisscheibe, wird eingefärbt (auch der Punkt im Kästchen, #174)
 
 -- ---- die Karte selbst ----
 function ns.CreateMapCanvas(parent, width, height)
