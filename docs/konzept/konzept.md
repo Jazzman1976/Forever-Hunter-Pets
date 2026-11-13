@@ -196,6 +196,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 ## 11 Lernstand
 
 - **Aus Sicht des Jägers.** „fehlt dir, erreichbar / fehlt dir, außer Reichweite / hast du“ meinen den Jäger, nicht das Pet. Was das aktive Pet lernen kann, zeigt nur „Ausbildung“.
+- **Erreichbar in beiden Modi gleich** (13.11.2026, #192): Im Entdeckermodus zählen für „fehlt dir, erreichbar“ auch die noch nicht studierten Lehrtiere. Der Filter verrät damit nur, *dass* es auf der eigenen Stufe etwas zu finden gibt, nicht *was*: In den Details bleibt es bei „verborgenes Tier“ ohne Stufe und Familie. Vorher zählten nur studierte, also selbst gezähmte Lehrtiere, deren Ränge man meist schon hat; fast jeder fehlende Tier-Rang stand so „außer Reichweite“.
 - **Ränge einzeln:** Rang 3 schließt Rang 2 nicht ein (Korrektur vom 21.09.2026). Gespeichert je Zauber-ID.
 - **Was das Pet kann, ist nicht gelernt** (0.2.1). Ein verfrühter Haken ist gefährlicher als ein fehlender – man ließe das Tier zu früh frei. Angezeigt wird stattdessen „hat dein Pet“.
 - **Quellen:** Wildtierausbildung (Zauber-ID über den Tooltip der Zeile) und Lernmeldung (trägt die ID eines Jäger-Zaubers, zugeordnet über Name und den Rang, den das Pet schon hat).
