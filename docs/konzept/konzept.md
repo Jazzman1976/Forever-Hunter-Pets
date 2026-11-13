@@ -90,7 +90,7 @@ Die mitgelieferten Daten sind nur ein Teil. Was das Addon zeigt, setzt sich zusa
 | Name und Icon einer Familie | `ns.FamilyName`, `ns.FamilyIds`, `ns.FamilyIcon` | Daten → Erhebung → Ersatz-Icon „Wildtier zähmen“ |
 | Lehrtiere eines Rangs | `ns.Teachers`, `ns.ObservedTeachers` | Daten + Zähmungen (eigene und geteilte) |
 | Was lehrt ein Tier? | `ns.TeachInfo(npc, discover)`, `ns.Studied` | Daten + alle Zähmungen; im Entdeckermodus erst, wenn das Tier studiert ist (#169) |
-| Fundorte, Zonen | `ns.Coords`, `ns.ZoneCounts`, `ns.BeastZones`, `ns.TamedZones` | Daten + Zellen (fremde ab 3 Meldern je Tier und Karte, `ns.ForeignCellsOk`) + eigene Zähmungen |
+| Fundorte, Zonen | `ns.Coords`, `ns.ZoneCounts`, `ns.BeastZones` (gezeigt), `ns.BeastZonesAll` (gezählt, #193), `ns.TamedZones` | Daten + Zellen (fremde ab 3 Meldern je Tier und Karte, `ns.ForeignCellsOk`) + eigene Zähmungen |
 
 Anlass für den Grundsatz: Ein gezähmter Kojote fehlte bei „Beißen 2“, ein Junger Fleischreißer „brachte keine Fähigkeit mit“ – beides, weil nur die mitgelieferten Daten gelesen wurden.
 
@@ -104,7 +104,7 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | --- | --- | --- |
 | Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes; ab „Tier studiert“ dieselben Daten wie im Komplettmodus (#169) |
 | Grundgerüst | – | alle Fähigkeiten und Ränge (Spielwissen), **wie viele** Lehrtiere und Tiere es gibt |
-| Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N noch nicht studiert“ bzw. „verborgenes Tier“ |
+| Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N noch nicht studiert“ bzw. „verborgenes Tier“; Zonenauswahl und Ränge je Zone nach den kompletten Daten wie im Reiter „Gebiet“ (#193) |
 | Karte (Gebiet, Kartenseite) | alle Fundorte | eigene Zellen; ist das Tier in der Zone studiert, dort alle bekannten Fundorte (#170) |
 | Tier-Tooltip | Ränge aus allen Daten, kein Status | Status-Tag; nach der eigenen Zähmung Ränge aus allen Daten (#169) |
 | Reiter „Gebiet“, Liste | alle Tiere benannt, anklickbar, kein Status | anonym bis zur Fährte, dann Name und Status-Tag |
