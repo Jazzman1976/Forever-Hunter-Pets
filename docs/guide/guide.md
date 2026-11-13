@@ -108,12 +108,14 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
   What it teaches shows step by step: nothing while you only tracked it; once you found it, whether it teaches anything – *teaches something*, *teaches nothing*, or a red ✖ with *No data* when nobody knows yet (attack speed counts as something); once you studied it, *teaches* with the ability icons. A beast you have studied in another zone shows its icons as soon as you track it, because what a beast teaches is the same everywhere.
 
-  Sorted by status: studied first, never seen last. Hidden beasts can't be selected.
+  Sorted by status: studied first, never seen last. Every row can be selected, hidden beasts too – their name stays hidden in the map title and in the tooltip.
+
+  **What to do next.** Hover over a row: below what it teaches, a gold line tells you how to get to the next step – for a hidden beast, that you only need to see it somewhere to pick up its trail, and that *Track Beasts*, *Eagle Eye* or *Eyes of the Beast* work too; for a tracked beast, that you need to get closer to find it; for a found beast, that taming it tells you its abilities. While the map shows no spawn point for the selected beast, it says the same in its middle: that a hidden beast is hiding somewhere in this zone, or that you have picked up the trail of a tracked beast but need to get closer to see where it lives.
 
   When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
 - **Complete mode:** every beast with its name, no status. The checkbox is ticked when it is known what the beast teaches. Beasts with known abilities come first.
 
-**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch.
+**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch. In explorer mode, a beast without spawn points on the map gets a hint in the middle of the map instead (see *What to do next* above).
 
 **The counters (below the map).**
 - **Beasts** – *X of Y known*. Only *beast studied* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.

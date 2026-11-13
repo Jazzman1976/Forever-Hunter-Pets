@@ -248,6 +248,16 @@ ns.Locales.deDE = {
   ["dot"] = "Punkt",
   ["tick"] = "Haken",
   ["No beast found yet"] = "Noch kein Tier gefunden",
+  -- Hinweise im Reiter „Gebiet“, was als Nächstes zu tun ist (#175)
+  ["You only need to see it somewhere to pick up its trail. Then you find out more about the beast. “%s”, “%s” or “%s” work too."] = "Du musst es nur irgendwo sehen, um seine Fährte aufzunehmen. Dann findest du mehr über das Tier heraus. Das geht auch mit „%s“, „%s“ oder „%s“.",
+  ["You need to get closer to find it. Then you can tell whether it might teach you something."] = "Du musst näher ran, um es zu finden. Dann kannst du einschätzen, ob es etwas beibringen könnte.",
+  ["Tame it to find out its abilities."] = "Durch Zähmen findest du seine Fähigkeiten heraus.",
+  ["Somewhere in this zone this beast is hiding. You have just never seen it."] = "Irgendwo in diesem Gebiet versteckt sich dieses Tier. Du hast es nur noch nie gesehen.",
+  ["You have already picked up the trail of %s, but you can only tell where exactly it lives once you get closer."] = "Du hast bereits die Fährte von %s aufgenommen, kannst aber erst sagen, wo genau es lebt, wenn du näher herangehst.",
+  -- Rückfall, wenn der Client den Namen des Jägerzaubers nicht liefert (#175)
+  ["Track Beasts"] = "Wildtiere aufspüren",
+  ["Eagle Eye"] = "Adlerauge",
+  ["Eyes of the Beast"] = "Augen des Wildtiers",
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
   ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",

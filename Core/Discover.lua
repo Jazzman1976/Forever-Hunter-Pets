@@ -296,6 +296,53 @@ function ns.TeachText(npc, st)
   return (L["teaches %s"]):format(table.concat(parts, " "))
 end
 
+-- ---- Hinweise: was als Nächstes zu tun ist (#175) ----
+-- Jede Stufe sagt im Reiter „Gebiet“ selbst, wie es weitergeht: ganze Sätze im Tooltip der Zeile (ns.StatusHint)
+-- und auf der Karte, solange sie für das Tier keinen Fundort zeigt (ns.MapHint). Nur im Entdeckermodus; eine
+-- bewusste Ausnahme von „knapp“ (Grundsatz 7, Rückmeldungen der Spieler, #186). Der Tier-Tooltip in der Welt bleibt
+-- ohne. Die Namen der Jägerzauber kommen vom Client, damit sie in jeder Sprache stimmen; fehlt einer, steht der
+-- übersetzte Name aus Locales/ da.
+local HUNTER_SPELLS = { { 1494, "Track Beasts" }, { 6197, "Eagle Eye" }, { 1002, "Eyes of the Beast" } }
+local function hunterSpell(i)
+  local id, name = HUNTER_SPELLS[i][1], HUNTER_SPELLS[i][2]
+  if C_Spell and C_Spell.GetSpellName then
+    local ok, v = pcall(C_Spell.GetSpellName, id)
+    v = ok and ns.clean(v) or nil
+    if type(v) == "string" and v ~= "" then return v end
+  end
+  return ns.L[name]
+end
+
+-- Satz für den Tooltip der Zeile; nil im Komplettmodus und bei „Tier studiert“ (dort steht die Lehre)
+function ns.StatusHint(st)
+  if not ns.Discovering() then return nil end
+  local L = ns.L
+  if st == "unknown" then
+    return (L["You only need to see it somewhere to pick up its trail. Then you find out more about the beast. “%s”, “%s” or “%s” work too."])
+      :format(hunterSpell(1), hunterSpell(2), hunterSpell(3))
+  elseif st == "track" then
+    -- derselbe Satz, auch wenn die Lehre aus einer anderen Zone schon bekannt ist
+    return L["You need to get closer to find it. Then you can tell whether it might teach you something."]
+  elseif st == "found" then
+    return L["Tame it to find out its abilities."]
+  end
+  return nil
+end
+
+-- Satz für die Karte, solange sie für das Tier keinen Fundort zeigt; nil im Komplettmodus und ab „Tier gefunden“
+-- (dann stehen die eigenen Fundorte da). Bei „Noch nie gesehen“ ohne Namen: Der Name verriete, was die Liste verbirgt.
+function ns.MapHint(st, npc)
+  if not ns.Discovering() then return nil end
+  local L = ns.L
+  if st == "unknown" then
+    return L["Somewhere in this zone this beast is hiding. You have just never seen it."]
+  elseif st == "track" then
+    return (L["You have already picked up the trail of %s, but you can only tell where exactly it lives once you get closer."])
+      :format(ns.BeastName(npc))
+  end
+  return nil
+end
+
 -- ---- Was ein Tier lehrt ----
 -- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo
 local bySpell

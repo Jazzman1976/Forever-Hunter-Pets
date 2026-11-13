@@ -45,6 +45,33 @@ function ns.CreateMapCanvas(parent, width, height)
     return p
   end)
 
+  -- Hinweisfläche (#175): ein halb durchsichtiger dunkler Rahmen in der Mitte, darin ein Satz, umbrechend. Der
+  -- Reiter „Gebiet“ setzt ihn im Entdeckermodus, solange die Karte für das gewählte Tier keinen Fundort zeigt.
+  local HINT_PAD = 14
+  local hint = CreateFrame("Frame", nil, c)
+  hint:SetPoint("CENTER")
+  hint:SetFrameLevel(c:GetFrameLevel() + 4)
+  local rim = hint:CreateTexture(nil, "BORDER")
+  rim:SetAllPoints()
+  rim:SetColorTexture(1, 1, 1, 0.25)
+  local inner = hint:CreateTexture(nil, "ARTWORK")
+  inner:SetPoint("TOPLEFT", 1, -1)
+  inner:SetPoint("BOTTOMRIGHT", -1, 1)
+  inner:SetColorTexture(0, 0, 0, 0.75)
+  local hintText = W.Text(hint, "GameFontHighlight", true)
+  hintText:SetDrawLayer("OVERLAY")
+  hintText:SetPoint("CENTER")
+  hintText:SetWidth(math.floor(width * 0.7))
+  hintText:SetJustifyH("CENTER")
+  hint:Hide()
+  -- text = nil oder "" blendet die Fläche aus
+  function c:SetHint(text)
+    if not text or text == "" then hint:Hide() return end
+    hintText:SetText(text)
+    hint:SetSize(math.floor(width * 0.7) + 2 * HINT_PAD, hintText:GetStringHeight() + 2 * HINT_PAD)
+    hint:Show()
+  end
+
   -- Erkundete Gebiete: der Client liefert je Gebiet ein Bild, zerlegt in Kacheln von 256 Pixeln.
   -- Die letzte Kachel einer Reihe oder Spalte zeigt nur den Rest, ihre Datei ist aber auf die
   -- nächste Zweierpotenz aufgefüllt – daher der Ausschnitt über SetTexCoord.
