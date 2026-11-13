@@ -64,9 +64,10 @@ function W.CheckBox(parent)
   box.check:SetPoint("CENTER", 1, 1)
   box.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
   -- Punkt statt Haken (#174, Reiter „Gebiet“, Entdeckermodus: „Tier gefunden“), im Goldgelb des Hakens; versteckt,
-  -- bis jemand ihn braucht – „Fähigkeiten“ nutzt ihn nicht
+  -- bis jemand ihn braucht – „Fähigkeiten“ nutzt ihn nicht. Klein (5 px, Maintainer nach dem Test: mit 8 px zu
+  -- wuchtig), damit der Haken deutlich wichtiger aussieht
   box.dot = box:CreateTexture(nil, "OVERLAY")
-  box.dot:SetSize(8, 8)
+  box.dot:SetSize(5, 5)
   box.dot:SetPoint("CENTER")
   box.dot:SetTexture(W.DISK)
   box.dot:SetVertexColor(1, 0.82, 0)
