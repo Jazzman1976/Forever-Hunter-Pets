@@ -73,7 +73,9 @@ end
 
 -- Selbst gezähmt in dieser Zone: Die Zähmung notiert die Zone (seenIn), und „Wildtier zähmen“ reicht nur etwa
 -- 30 m – wer zähmt, war dem Tier nah. Das gilt als Fundort, auch wenn eine ältere Zähmung keine Zelle speicherte
--- (vor dem 16.10.2026 nur aus 10 m; Junger Fleischreißer).
+-- (vor dem 16.10.2026 nur aus 10 m; Junger Fleischreißer). Nur ungefähr: Eine Zähmung speichert ihre Zone nicht,
+-- gezählt wird jede Zone, in der man das Tier gesehen hat. Deshalb zählt das nur dafür, wo ein Tier lebt
+-- (ns.LivesIn, ns.TamedZones), nicht als eigener Fund für den Status (#170).
 local function tamedIn(npc, map)
   if not seenIn(npc, map) then return false end
   for _, o in ipairs(ns.ObservationsOf(npc)) do
@@ -182,7 +184,10 @@ function ns.BeastStatus(npc, map)
   if not ns.LivesIn(npc, map) then
     return trackOnly(npc, map) and "track" or "unknown"
   end
-  if ownCells(npc, map) > 0 or tamedIn(npc, map) then
+  -- Gefunden (und damit auch studiert) ist ein Tier in einer Zone nur mit einer eigenen Zelle dort. Seit dem
+  -- 16.10.2026 speichert jede Zähmung eine; eine Zähmung anderswo und eine Fährte hier reichen nicht (#170: sonst
+  -- stand „Tier studiert“ mit allen Fundorten in jeder Zone, in der man das Tier nur von Weitem sah).
+  if ownCells(npc, map) > 0 then
     return ns.Studied(npc) and "known" or "found"
   end
   if seenIn(npc, map) then return "track" end

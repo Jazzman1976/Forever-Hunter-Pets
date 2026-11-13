@@ -41,6 +41,9 @@ ok(NS.BeastStatus(NPC, MAP) == "track", "nur Fährte")
 
 -- eigene Zähmung auf Stufe 14: Ducken 2 (ab Pet-Stufe 15) zeigt das Zauberbuch noch nicht, widerlegt ist er nicht
 table.insert(NS.db.obs, ("%d;14;;;1792000010;"):format(NPC))   -- eigene Zähmung (ohne Kürzel)
+-- die Zähmung speichert immer eine Zelle in ihrer Zone (Core/Observe.lua), beim Konto und beim Charakter
+NS.db.loc = { [NPC] = { [MAP] = "AA" } }
+NS.char.loc = { [NPC] = { [MAP] = "AA" } }
 NS.ObservationsChanged()
 ok(NS.Studied(NPC), "gezähmt: studiert")
 ok(NS.BeastStatus(NPC, MAP) == "known", "gezähmt in der Zone: letzte Stufe")

@@ -15,6 +15,8 @@ NS.db.seenIn = { [NPC] = tostring(MAP) }
 NS.char.seenIn = { [NPC] = tostring(MAP) }
 ok(NS.StatusText(NPC, MAP) == L["tracked"], "Fährte")
 NS.db.obs = { ("%d;14;;;1792000010;"):format(NPC) }
+NS.db.loc = { [NPC] = { [MAP] = "AA" } }   -- die Zelle der Zähmung
+NS.char.loc = { [NPC] = { [MAP] = "AA" } }
 NS.ObservationsChanged()
 ok(NS.StatusText(NPC, MAP) == L["beast studied"], "gezähmt: " .. tostring(NS.StatusText(NPC, MAP)))
 

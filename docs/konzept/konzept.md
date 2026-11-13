@@ -127,10 +127,11 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | --- | --- | --- | --- |
 | `unknown` | **Noch nie gesehen**; in der Liste anonym als „verborgenes Tier“ | noch nichts in dieser Zone | keins |
 | `track` | **Fährte aufgenommen** | in dieser Zone gesehen, nie nah gewesen | keins |
-| `found` | **Tier gefunden** | eigener Fundort in dieser Zone (oder eigene Zähmung dort) | leer |
+| `found` | **Tier gefunden** | eigene Zelle in dieser Zone (jede Zähmung speichert eine) | leer |
 | `known` | **Tier studiert** | gefunden und selbst gezähmt (`ns.Studied`), auch wenn es nichts lehrt | Haken |
 
 - **Je NPC-ID und je Zone.** Jede Zone ist ein eigenes Jagdrevier; ein Tier, das über eine Grenze läuft, muss in jeder Zone selbst gefunden werden. Innerhalb einer Zone reicht ein Tier dieser ID.
+- **Gefunden nur mit eigener Zelle** (Maintainer, 13.11.2026, #170): „Tier gefunden“ und „Tier studiert“ hängen in einer Zone an einer eigenen Zelle dort; eine einzige genügt für die ganze Zone. Eine Zähmung anderswo plus eine Fährte hier reicht nicht. Dann steht hier „Fährte aufgenommen“, die Lehre ist aber schon da (#169).
 - **Was ein Tier lehrt, gilt zonenübergreifend:** Die Fähigkeiten hängen an der NPC-ID, nur der Rang an der Stufe. „Bekannt“ wird ein Tier in einer Zone trotzdem erst, wenn es dort gefunden ist.
 - **Wo lebt ein Tier?** (`ns.LivesIn`) Wo es einen echten Fundort hat: Daten, Zelle oder eigene Zähmung. Hat es nirgends einen, zählt seine Fährte, wo man es gesehen hat ([§9](#9-fährten)).
 - **Wörter:** Jäger-Sprache, als Zustand formuliert, ohne Icon. Verlauf: „Fährte“ mit Pfoten-Icon, dann „gesichtet / gefunden / bekannt“ – zu nah beieinander, der Unterschied war unklar; seit 13.11.2026 (#171) „Noch nie gesehen“ statt „? unentdeckt“ und „Tier studiert“ statt „Fähigkeiten bekannt“, weil das beschreibt, was der Spieler getan hat. „Tier studiert“ ist in allen Punkten gleich „gezähmt“ (später auch über Wildtierkunde, #183). Im Code heißen die Status weiter `unknown`, `track`, `found`, `known`. Texte: `ns.StatusWord`, `ns.StatusText` (liefert im Komplettmodus `nil`).
@@ -162,7 +163,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 - **Der Client nennt nur die Position des Spielers.** Deshalb zählt ein Fundort nur, wenn das Tier in etwa **10 m** steht (`CheckInteractDistance` 3, sonst 2), gerundet auf ein Raster von 2 % der Karte (50 × 50 Zellen, 60–100 m).
 - **Genauigkeit vor Menge** (16.10.2026): Eine Anhebung auf 28 m wurde verworfen. Die Karte soll „hier ungefähr“ zeigen, nicht daneben.
-- **Zähmen gibt immer einen Fundort**, vom Beginn des Zauberns: „Wildtier zähmen“ reicht nur etwa 30 m, das liegt in derselben oder der Nachbarzelle. Ältere Zähmungen ohne Zelle zählen in ihrer Zone trotzdem als Fundort (`ns.TamedZones`).
+- **Zähmen gibt immer einen Fundort**, vom Beginn des Zauberns: „Wildtier zähmen“ reicht nur etwa 30 m, das liegt in derselben oder der Nachbarzelle. Ältere Zähmungen ohne Zelle zählen nur dafür, wo ein Tier lebt (`ns.TamedZones`, `ns.LivesIn`), nicht als eigener Fund: Eine Zähmung speichert ihre Zone nicht, und sonst stand ein anderswo gezähmtes Tier in jeder Zone, in der man es nur von Weitem sah, als „Tier studiert“ da (#170, 13.11.2026).
 - **Kampf:** Während des Kampfs ruht das Addon (geheime Werte). Fundorte entstehen trotzdem – beim Heranlaufen und danach neben dem toten Tier. Eine eigene Behandlung brachte in der Probe nichts.
 - **Fernsicht:** Während „Augen des Wildtiers“ (1002) und „Adlerauge“ (6197) entstehen keine Zellen (`ns.Possessing`), weil der Jäger woanders steht als das, was er sieht. `CheckInteractDistance` misst dabei vom Jäger aus; die Sperre ist die zweite Sicherung.
 - **Je Tier und Zelle einmal.** Wandernde Tiere ergeben eine Kette – für die Suche nützlicher als ein Punkt.

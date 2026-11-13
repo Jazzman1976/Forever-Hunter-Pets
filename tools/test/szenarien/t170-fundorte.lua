@@ -39,6 +39,20 @@ ok(NS.BeastStatus(NPC, OTHER) ~= "known", "andere Zone: nicht studiert (" .. NS.
 ok(#NS.Coords(NPC, OTHER) == 0, "andere Zone: keine Punkte")
 ok(NS.ZoneCounts(NPC)[OTHER] == nil, "andere Zone: nicht auf der Tierseite")
 
+-- dritte Zone: dort nur von Weitem gesehen (Fährte), gezähmt anderswo – nicht studiert, keine Punkte; die Lehre
+-- steht trotzdem da (#169). Erst eine eigene Zelle dort macht es zu „Tier studiert“.
+local FAR = 1437
+NS.db.locIn[NPC][FAR] = { a0000001 = "2C", a0000002 = "2C", a0000003 = "2C" }
+NS.db.seenIn[NPC] = MAP .. "," .. FAR
+NS.char.seenIn[NPC] = MAP .. "," .. FAR
+ok(NS.BeastStatus(NPC, FAR) == "track", "nur gesehen, anderswo gezähmt: Fährte (" .. NS.BeastStatus(NPC, FAR) .. ")")
+ok(#NS.Coords(NPC, FAR) == 0, "nur gesehen: keine Punkte")
+ok(NS.TeachInfo(NPC, true) ~= nil, "Lehre trotzdem bekannt")
+NS.char.loc[NPC][FAR] = "2C"
+NS.db.loc[NPC][FAR] = "2C"
+ok(NS.BeastStatus(NPC, FAR) == "known", "eigene Zelle dort: studiert")
+ok(#NS.Coords(NPC, FAR) >= 1, "dann alle Fundorte dort")
+
 -- Komplettmodus: alles, überall
 NS.char.discover = false
 ok(#NS.Coords(NPC, MAP) == full and #NS.Coords(NPC, OTHER) > 0, "Komplettmodus: alle Fundorte in beiden Zonen")
