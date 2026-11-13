@@ -478,7 +478,8 @@ function ns.Teachers(a, r, zone)
   end
   -- Entdeckermodus: nur Lehrtiere, die man studiert hat, mit der Belegung aus den kompletten Daten (#169; bis 1.2.0
   -- nur, wenn eine eigene Zähmung genau diesen Rang zeigte). Die übrigen zählen als unentdeckt (list.undiscovered),
-  -- damit man weiß, dass es etwas zu finden gibt
+  -- damit man weiß, dass es etwas zu finden gibt. Dazu die niedrigste Stufe unter ihnen (list.undiscoveredMin), damit
+  -- „fehlt dir, erreichbar“ gleich zählt wie im Komplettmodus (#192); gezeigt wird die Stufe nirgends
   list.undiscovered = 0
   if ns.Discovering and ns.Discovering() then
     local own = { hidden = 0, undiscovered = 0 }
@@ -487,6 +488,8 @@ function ns.Teachers(a, r, zone)
         own[#own + 1] = t
       else
         own.undiscovered = own.undiscovered + 1
+        local min = t.beast.min or 0
+        if not own.undiscoveredMin or min < own.undiscoveredMin then own.undiscoveredMin = min end
       end
     end
     list = own
