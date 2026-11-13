@@ -32,6 +32,8 @@ Der Client meldet `## Interface: 16001` und `WOW_PROJECT_ID == WOW_PROJECT_CAMEL
 
 - Ein abweichendes Tempo ist eine **passive Fähigkeit im Zauberbuch** des Pets, mit Namen und Zauber-ID: Halbwüchsiger Schneeleopard (1199, 1,5 s) → „Schnellerer Angriff III“ (1263102), Junger Waldbär (822, 2,5 s) → „Langsamerer Angriff II“ (1263113). Die römische Ziffer gehört zum Namen; Untertitel „Passiv“, kein Rang. Normales Tempo (2,0 s, Eisklauenbär 1196) hat keine.
 - `UnitAttackSpeed(unit)` beim wilden Tier (angevisiert, außerhalb des Kampfs) liefert dasselbe Tempo wie nach dem Zähmen, in allen drei Fällen.
+- **Buffs des Jägers verfälschen das gemessene Tempo des Pets** (13.11.2026, #189): Unter „Segen des Kriegshäuptlings“ (+15 % Angriffsgeschwindigkeit) liefert `UnitAttackSpeed("pet")` **1,739 s** statt 2,0 s. Das Pet trägt dabei **keine** Aura; der Buff des Charakters wirkt unsichtbar. Ohne Buff neu gezähmt: 2,0 s. Fremde Zähmungen zeigten auch 1,2 s ohne Tempo-Zauber, dort wirkte wohl mehr zusammen. Gemessene Werte taugen deshalb nicht für das angeborene Tempo; maßgeblich ist das Zauberbuch.
+- **Die Beschreibung des Tempo-Zaubers nennt den Wert** (13.11.2026, #189): `C_Spell.GetSpellDescription(1263100)` („Schnellerer Angriff II“) ergibt „Erhöht das Angriffstempo um 25%.“, also 2,0 s ÷ 1,25 = 1,6 s. Bekannte Tempo-Zauber: I 1263099 (1,7 s), II 1263100 (1,6 s), III 1263102 (1,5 s), IV 1263104 (1,4 s), V 1263107 (1,3 s), Langsamerer Angriff II 1263113 (2,5 s).
 
 ## Kampf (Probe, 16.10.2026)
 
