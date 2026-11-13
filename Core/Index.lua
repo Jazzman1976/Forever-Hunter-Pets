@@ -301,8 +301,8 @@ function ns.ZoneCounts(npcId, full)
   return out
 end
 
--- Zonen eines Tiers: aus den Daten, dazu die, in denen Zellen liegen oder in denen man es selbst gezähmt hat
--- (ns.TamedZones, Core/Discover.lua). Im Entdeckermodus nur eigene Zellen und Zähmungen.
+-- Zonen eines Tiers, wie sie gezeigt werden: aus den Daten, dazu die, in denen Zellen liegen oder in denen man es
+-- selbst gezähmt hat (ns.TamedZones, Core/Discover.lua). Im Entdeckermodus nur eigene Zellen und Zähmungen.
 function ns.BeastZones(npcId)
   if ns.Discovering and ns.Discovering() then
     local set = {}
@@ -313,6 +313,12 @@ function ns.BeastZones(npcId)
     table.sort(out)
     return out
   end
+  return ns.BeastZonesAll(npcId)
+end
+
+-- Zonen eines Tiers aus den kompletten Daten, in jedem Modus: zum Zählen, wer in einer Zone lebt (Grundgerüst, wie
+-- im Reiter „Gebiet“, #193). Was man vom Tier sieht, regelt ns.BeastZones.
+function ns.BeastZonesAll(npcId)
   local b = D.beasts[npcId]
   local cells = {}
   for z in pairs(ns.CellMaps and ns.CellMaps(npcId) or {}) do cells[z] = true end
@@ -456,7 +462,8 @@ function ns.Teachers(a, r, zone)
     local observed = ns.Observed and ns.Observed(id, a, r)
     local here = not zone
     if zone then
-      for _, z in ipairs(ns.BeastZones(id)) do if zone[z] then here = true end end
+      -- wer in der Zone lebt, nach den kompletten Daten; im Entdeckermodus zählen nicht studierte unten als unentdeckt
+      for _, z in ipairs(ns.BeastZonesAll(id)) do if zone[z] then here = true end end
     end
     if here and not ns.ShowConf(conf) then
       list.hidden = list.hidden + 1

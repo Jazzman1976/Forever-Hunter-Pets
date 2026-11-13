@@ -63,13 +63,14 @@ local function buildEntries(abilities, fam, zone)
   for _, x in ipairs(abilities) do
     local a = x.a
     if not fam or ns.AppliesToAll(a) or contains(a.families, fam) then
-      -- gezählt wird nur, was die Einstellungen zeigen (unsichere und unbelegte Lehrtiere sind sonst aus)
+      -- gezählt wird nur, was die Einstellungen zeigen (unsichere und unbelegte Lehrtiere sind sonst aus); wer in
+      -- der Zone lebt, sagen in beiden Modi die kompletten Daten (#193)
       local inZone, shown = 0, 0
       for _, t in ipairs(a.teach) do
         if ns.ShowConf(t[3]) then
           shown = shown + 1
           local b = zone and D.beasts[t[1]]
-          if b and inZones(ns.BeastZones(t[1]), zone) then inZone = inZone + 1 end
+          if b and inZones(ns.BeastZonesAll(t[1]), zone) then inZone = inZone + 1 end
         end
       end
       -- dazu, was eigene Zähmungen zeigten, auch bei Tieren, die (noch) nicht in den Daten stehen
@@ -77,7 +78,7 @@ local function buildEntries(abilities, fam, zone)
         for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
           if ns.ShowConf(x.conf) then
             shown = shown + 1
-            if zone and inZones(ns.BeastZones(x.id), zone) then inZone = inZone + 1 end
+            if zone and inZones(ns.BeastZonesAll(x.id), zone) then inZone = inZone + 1 end
           end
         end
       end
@@ -97,7 +98,8 @@ local function buildEntries(abilities, fam, zone)
               end
               teachers = own
             end
-            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0) then
+            -- verborgene Lehrtiere (Entdeckermodus) zählen mit: Der Rang ist in der Zone zu finden (#193)
+            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0 and (teachers.undiscovered or 0) == 0) then
               entries[#entries + 1] = { a = a, r = r, name = x.name, teachers = teachers }
             end
           end
@@ -106,6 +108,12 @@ local function buildEntries(abilities, fam, zone)
     end
   end
   return entries
+end
+
+-- Die Zeilen für Familie und Zone (beide optional), wie die Liste sie vor den Status-Filtern hat; für die
+-- Prüfung ohne Spiel (#193)
+function ns.AbilityEntries(fam, zone)
+  return buildEntries(orderedAbilities(), fam, zone)
 end
 
 local function familyOptions()
@@ -117,7 +125,8 @@ local function familyOptions()
   return options
 end
 
--- Nur Zonen, in denen überhaupt ein Lehrtier steht. Der Wert einer Auswahl ist eine Menge von
+-- Nur Zonen, in denen überhaupt ein Lehrtier steht, in beiden Modi nach den kompletten Daten (#193: dass es einen
+-- Rang in einer Zone gibt, darf der Entdeckermodus verraten, nicht wo genau). Der Wert einer Auswahl ist eine Menge von
 -- Zonen-IDs: Forever führt manche Zone unter zwei IDs (Desolace), die gehören zusammen. Eine
 -- Instanz, die wie eine Zone heißt (Vorgebirge von Hillsbrad), bleibt getrennt und wird benannt.
 local function zoneOptions()
@@ -130,7 +139,7 @@ local function zoneOptions()
       for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do ids[#ids + 1] = x.id end
     end
     for _, npc in ipairs(ids) do
-      for _, z in ipairs(ns.BeastZones(npc)) do
+      for _, z in ipairs(ns.BeastZonesAll(npc)) do
         if not seen[z] then
           seen[z] = true
           local name, inst = ns.ZoneName(z), (D.zones[z] and D.zones[z].inst) and true or false
