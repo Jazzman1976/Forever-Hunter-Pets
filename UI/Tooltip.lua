@@ -94,23 +94,30 @@ local function addLines(tooltip, guid)
   if id then info, unsure = ns.TeachInfo(id, ns.Discovering()) end
   -- wie die gelernten Ränge: mit „Bekannte Fähigkeiten anzeigen“ aus nicht zeigen (Wunsch des Nutzers)
   local nothing = info ~= nil and #info == 0 and ns.db.ui.tooltipShowKnown ~= false
-  -- Komplettmodus: Weiß noch niemand, was ein wildes Tier lehrt, sagt der Tooltip das, statt zu schweigen (#23,
-  -- sonst wirkt es, als könne das Tier nichts). Geprüft wird roh, nicht nach den Einstellungen: ausgeblendete
-  -- unsichere Angaben sind keine fehlenden Daten.
-  local missing = id and not ns.Discovering() and #ns.ObservationsOf(id) == 0
+  -- Entdeckermodus, „Tier gefunden“ und noch nicht studiert (#173): Hier gelten die beiden goldenen Zeilen unten wie im
+  -- Komplettmodus (Maintainer, 13.11.2026: derselbe Zustand sieht in beiden Modi gleich aus, und vor dem Tier ist die
+  -- Aufforderung zum Zähmen am wertvollsten). Belege unter der Schwelle aus den kompletten Daten.
+  local found = id and ns.Discovering() and st == "found" and not ns.Studied(id)
+  if found then unsure = select(2, ns.TeachInfo(id, false)) end
+  local hints = id and (not ns.Discovering() or found)
+  -- Weiß noch niemand, was ein wildes Tier lehrt, sagt der Tooltip das, statt zu schweigen (#23, sonst wirkt es, als
+  -- könne das Tier nichts). Geprüft wird roh, nicht nach den Einstellungen: ausgeblendete unsichere Angaben sind
+  -- keine fehlenden Daten.
+  local missing = hints and #ns.ObservationsOf(id) == 0
     and #(ns.AllBeastTeaches(id) or {}) == 0 and wildBeastUnderMouse(guid)
-  -- Komplettmodus: Gibt es Angaben unter der Schwelle, bittet eine Zeile um mehr Belege (#40). Auch roh geprüft:
-  -- Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne sie bliebe ein Tier mit nur unsicheren Lehren
-  -- stumm. Nach einer eigenen Zähmung ist alles belegt, die Zeile fällt von selbst weg.
-  local proof = unsure and not missing and wildBeastUnderMouse(guid)
-  -- Entdeckermodus, „Tier gefunden“ und noch nicht studiert (#173): ob es etwas lehrt, grau wie „lehrt nichts“.
-  -- „lehrt nichts“ folgt wie oben der Einstellung „Auch Ränge zeigen, die du hast“, „lehrt etwas“ und „Keine Daten
-  -- bekannt“ stehen immer.
+  -- Gibt es Angaben unter der Schwelle, bittet eine Zeile um mehr Belege (#40). Auch roh geprüft: Die Aussage
+  -- stimmt auch bei ausgeblendeten Angaben, und ohne sie bliebe ein Tier mit nur unsicheren Lehren stumm. Nach einer
+  -- eigenen Zähmung ist alles belegt, die Zeile fällt von selbst weg.
+  local proof = hints and unsure and not missing and wildBeastUnderMouse(guid)
+  -- „Tier gefunden“: dazu grau, ob es etwas lehrt (#173). „lehrt nichts“ folgt wie oben der Einstellung „Auch Ränge
+  -- zeigen, die du hast“, „lehrt etwas“ steht immer. Weiß niemand etwas, sagt es eine der goldenen Zeilen; nur wenn
+  -- keine passt (etwa eine fremde Zähmung mit unbekanntem Zauber), steht „Keine Daten“.
   local summary
-  if st == "found" and not ns.Studied(id) then
+  if found then
     local kind
     summary, kind = ns.TeachSummary(id)
     if kind == "nothing" and ns.db.ui.tooltipShowKnown == false then summary = nil end
+    if kind == "none" and (missing or proof) then summary = nil end
   end
   if #list == 0 and not status and not nothing and not missing and not proof and not summary then return end
 
