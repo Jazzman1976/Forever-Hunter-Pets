@@ -259,11 +259,13 @@ function traitsFromObservations() {
       beleg: `passiver Zauber im Zauberbuch, Tempo aus den Zähmungen, seit ${z.datum}`,
     });
   }
-  return out.sort((a, b) => a.speed - b.speed);
+  // Tempo-Fähigkeiten von Hand stehen mit denen aus den Zähmungen zusammen, nach dem Tempo (die Liste im Spiel
+  // übernimmt im deutschen Client die Reihenfolge der Daten)
+  return [...manualAbilities.filter((a) => a.kind === 'trait'), ...out].sort((a, b) => a.speed - b.speed);
 }
 
 const abilitiesIn = [
-  ...manualAbilities,
+  ...manualAbilities.filter((a) => a.kind !== 'trait'),
   ...abilitiesFromSurvey().filter((a) => !a.ranks.some((r) => manualIds.has(r.id))),
   ...traitsFromObservations(),
 ];

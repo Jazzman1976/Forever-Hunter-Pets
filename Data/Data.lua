@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-11-13T15:07:11.410Z",
+  generatedAt = "2026-11-13T15:12:14.184Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -408,14 +408,6 @@ ns.Data = {
   },
   abilities = {
     {
-      de = "Schnellerer Angriff II", kind = "trait", source = "tame", speed = 1.6,
-      families = {  },
-      ranks = {
-        { id = 1263100, rank = 1 },
-      },
-      teach = {  },
-    },
-    {
       de = "Ducken", icon = 132118, kind = "family", source = "tame",
       families = { 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 20, 25, 26, 27, 319 },
       ranks = {
@@ -689,6 +681,14 @@ ns.Data = {
         { id = 1263102, rank = 1 },
       },
       teach = { { 1199, 1 }, { 2034, 1 }, { 2958, 1 }, { 2959, 1 }, { 3243, 1 }, { 3415, 1 } },
+    },
+    {
+      de = "Schnellerer Angriff II", kind = "trait", source = "tame", speed = 1.6,
+      families = {  },
+      ranks = {
+        { id = 1263100, rank = 1 },
+      },
+      teach = {  },
     },
     {
       de = "Schnellerer Angriff I", kind = "trait", source = "tame", speed = 1.7,

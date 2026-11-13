@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-13T15:07:11.410Z",
+ "generatedAt": "2026-11-13T15:12:14.184Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -4697,24 +4697,6 @@
  "abilities": [
   {
    "en": null,
-   "de": "Schnellerer Angriff II",
-   "icon": null,
-   "kind": "trait",
-   "source": "tame",
-   "speed": 1.6,
-   "families": [],
-   "ranks": [
-    {
-     "id": 1263100,
-     "rank": 1,
-     "level": null,
-     "tp": null
-    }
-   ],
-   "teach": []
-  },
-  {
-   "en": null,
    "de": "Ducken",
    "icon": 132118,
    "kind": "family",
@@ -6203,6 +6185,24 @@
      "conf": 1
     }
    ]
+  },
+  {
+   "en": null,
+   "de": "Schnellerer Angriff II",
+   "icon": null,
+   "kind": "trait",
+   "source": "tame",
+   "speed": 1.6,
+   "families": [],
+   "ranks": [
+    {
+     "id": 1263100,
+     "rank": 1,
+     "level": null,
+     "tp": null
+    }
+   ],
+   "teach": []
   },
   {
    "en": null,
