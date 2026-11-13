@@ -97,13 +97,13 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
 **The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or a red ✖ with *No data known* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other characters have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
 
-- **Explorer mode:** each beast carries its status, and the checkbox follows it:
+- **Explorer mode:** each beast carries its status, and the checkbox follows it – a different shape at each step, so you can tell them apart without colour:
 
   | Status | Meaning | Checkbox |
   | --- | --- | --- |
   | **never seen** – listed as *hidden beast* | you haven't come across it in this zone yet – name hidden. The beast is known, you just have to find it: *Go on the prowl and find it.* | none |
-  | **tracked** | you have seen it in this zone, but were never close to it | none |
-  | **beast found** | you were close to it in this zone, so its spawn point is on your map | empty |
+  | **tracked** | you have seen it in this zone, but were never close to it | empty |
+  | **beast found** | you were close to it in this zone, so its spawn point is on your map | dot |
   | **beast studied** | found, and you have tamed it – you know what it teaches (also when it teaches nothing) | ticked |
 
   What it teaches shows step by step: nothing while you only tracked it; once you found it, whether it teaches anything – *teaches something*, *teaches nothing*, or a red ✖ with *No data known* when nobody knows yet (attack speed counts as something); once you studied it, *teaches* with the ability icons. A beast you have studied in another zone shows its icons as soon as you track it, because what a beast teaches is the same everywhere.

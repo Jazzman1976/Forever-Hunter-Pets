@@ -219,14 +219,14 @@ function ns.BuildArea(parent)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText(L["Beasts"], 1, 1, 1)
     if ns.Discovering() then
-      GameTooltip:AddLine(ns.StatusWord("unknown") .. ": "
-        .. L["You have never seen it in this zone, so it is listed as a hidden beast."], 0.8, 0.8, 0.8, true)
-      GameTooltip:AddLine(ns.StatusWord("track") .. ": "
-        .. L["You saw it in this zone, but were never close to it. It is not on your map yet."], 0.8, 0.8, 0.8, true)
-      GameTooltip:AddLine(ns.StatusWord("found") .. ": "
-        .. L["You were close to it in this zone, so its spawn point is on your map."], 0.8, 0.8, 0.8, true)
-      GameTooltip:AddLine(ns.StatusWord("known") .. ": "
-        .. L["Found, and you have tamed it, so you know what it teaches."], 0.8, 0.8, 0.8, true)
+      -- je Status mit seinem Kästchen (#174), denn hier werden die Status erklärt
+      local function line(st, box, text)
+        GameTooltip:AddLine(ns.StatusWord(st) .. " (" .. L[box] .. "): " .. L[text], 0.8, 0.8, 0.8, true)
+      end
+      line("unknown", "no box", "You have never seen it in this zone, so it is listed as a hidden beast.")
+      line("track", "empty box", "You saw it in this zone, but were never close to it. It is not on your map yet.")
+      line("found", "dot", "You were close to it in this zone, so its spawn point is on your map.")
+      line("known", "tick", "Found, and you have tamed it, so you know what it teaches.")
       GameTooltip:AddLine(L["Only “beast studied” moves the progress."], 0.8, 0.8, 0.8, true)
     else
       GameTooltip:AddLine(L["Known: the data or a taming shows what it teaches."], 0.8, 0.8, 0.8, true)
@@ -452,9 +452,11 @@ function ns.BuildArea(parent)
       local where = {}
       if fam then where[#where + 1] = ns.BeastFamilyText(e.npc) end
       if level then where[#where + 1] = (L["Level %s"]):format(level) end
-      -- Haken = Tier studiert. Entdeckermodus: leeres Kästchen = Tier gefunden, kein Kästchen bei Fährte
-      -- und noch nie gesehen; Komplettmodus: leeres Kästchen = noch unklar, was es lehrt
-      r.box:SetShown(not discover or e.st == "known" or e.st == "found")
+      -- Entdeckermodus (#174): jede Stufe in eigener Form – kein Kästchen (noch nie gesehen), leer (Fährte),
+      -- Punkt (Tier gefunden), Haken (Tier studiert); bis #174 erst ab „Tier gefunden“ (leer).
+      -- Komplettmodus: leeres Kästchen = noch unklar, was es lehrt, Haken = bekannt
+      r.box:SetShown(not discover or e.st ~= "unknown")
+      r.box.dot:SetShown(e.st == "found")
       r.box.check:SetShown(e.st == "known")
       if e.pick then
         r.npc, r.st = e.npc, discover and e.st or nil

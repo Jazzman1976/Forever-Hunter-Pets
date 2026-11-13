@@ -242,6 +242,11 @@ ns.Locales.deDE = {
   ["beast found"] = "Tier gefunden",
   ["never seen"] = "Noch nie gesehen",
   ["beast studied"] = "Tier studiert",
+  -- Kästchen je Status im Tooltip des Zählers „Tiere“ (#174)
+  ["no box"] = "kein Kästchen",
+  ["empty box"] = "leeres Kästchen",
+  ["dot"] = "Punkt",
+  ["tick"] = "Haken",
   ["No beast found yet"] = "Noch kein Tier gefunden",
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",

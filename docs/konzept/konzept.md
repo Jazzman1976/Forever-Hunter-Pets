@@ -127,10 +127,11 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | Status (Code) | Tag | Wann | Kästchen |
 | --- | --- | --- | --- |
 | `unknown` | **Noch nie gesehen**; in der Liste anonym als „verborgenes Tier“ | noch nichts in dieser Zone | keins |
-| `track` | **Fährte aufgenommen** | in dieser Zone gesehen, nie nah gewesen | keins |
-| `found` | **Tier gefunden** | eigene Zelle in dieser Zone (jede Zähmung speichert eine) | leer |
+| `track` | **Fährte aufgenommen** | in dieser Zone gesehen, nie nah gewesen | leer |
+| `found` | **Tier gefunden** | eigene Zelle in dieser Zone (jede Zähmung speichert eine) | Punkt |
 | `known` | **Tier studiert** | gefunden und selbst gezähmt (`ns.Studied`), auch wenn es nichts lehrt | Haken |
 
+- **Kästchen je Stufe** (Maintainer, 13.11.2026, #174; vorher erst ab „Tier gefunden“ leer, mit Haken bei „Tier studiert“): Jede Stufe hat im Reiter „Gebiet“ ihre eigene Form – nichts, leer, Punkt, Haken –, nicht nur eine Farbe. Der Punkt ist die runde Scheibe der Karten-Pins im Goldgelb des Hakens (`box.dot` in `W.CheckBox`, Scheibe `W.DISK`); „Fähigkeiten“ nutzt ihn nicht, das Lernstand-Kästchen bleibt, wie es ist. Der Tooltip am Zähler „Tiere“ nennt je Status sein Kästchen. Im Komplettmodus unverändert: leer, Haken, wenn bekannt ist, was das Tier lehrt.
 - **Je NPC-ID und je Zone.** Jede Zone ist ein eigenes Jagdrevier; ein Tier, das über eine Grenze läuft, muss in jeder Zone selbst gefunden werden. Innerhalb einer Zone reicht ein Tier dieser ID.
 - **Gefunden nur mit eigener Zelle** (Maintainer, 13.11.2026, #170): „Tier gefunden“ und „Tier studiert“ hängen in einer Zone an einer eigenen Zelle dort; eine einzige genügt für die ganze Zone. Eine Zähmung anderswo plus eine Fährte hier reicht nicht. Dann steht hier „Fährte aufgenommen“, die Lehre ist aber schon da (#169).
 - **Was ein Tier lehrt, gilt zonenübergreifend:** Die Fähigkeiten hängen an der NPC-ID, nur der Rang an der Stufe. „Bekannt“ wird ein Tier in einer Zone trotzdem erst, wenn es dort gefunden ist.
@@ -232,7 +233,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - Liste links, Karte rechts oben, bündig mit der Liste; der Kartentitel steht in der Kopfzeile neben der Zonenauswahl (wie „Ausbildung“), die Zähler darunter.
 - Immer ein Tier gewählt.
 - **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
-- Kästchen aus „Fähigkeiten“, Familien-Icon.
+- Kästchen aus „Fähigkeiten“ (im Entdeckermodus mit Punkt bei „Tier gefunden“, #174), Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile. Im Entdeckermodus vor dem Studieren: bei „Tier gefunden“ „lehrt etwas“, „lehrt nichts“ oder „Keine Daten bekannt“ in Zeile und Zeilen-Tooltip, bei der Fährte nichts (#173).
 - Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ steht nur hinten als Belegungszeichen; vorn steht keins mehr, seit „? unklar“ und „? unbekannt“ zu „Keine Daten bekannt“ mit rotem X wurden (#172). Verborgenes trägt seit #171 kein „?“ mehr, nur das Fragezeichen-Icon. Seit #169 kann auch im Entdeckermodus „?“ bzw. „!“ hinter einem Rang stehen, wenn ein studiertes Tier unsichere Angaben hat und die Einstellung sie zeigt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
 - „lehrt nichts“ aus fremden Zähmungen gilt erst ab 3 Meldern, wie Ränge; eine eigene Zähmung zählt sofort (#40). Vorher reichte eine einzige fremde Zähmung, was eine Falschaussage sein konnte.
