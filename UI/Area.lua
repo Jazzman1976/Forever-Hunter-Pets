@@ -181,15 +181,15 @@ function ns.BuildArea(parent)
   mapInfo:SetWidth(RIGHT_W)
 
   local barW = RIGHT_W - LABEL_W - 8
-  local y = -(mapH + 30)
+  local yBeasts = -(mapH + 30)
+  -- Titel links kurz, daneben der Wert als ganzer Satz (#176), der umbrechen darf; Lage setzt layoutCounters
   local function row(label, withBar)
     local r = {}
     r.label = W.Text(right, "GameFontNormal")
-    r.label:SetPoint("TOPLEFT", 0, y)
     r.label:SetWidth(LABEL_W)
     r.label:SetText(label)
-    r.value = W.Text(right, "GameFontHighlight")
-    r.value:SetPoint("TOPLEFT", LABEL_W, y)
+    r.value = W.Text(right, "GameFontHighlight", true)
+    r.value:SetWidth(RIGHT_W - LABEL_W)
     if withBar then
       r.bar = CreateFrame("Frame", nil, right)
       r.bar:SetSize(barW, BAR_H)
@@ -200,7 +200,6 @@ function ns.BuildArea(parent)
       r.fill:SetPoint("BOTTOMLEFT")
       r.fill:SetColorTexture(0.62, 0.83, 0.37, 0.9)
     end
-    y = y - (withBar and 34 or 24)
     return r
   end
   local function setBar(r, x, total)
@@ -211,16 +210,18 @@ function ns.BuildArea(parent)
   end
   -- Immer „X von Y …“, auch wenn alles bekannt ist (#19): eine nackte Zahl wirkte über den Kacheln wie ein
   -- kaputter Umbruch, und alle drei Zähler sollen gleich aussehen (Wunsch des Nutzers). Der Balken bleibt, dann voll.
+  -- Seit #176 ganze Sätze, je Modus eigene: „Du hast 5 von 22 Tieren gefunden“ bzw. „Bei 15 von 22 Tieren ist
+  -- bekannt, was sie lehren“.
   local function showCount(r, x, total, fmt)
     r.value:SetText((L[fmt]):format(x, total))
     setBar(r, x, total)
   end
-  local yBeasts = y
   local beasts = row(L["Beasts"], true)
-  -- Was die Status bedeuten, beim Überfahren des Zählers (Wunsch des Nutzers: nicht selbsterklärend)
+  -- Was die Status bedeuten, beim Überfahren des Zählers (Wunsch des Nutzers: nicht selbsterklärend); die Höhe
+  -- folgt dem Satz (layoutCounters)
   local beastsHover = CreateFrame("Frame", nil, right)
   beastsHover:SetPoint("TOPLEFT", 0, yBeasts)
-  beastsHover:SetSize(RIGHT_W, yBeasts - y)
+  beastsHover:SetSize(RIGHT_W, 34)
   beastsHover:EnableMouse(true)
   beastsHover:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -234,14 +235,15 @@ function ns.BuildArea(parent)
       line("track", "empty box", "You saw it in this zone, but were never close to it. It is not on your map yet.")
       line("found", "dot", "You were close to it in this zone, so its spawn point is on your map.")
       line("known", "tick", "Found, and you have tamed it, so you know what it teaches.")
-      GameTooltip:AddLine(L["Only “beast studied” moves the progress."], 0.8, 0.8, 0.8, true)
+      -- seit #176 wächst der Zähler „Tiere“ schon mit dem Fund
+      GameTooltip:AddLine((L["The “%s” counter grows from “%s”, teaching beasts and ranks with “%s”."]):format(
+        L["Beasts"], ns.StatusWord("found"), ns.StatusWord("known")), 0.8, 0.8, 0.8, true)
     else
       GameTooltip:AddLine(L["Known: the data or a taming shows what it teaches."], 0.8, 0.8, 0.8, true)
     end
     GameTooltip:Show()
   end)
   beastsHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  local yTeachers = y
   local teachers = row(L["Teaching beasts"], false)
   local ranks = row(L["Abilities"], false)
 
@@ -362,20 +364,27 @@ function ns.BuildArea(parent)
     end
   end
 
-  -- Die Zähler unter der Karte stehen untereinander; die Kacheln schieben die folgenden nach unten
+  -- Die Zähler unter der Karte stehen untereinander; Sätze, die umbrechen, und die Kacheln schieben die folgenden
+  -- nach unten (#176: um die tatsächliche Höhe, vorher feste 22 px je Zeile)
   local function anchor(r, top)
     r.label:ClearAllPoints()
     r.label:SetPoint("TOPLEFT", 0, top)
     r.value:ClearAllPoints()
     r.value:SetPoint("TOPLEFT", LABEL_W, top)
   end
-  local function layoutTiles(p)
-    local top = yTeachers
+  local function textH(r) return math.max(14, math.ceil(r.value:GetStringHeight())) end
+  local function layoutCounters(p)
+    local top = yBeasts
+    anchor(beasts, top)
+    local h = textH(beasts) + 5 + BAR_H + 7   -- Satz, Abstand, Balken, Luft (bei einer Zeile wie bisher 34)
+    beastsHover:SetHeight(h)
+    top = top - h
     anchor(teachers, top)
-    local lines = drawTiles(teacherTiles, p.teacherList, top - 22, fillTeacher)
-    top = top - 22 - lines * (TILE + TILE_GAP) - (lines > 0 and 8 or 2)
+    local below = textH(teachers) + 8
+    local lines = drawTiles(teacherTiles, p.teacherList, top - below, fillTeacher)
+    top = top - below - lines * (TILE + TILE_GAP) - (lines > 0 and 8 or 2)
     anchor(ranks, top)
-    drawTiles(rankTiles, p.rankList, top - 22, fillRank)
+    drawTiles(rankTiles, p.rankList, top - (textH(ranks) + 8), fillRank)
   end
 
   -- ---- Neu in dieser Zone (#66) ----
@@ -526,10 +535,14 @@ function ns.BuildArea(parent)
     drawList()
     drawMap()
     local p = ns.ZoneProgress(zone)
-    showCount(beasts, p.beastsKnown, p.beasts, "%d of %d known")
-    showCount(teachers, p.teachersKnown, p.teachers, "%d of %d identified")
-    showCount(ranks, p.ranksFound, p.ranks, "%d of %d ranks discovered")
-    layoutTiles(p)
+    local discover = ns.Discovering()
+    showCount(beasts, p.beastsKnown, p.beasts,
+      discover and "You have found %d of %d beasts" or "For %d of %d beasts it is known what they teach")
+    showCount(teachers, p.teachersKnown, p.teachers,
+      discover and "You have studied %d of %d teaching beasts" or "%d of %d teaching beasts are known")
+    showCount(ranks, p.ranksFound, p.ranks,
+      discover and "Doing so, you have discovered %d of %d ranks in this zone" or "They teach %d of %d ranks in this zone")
+    layoutCounters(p)
     -- Fundorte als Fußnote: so viele, wie die Karte über alle Tiere zeigt – im Entdeckermodus eigene Zellen und bei
     -- studierten Tieren alle Fundorte (#170), im Komplettmodus alle Fundorte der Zone
     local n = ns.Discovering() and p.shown or p.points

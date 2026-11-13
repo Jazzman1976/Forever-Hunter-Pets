@@ -306,7 +306,9 @@ end
 -- Nur im Entdeckermodus und nur für die Zone, in der man zähmte. Vorher (bevor Zelle, Zone und Zähmung
 -- gespeichert sind) und nachher dieselbe Zählung wie im Reiter „Gebiet“ (ns.ZoneProgress), damit Chat und
 -- Reiter dieselben Zahlen zeigen. Neue Rang-Kacheln gehen vor; sonst zählt, ob das Tier „Tier studiert“
--- wurde. Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten.
+-- wurde; dann nennt sie die studierten Tiere der Zone, nicht den Zähler „Tiere“ des Reiters, der seit #176 schon
+-- ab „Tier gefunden“ zählt. Ein Fund meldet sich nicht. Der Zonenname steht vorne, weil deutsche Zonen sonst je
+-- einen eigenen Artikel bräuchten.
 local function discoverState(npc, map)
   if not (map and ns.Discovering()) then return nil end
   local found = {}
@@ -330,8 +332,9 @@ local function announceDiscovery(npc, map, before)
     ns.Print((L["Discovered: %s – %s: %d of %d ranks"]):format(table.concat(parts, ", "), ns.ZoneName(map),
       p.ranksFound, p.ranks))
   elseif before.status ~= "known" and ns.BeastStatus(npc, map) == "known" then
-    ns.Print((L["Discovered: %s studied – %s: %d of %d beasts"]):format(ns.BeastName(npc),
-      ns.ZoneName(map), p.beastsKnown, p.beasts))
+    -- die studierten Tiere (p.known), nicht X des Zählers „Tiere“: der zählt seit #176 ab „Tier gefunden“
+    ns.Print((L["Discovered: %s studied – %s: %d of %d beasts studied"]):format(ns.BeastName(npc),
+      ns.ZoneName(map), p.known, p.beasts))
   end
 end
 

@@ -461,10 +461,10 @@ end
 -- ---- Fortschritt einer Zone ----
 -- { beasts, beastsKnown, track, found, known, teachers, teachersKnown, ranks, ranksFound, cells, points }
 -- Y aus allem, was bekannt ist (Daten, Zellen, Zähmungen, Fährten). Ränge: nur die, die ein Lehrtier der Zone
--- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Tier studiert“
--- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
---   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown = studierte Lehrtiere,
---                   ranksFound = Ränge, die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169).
+-- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. beastsKnown ist X des Zählers „Tiere“, je Modus:
+--   Entdeckermodus: X aus eigenen Funden – beastsKnown = gefunden oder studiert (ab „Tier gefunden“, #176; bis dahin
+--                   nur „Tier studiert“, Nutzer, 17.10.2026), teachersKnown = studierte Lehrtiere, ranksFound = Ränge,
+--                   die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169). Die Fährte zählt nirgends.
 --   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
 --                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
 --                   Einstellungen ausblenden, zählt weder in X noch in Y.
@@ -529,7 +529,7 @@ function ns.ZoneProgress(map)
     local st = ns.BeastStatus(npc, map)
     if p[st] then p[st] = p[st] + 1 end
     if discover then
-      if st == "known" then p.beastsKnown = p.beastsKnown + 1 end
+      if st == "found" or st == "known" then p.beastsKnown = p.beastsKnown + 1 end
     elseif info[npc] then
       p.beastsKnown = p.beastsKnown + 1
     end
@@ -585,9 +585,10 @@ function ns.DiscoverStatus()
   local map = ns.CellHere and ns.CellHere()
   if not map then ns.Print("Keine Karte für den Standort."); return end
   local p = ns.ZoneProgress(map)
-  ns.Print(("%s (%s): Tiere %d von %d bekannt (%d Fährten, %d gefunden, %d bekannt) · Lehrtiere %d von %d · "
+  ns.Print(("%s (%s): Tiere %d von %d %s (%d Fährten, %d gefunden, %d studiert) · Lehrtiere %d von %d · "
     .. "Ränge %d von %d · %d eigene Zellen"):format(ns.ZoneName(map), ns.Discovering() and "Entdecker" or "Komplett",
-    p.beastsKnown, p.beasts, p.track, p.found, p.known, p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
+    p.beastsKnown, p.beasts, ns.Discovering() and "gefunden" or "bekannt", p.track, p.found, p.known,
+    p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
   local owner = ns.db and ns.db.discoverOwner
   ns.Print(("Funde: %s · dieser Charakter %s · bisherige Funde %s"):format(
     ns.Finds() == ns.db and "Konto" or "Charakter", ns.MyRep() or "?",
