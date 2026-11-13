@@ -42,11 +42,15 @@ end
 
 -- Tooltip einer Zeile: Name, dann je Fähigkeit Icon, Name und Rang – oder „Keine Daten bekannt“ bzw. „lehrt nichts“.
 -- Nicht Belegtes mit „?“ bzw. „!“ hinter dem Rang, wie im Tooltip des Tiers (#40).
-local function teachTooltip(owner, npc)
+-- Entdeckermodus, noch nicht studiert (#173): bei „Tier gefunden“ nur, ob es etwas lehrt (ns.TeachSummary), bei der
+-- Fährte nichts. st: Status in der Zone (nil bei den Kacheln, dort stehen nur studierte Tiere).
+local function teachTooltip(owner, npc, st)
   GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
   GameTooltip:SetText(ns.BeastName(npc))
   local info = ns.TeachInfo(npc, ns.Discovering())
-  if not info then
+  if ns.Discovering() and not ns.Studied(npc) then
+    if st == "found" then GameTooltip:AddLine((ns.TeachSummary(npc)), 0.8, 0.8, 0.8) end
+  elseif not info then
     GameTooltip:AddLine(ns.NoData(), 0.8, 0.8, 0.8)
   elseif #info == 0 then
     GameTooltip:AddLine(L["teaches nothing"] .. ns.ConfMark(info.conf), 0.8, 0.8, 0.8)
@@ -143,7 +147,7 @@ function ns.BuildArea(parent)
     b.sub:SetPoint("TOPLEFT", 68, -22)
     b.sub:SetPoint("TOPRIGHT", -4, -22)
     b:SetScript("OnEnter", function(self)
-      if self.npc then teachTooltip(self, self.npc) end
+      if self.npc then teachTooltip(self, self.npc, self.st) end
     end)
     b:SetScript("OnLeave", function() GameTooltip:Hide() end)
     b:SetScript("OnClick", function(self)
@@ -453,11 +457,12 @@ function ns.BuildArea(parent)
       r.box:SetShown(not discover or e.st == "known" or e.st == "found")
       r.box.check:SetShown(e.st == "known")
       if e.pick then
-        r.npc = e.npc
+        r.npc, r.st = e.npc, discover and e.st or nil
         r.icon:SetTexture((ns.FamilyIcon(fam)))
         r.name:SetText(e.name)
         if discover then table.insert(where, 1, ns.StatusWord(e.st)) end   -- Status-Tag nur im Entdeckermodus
-        where[#where + 1] = ns.TeachText(e.npc)
+        local teach = ns.TeachText(e.npc, r.st)   -- Entdeckermodus: bei der Fährte nichts (#173)
+        if teach then where[#where + 1] = teach end
         r.sub:SetText(table.concat(where, " · "))
         r:Enable()
       else

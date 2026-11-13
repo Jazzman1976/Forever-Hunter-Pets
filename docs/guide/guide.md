@@ -106,6 +106,8 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
   | **beast found** | you were close to it in this zone, so its spawn point is on your map | empty |
   | **beast studied** | found, and you have tamed it – you know what it teaches (also when it teaches nothing) | ticked |
 
+  What it teaches shows step by step: nothing while you only tracked it; once you found it, whether it teaches anything – *teaches something*, *teaches nothing*, or a red ✖ with *No data known* when nobody knows yet (attack speed counts as something); once you studied it, *teaches* with the ability icons. A beast you have studied in another zone shows its icons as soon as you track it, because what a beast teaches is the same everywhere.
+
   Sorted by status: studied first, never seen last. Hidden beasts can't be selected.
 
   When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
@@ -139,11 +141,11 @@ When you hover over a beast, the addon adds its lines below **Forever Hunter Pet
 1. **Status** (explorer mode only): *tracked*, *beast found* or *beast studied*; none while you have never seen it.
 2. **Attack speed** if it differs from normal (for example *Faster Attack III (1.5 s)*) – your pet takes it over.
 3. **Every rank it teaches**, with the ability icon: *– you have it* (grey) if you have the rank, *– you lack it* (green) if not.
-4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
+4. *teaches nothing* (grey) when it is known that the beast teaches nothing. In explorer mode, for a beast you have found but not studied yet: *teaches something*, *teaches nothing* or a red ✖ with *No data known* (grey) – *what* it teaches you find out by taming it.
 5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
 6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 characters and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
-In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
+In explorer mode the ranks are listed once you have studied (tamed) the beast, then from all data, as in complete mode. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
 
 ## How the addon learns
 

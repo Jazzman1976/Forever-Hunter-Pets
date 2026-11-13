@@ -254,12 +254,38 @@ function ns.NoData(text)
   return ("|T%s:14:14|t "):format(NO_DATA_ICON) .. (text or ns.L["No data known"])
 end
 
+-- Entdeckermodus, „Tier gefunden“ und noch nicht studiert (#173): nur *ob* das Tier etwas lehrt, *was*, bleibt dem
+-- Zähmen. Grundlage sind die kompletten Daten mit denselben Einstellungen zur Belegung (ns.TeachInfo(npc, false)).
+-- „lehrt etwas“ (auch ein Tier nur mit Angriffstempo, passend zum Zähler und zu dem, was nach dem Studieren dasteht;
+-- Maintainer, 13.11.2026), „lehrt nichts“ oder „Keine Daten bekannt“. Sind alle Angaben unsicher, trägt „lehrt
+-- etwas“ das „?“ bzw. „!“ der sichersten, wie „lehrt nichts?“ (#136).
+-- Zweiter Wert: "something", "nothing" oder "none" (der Tier-Tooltip blendet „lehrt nichts“ nach der Einstellung aus).
+function ns.TeachSummary(npc)
+  local L = ns.L
+  local info = ns.TeachInfo(npc, false)
+  if not info then return ns.NoData(), "none" end
+  if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf), "nothing" end
+  local best = ns.CONF_REFUTED
+  for _, e in ipairs(info) do
+    if e.conf < best then best = e.conf end
+  end
+  return L["teaches something"] .. ns.ConfMark(best), "something"
+end
+
 -- „Keine Daten bekannt“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
 -- passt die Zeile auch bei mehreren Fähigkeiten; Namen und Ränge stehen im Tooltip der Zeile im Reiter).
 -- Nicht Belegtes trägt hinter dem Icon dasselbe „?“ bzw. „!“ wie im Tooltip (#40).
-function ns.TeachText(npc)
+-- st: Status des Tiers in der Zone (ns.BeastStatus). Entdeckermodus (#173): ein studiertes Tier zeigt seine Lehre in
+-- jedem Status (sie hängt an der NPC-ID), sonst „Tier gefunden“ nur ob es etwas lehrt (ns.TeachSummary) und
+-- Fährte und „Noch nie gesehen“ nichts (nil; bis #173 „? unklar“).
+function ns.TeachText(npc, st)
   local L = ns.L
-  local info = ns.TeachInfo(npc, ns.Discovering())
+  local discover = ns.Discovering()
+  if discover and not ns.Studied(npc) then
+    if st == "found" then return (ns.TeachSummary(npc)) end
+    return nil
+  end
+  local info = ns.TeachInfo(npc, discover)
   if not info then return ns.NoData() end
   if #info == 0 then return L["teaches nothing"] .. ns.ConfMark(info.conf) end
   local parts = {}

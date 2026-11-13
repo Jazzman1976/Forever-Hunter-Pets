@@ -62,7 +62,8 @@ local function statusLine(id, guid)
   if not quiet() and ns.UnitClose("mouseover") then
     ns.AddCells(id, map, cell)
   end
-  return ns.StatusText(id, map)   -- nil bei „Noch nie gesehen“: keine Zeile
+  -- nil bei „Noch nie gesehen“: keine Zeile; dazu der Status selbst (#173)
+  return ns.StatusText(id, map), ns.Discovering() and ns.BeastStatus(id, map) or nil
 end
 
 local function addLines(tooltip, guid)
@@ -70,7 +71,8 @@ local function addLines(tooltip, guid)
   if not ns.ModeChosen() then return end   -- vor der Wahl des Modus nichts verraten
   local id = npcIdFromGuid(guid)
   if id and excluded(id, guid) then return end
-  local status = id and statusLine(id, guid)
+  local status, st
+  if id then status, st = statusLine(id, guid) end
   local list
   if ns.Discovering() then
     -- Entdeckermodus: erst, wenn das Tier studiert ist, dann aus den kompletten Daten wie im Komplettmodus (#169)
@@ -101,13 +103,23 @@ local function addLines(tooltip, guid)
   -- Die Aussage stimmt auch bei ausgeblendeten Angaben, und ohne sie bliebe ein Tier mit nur unsicheren Lehren
   -- stumm. Nach einer eigenen Zähmung ist alles belegt, die Zeile fällt von selbst weg.
   local proof = unsure and not missing and wildBeastUnderMouse(guid)
-  if #list == 0 and not status and not nothing and not missing and not proof then return end
+  -- Entdeckermodus, „Tier gefunden“ und noch nicht studiert (#173): ob es etwas lehrt, grau wie „lehrt nichts“.
+  -- „lehrt nichts“ folgt wie oben der Einstellung „Auch Ränge zeigen, die du hast“, „lehrt etwas“ und „Keine Daten
+  -- bekannt“ stehen immer.
+  local summary
+  if st == "found" and not ns.Studied(id) then
+    local kind
+    summary, kind = ns.TeachSummary(id)
+    if kind == "nothing" and ns.db.ui.tooltipShowKnown == false then summary = nil end
+  end
+  if #list == 0 and not status and not nothing and not missing and not proof and not summary then return end
 
   -- Leerzeilen davor und danach trennen die Zeilen von denen anderer Addons (Einstellungen)
   if ns.db.ui.tooltipGapBefore then tooltip:AddLine(" ") end
   tooltip:AddLine("Forever Hunter Pets", 0.62, 0.83, 0.37)
   -- alle Zeilen bündig mit der Kopfzeile (Wunsch des Nutzers)
   if status then tooltip:AddLine(status, 1, 0.82, 0) end
+  if summary then tooltip:AddLine(summary, 0.6, 0.6, 0.6) end
   if nothing then tooltip:AddLine(L["teaches nothing"] .. ns.ConfMark(info.conf), 0.6, 0.6, 0.6) end   -- grau wie „gelernt“; „?“ unsicher (#136)
   if missing then   -- gold wie der Status
     tooltip:AddLine(L["No hunter knows yet what this beast teaches. Tame it and help!"], 1, 0.82, 0, true)

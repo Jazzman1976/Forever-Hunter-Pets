@@ -236,6 +236,7 @@ ns.Locales.deDE = {
   ["Spawn points: %s"] = "Fundorte: %s",
   -- Entdecken: Tierliste im Reiter „Gebiet“ (E5)
   ["teaches nothing"] = "lehrt nichts",
+  ["teaches something"] = "lehrt etwas",   -- Entdeckermodus, „Tier gefunden“ (#173)
   ["teaches %s"] = "lehrt %s",
   ["tracked"] = "Fährte aufgenommen",
   ["beast found"] = "Tier gefunden",
