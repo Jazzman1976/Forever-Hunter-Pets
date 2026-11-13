@@ -98,7 +98,8 @@ local function buildEntries(abilities, fam, zone)
               end
               teachers = own
             end
-            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0) then
+            -- verborgene Lehrtiere (Entdeckermodus) zählen mit: Der Rang ist in der Zone zu finden (#193)
+            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0 and (teachers.undiscovered or 0) == 0) then
               entries[#entries + 1] = { a = a, r = r, name = x.name, teachers = teachers }
             end
           end
@@ -107,6 +108,12 @@ local function buildEntries(abilities, fam, zone)
     end
   end
   return entries
+end
+
+-- Die Zeilen für Familie und Zone (beide optional), wie die Liste sie vor den Status-Filtern hat; für die
+-- Prüfung ohne Spiel (#193)
+function ns.AbilityEntries(fam, zone)
+  return buildEntries(orderedAbilities(), fam, zone)
 end
 
 local function familyOptions()
