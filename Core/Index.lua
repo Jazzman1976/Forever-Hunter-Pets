@@ -70,6 +70,21 @@ function ns.Description(r)
   return "…"
 end
 
+-- Tempo eines Tempo-Zaubers in Sekunden aus seiner Beschreibung (#189), nie aus einem gemessenen Tempo: „Erhöht das
+-- Angriffstempo um 25%.“ → 2,0 s ÷ 1,25 = 1,6 s (passt zu allen bekannten: +15 % 1,7 s, +33 % 1,5 s, +50 % 1,3 s).
+-- faster: ob der Zauber schneller macht (die Richtung steht nur in Worten da, sie kommt aus den Zähmungen);
+-- langsamer angenommen als 2,0 s ÷ (1 − p). nil, wenn die Beschreibung fehlt oder keine Prozentzahl nennt.
+local NORMAL_SPEED = 2.0
+function ns.TraitSpeed(id, faster)
+  if not (C_Spell and C_Spell.GetSpellDescription) then return nil end
+  local ok, text = pcall(C_Spell.GetSpellDescription, id)
+  text = ok and ns.clean(text)
+  local p = type(text) == "string" and tonumber(text:match("(%d+)[%s\194\160]*%%"))   -- auch „25 %“ mit Leerzeichen
+  if not (p and p > 0 and p < 100) then return nil end
+  local speed = faster and NORMAL_SPEED / (1 + p / 100) or NORMAL_SPEED / (1 - p / 100)
+  return math.floor(speed * 10 + 0.5) / 10
+end
+
 -- Angriffstempo ist keine erlernbare Fähigkeit, sondern eine Eigenschaft des gezähmten Tiers
 function ns.Learnable(a) return a.kind ~= "trait" end
 function ns.AppliesToAll(a) return a.kind ~= "family" end
@@ -637,15 +652,16 @@ function ns.MergeSurveyAbilities()
   -- Angriffstempo, das die Daten noch nicht kennen (#189): nur aus dem Zauberbuch einer eigenen Zähmung, nie aus
   -- einem gemessenen Tempo (Buffs des Jägers verfälschen es). Ein passiver Zauber ohne Rang (der Client hat seine
   -- Daten, es gibt also keinen), den die Wildtierausbildung nicht kennt, wird eine Tempo-Fähigkeit, wie im Generator.
-  -- Das Tempo in Sekunden steht nur zur Anzeige da: der häufigste gemessene Wert der eigenen Zähmungen mit dem
-  -- Zauber; weicht er nicht von 2,0 s ab, ist es kein Tempo-Zauber. Fremde Zähmungen kommen nur über die Stammdaten.
+  -- Das Tempo in Sekunden kommt aus der Beschreibung des Zaubers (ns.TraitSpeed); die gemessenen Werte der eigenen
+  -- Zähmungen sagen nur, ob schneller oder langsamer als normal, und keiner davon: kein Tempo-Zauber. Fremde
+  -- Zähmungen kommen nur über die Stammdaten.
   local candidates
   for id, e in pairs(s.spells or {}) do
     if type(e) == "table" and e.passive and not e.rank and not knownId[id] and not (s.ranks and s.ranks[id])
       and type(e.name) == "string" and e.name ~= "" and ns.SpellDataCached then
       if ns.SpellDataCached(id) then
         candidates = candidates or {}
-        candidates[id] = {}   -- Tempo × 10 → Anzahl eigener Zähmungen
+        candidates[id] = { fast = 0, slow = 0 }   -- eigene Zähmungen mit dem Zauber, schneller bzw. langsamer
       elseif ns.RequestSpellData then
         ns.RequestSpellData(id)   -- nach dem Laden liest Core/Survey.lua das Zauberbuch neu und ruft dies hier wieder
       end
@@ -655,21 +671,18 @@ function ns.MergeSurveyAbilities()
     for _, line in ipairs((ns.db and ns.db.obs) or {}) do
       local o = ns.ParseObservation and ns.ParseObservation(line)
       if o and o.own and o.speed then
-        for id, counts in pairs(candidates) do
+        for id, c in pairs(candidates) do
           if o.spells[id] then
-            local k = math.floor(o.speed * 10 + 0.5)
-            counts[k] = (counts[k] or 0) + 1
+            if o.speed < NORMAL_SPEED - 0.05 then c.fast = c.fast + 1
+            elseif o.speed > NORMAL_SPEED + 0.05 then c.slow = c.slow + 1 end
           end
         end
       end
     end
-    for id, counts in pairs(candidates) do
-      local best, most = nil, 0
-      for k, n in pairs(counts) do
-        if n > most or n == most and k < best then best, most = k, n end
-      end
-      if best and best ~= 20 and byName[s.spells[id].name] == nil then
-        local a = { kind = "trait", source = "tame", speed = best / 10, families = {}, teach = {},
+    for id, c in pairs(candidates) do
+      local speed = c.fast ~= c.slow and ns.TraitSpeed(id, c.fast > c.slow)
+      if speed and byName[s.spells[id].name] == nil then
+        local a = { kind = "trait", source = "tame", speed = speed, families = {}, teach = {},
           ranks = { { id = id, rank = 1 } } }
         a[LANG] = s.spells[id].name
         D.abilities[#D.abilities + 1] = a
