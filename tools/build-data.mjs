@@ -244,6 +244,7 @@ function traitsFromObservations() {
   const out = [];
   const bySpeed = new Map();
   for (const [id, ks] of speedsOf) {
+    if (manualIds.has(Number(id))) continue;   // von Hand gepflegt (Tempo aus der Zauberbeschreibung) geht vor
     const sorted = [...ks].sort((x, y) => y[1] - x[1] || x[0] - y[0]);
     const k = sorted[0][0];
     if (sorted.length > 1) {
