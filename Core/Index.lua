@@ -685,7 +685,12 @@ function ns.MergeSurveyAbilities()
         local a = { kind = "trait", source = "tame", speed = speed, families = {}, teach = {},
           ranks = { { id = id, rank = 1 } } }
         a[LANG] = s.spells[id].name
-        D.abilities[#D.abilities + 1] = a
+        -- nach dem Tempo zwischen die anderen Tempo-Fähigkeiten, wie in den Daten (die Liste übernimmt die Reihenfolge)
+        local at = #D.abilities + 1
+        for i, x in ipairs(D.abilities) do
+          if x.kind == "trait" and x.speed and x.speed > speed then at = i; break end
+        end
+        table.insert(D.abilities, at, a)
         byName[a[LANG]] = a
         knownId[id] = true
         added = true

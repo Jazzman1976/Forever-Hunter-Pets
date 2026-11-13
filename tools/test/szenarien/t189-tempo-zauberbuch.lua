@@ -105,3 +105,16 @@ LOADED[7800004] = true
 NS.MergeSurveyAbilities()
 local late = traitOf(7800004)
 ok(late and math.abs(late.speed - 1.6) < 0.05, "nach dem Laden: neue Tempo-Fähigkeit mit 1,6 s")
+
+-- Reihenfolge: Tempo-Fähigkeiten stehen am Ende nach dem Tempo, auch die zur Laufzeit angelegten
+local last, sorted, seenTrait, mixed = 0, true, false, false
+for _, a in ipairs(NS.Data.abilities) do
+  if a.kind == "trait" then
+    seenTrait = true
+    if a.speed < last then sorted = false end
+    last = a.speed
+  elseif seenTrait then
+    mixed = true
+  end
+end
+ok(sorted and not mixed, "Tempo-Fähigkeiten am Ende, nach dem Tempo sortiert")
