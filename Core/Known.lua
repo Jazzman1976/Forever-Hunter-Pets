@@ -355,7 +355,8 @@ end)
 
 -- ---- Quelle 2: die Systemnachricht „Ihr habt einen neuen Zauber erlernt: [Große Ausdauer].“ ----
 -- Sie kommt beim Lernen selbst und trägt den Zauber als Link. Passt dessen ID zu einem Rang der
--- Daten, ist er eindeutig; sonst entscheidet der Name im Link (siehe ranksFromPet).
+-- Daten, ist er eindeutig; sonst entscheidet der Rang im Namen des Links, wenn er einen trägt, und
+-- zuletzt der Name allein (siehe ranksFromPet).
 -- Passt die Nachricht auf einen der „erlernt“-Texte des Clients? Verglichen wird, was im Text
 -- vor und nach dem Platzhalter %s steht. Kennt der Client die Texte nicht, zählt jede Nachricht.
 local LEARN_TEXTS = { "ERR_LEARN_SPELL_S", "ERR_LEARN_ABILITY_S", "ERR_LEARN_PASSIVE_S" }
@@ -390,12 +391,21 @@ end
 -- kann und der Jäger noch nicht – genau der Fall, in dem man einem gezähmten Tier etwas abschaut.
 -- Kann das Pet keinen offenen Rang (etwa beim Tierausbilder in der Stadt), bleibt die Meldung ohne
 -- Folge; den Rang bringt dann das nächste Öffnen der Wildtierausbildung.
+-- Bei manchen Fähigkeiten trägt der Name im Link den Rang (im Spiel gesehen am 10.11.2026: „[Zwicken (Rang 1)]“,
+-- Link 1264745, Zwicken Rang 1 des Pets ist 1264735); dann entscheidet die Zahl, siehe splitRank (#152).
 local function ranksFromPet(a)
   local found = {}
   for _, r in ipairs(a.ranks) do
     if not ns.IsKnown(r) and ns.PetKnows(r) then found[#found + 1] = { a = a, r = r } end
   end
   return found
+end
+
+-- „Zwicken (Rang 1)“ → „Zwicken“, 1. Das Wort vor der Zahl wird nicht geprüft, so geht es in jeder Sprache
+-- („Rank 1“). Ohne Klammer mit Zahl am Ende: nil.
+local function splitRank(name)
+  local base, num = name:match("^(.-) %(%D*(%d+)%)$")
+  return base, tonumber(num)
 end
 
 ns.On("CHAT_MSG_SYSTEM", function(raw)
@@ -409,12 +419,25 @@ ns.On("CHAT_MSG_SYSTEM", function(raw)
   if not msg:find("|Hspell:", 1, true) or not isLearnMessage(msg) then return end
   local found, how = {}, "Name"
   for id, name in msg:gmatch("|Hspell:(%d+)[^|]*|h%[(.-)%]|h") do
-    local a = abilityByName(name)
+    local a, num = abilityByName(name), nil
+    if not a then
+      local base
+      base, num = splitRank(name)
+      a = base and abilityByName(base)
+    end
     local hit = rankById(tonumber(id))
+    local named
+    if a and num then
+      for _, r in ipairs(a.ranks) do
+        if r.rank == num then named = { a = a, r = r } end
+      end
+    end
     -- die ID zählt nur, wenn sie zur genannten Fähigkeit gehört: die Zauber des Jägers haben eigene
     -- IDs, und eine davon könnte zufällig die eines anderen Rangs in den Daten sein
     if hit and hit.a == a then
       found[#found + 1], how = hit, "ID"
+    elseif named then
+      found[#found + 1], how = named, "Rang"
     elseif a then
       for _, f in ipairs(ranksFromPet(a)) do found[#found + 1] = f end
     end
