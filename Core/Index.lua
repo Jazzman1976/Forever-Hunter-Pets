@@ -552,7 +552,8 @@ end
 -- Wildtierausbildung, vom Tierausbilder oder aus dem Zauberbuch eines Pets kennt, gelten gleich – nicht erst,
 -- wenn sie über den Import in den Daten stehen. Wie tools/build-data.mjs: Ränge gleichen Namens bilden eine
 -- Fähigkeit; was der Tierausbilder in der Stadt anbietet, gilt für alle Familien, sonst für die Familien der
--- Pets, die den Rang hatten. Ohne Rangnummer (Angriffstempo) bleibt ein Zauber draußen; Tempo kennt die Daten.
+-- Pets, die den Rang hatten. Ohne Rangnummer bleibt ein Zauber draußen; ein Tempo-Zauber aus dem Zauberbuch einer
+-- eigenen Zähmung wird eine Tempo-Fähigkeit (unten, #189).
 -- Wer etwas über die Fähigkeiten zwischenspeichert, hängt sich an ns.OnAbilitiesChanged (oben).
 
 -- Ränge vom Tierausbilder, wie sie die mitgelieferten Daten kennen – festgehalten beim Laden, bevor die
@@ -633,21 +634,49 @@ function ns.MergeSurveyAbilities()
       if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false, c.conf) end
     end
   end
-  -- Angriffstempo, das noch keine Tempo-Fähigkeit trägt (#136): eigenes sofort, fremdes ab 2 unsicher, ab 3 belegt
-  for _, c in ipairs(ns.ObservedSpeedCandidates and ns.ObservedSpeedCandidates() or {}) do
-    local conf = c.conf ~= ns.CONF_SURE and c.conf or nil
-    local have
-    for _, a in ipairs(D.abilities) do
-      if a.kind == "trait" and a.speed and math.abs(a.speed - c.speed) < 0.05 then have = a end
+  -- Angriffstempo, das die Daten noch nicht kennen (#189): nur aus dem Zauberbuch einer eigenen Zähmung, nie aus
+  -- einem gemessenen Tempo (Buffs des Jägers verfälschen es). Ein passiver Zauber ohne Rang (der Client hat seine
+  -- Daten, es gibt also keinen), den die Wildtierausbildung nicht kennt, wird eine Tempo-Fähigkeit, wie im Generator.
+  -- Das Tempo in Sekunden steht nur zur Anzeige da: der häufigste gemessene Wert der eigenen Zähmungen mit dem
+  -- Zauber; weicht er nicht von 2,0 s ab, ist es kein Tempo-Zauber. Fremde Zähmungen kommen nur über die Stammdaten.
+  local candidates
+  for id, e in pairs(s.spells or {}) do
+    if type(e) == "table" and e.passive and not e.rank and not knownId[id] and not (s.ranks and s.ranks[id])
+      and type(e.name) == "string" and e.name ~= "" and ns.SpellDataCached then
+      if ns.SpellDataCached(id) then
+        candidates = candidates or {}
+        candidates[id] = {}   -- Tempo × 10 → Anzahl eigener Zähmungen
+      elseif ns.RequestSpellData then
+        ns.RequestSpellData(id)   -- nach dem Laden liest Core/Survey.lua das Zauberbuch neu und ruft dies hier wieder
+      end
     end
-    if not have then
-      D.abilities[#D.abilities + 1] = { de = "Angriffstempo", en = "Attack speed", icon = "INV_Misc_PocketWatch_01",
-        kind = "trait", source = "tame", speed = c.speed, families = {}, teach = {},
-        ranks = { { id = -math.floor(c.speed * 100 + 0.5), rank = 1, conf = conf } }, observed = true }
-      added = true
-    elseif have.observed and have.ranks[1].conf ~= conf then
-      have.ranks[1].conf = conf   -- die Belegung steigt mit neuen Meldern
-      added = true
+  end
+  if candidates then
+    for _, line in ipairs((ns.db and ns.db.obs) or {}) do
+      local o = ns.ParseObservation and ns.ParseObservation(line)
+      if o and o.own and o.speed then
+        for id, counts in pairs(candidates) do
+          if o.spells[id] then
+            local k = math.floor(o.speed * 10 + 0.5)
+            counts[k] = (counts[k] or 0) + 1
+          end
+        end
+      end
+    end
+    for id, counts in pairs(candidates) do
+      local best, most = nil, 0
+      for k, n in pairs(counts) do
+        if n > most or n == most and k < best then best, most = k, n end
+      end
+      if best and best ~= 20 and byName[s.spells[id].name] == nil then
+        local a = { kind = "trait", source = "tame", speed = best / 10, families = {}, teach = {},
+          ranks = { { id = id, rank = 1 } } }
+        a[LANG] = s.spells[id].name
+        D.abilities[#D.abilities + 1] = a
+        byName[a[LANG]] = a
+        knownId[id] = true
+        added = true
+      end
     end
   end
   if added then
