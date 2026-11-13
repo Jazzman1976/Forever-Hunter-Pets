@@ -193,25 +193,13 @@ function ns.SeenName(npc)
   return best, false, bestConf
 end
 
--- Hat die gespeicherte Sichtung an Stelle i schon ein Tempo? (neun Felder statt acht)
-local function hasSpeed(i)
-  local s = ns.db and ns.db.sights and ns.db.sights[i]
-  return type(s) == "string" and select(2, s:gsub(";", ";")) >= 8
-end
-
--- Nimmt eine Sichtung auf, eigene wie fremde. Liefert true, wenn sie neu war oder eine ältere ohne Tempo
--- ergänzt hat (die wird ersetzt, nicht doppelt gespeichert).
+-- Nimmt eine Sichtung auf, eigene wie fremde. Liefert true, wenn sie neu war. Eine ältere ohne Tempo wird nicht
+-- mehr um das Tempo ergänzt: Das Tempo einer Sichtung wird nicht ausgewertet (#189) und soll keinen Verkehr machen.
 function ns.AddSighting(s)
   local o = ns.ParseSighting(s)
   if not o then return false end
   index()
-  local at = keys[key(o)]
-  if at then
-    if not (o.speed and not hasSpeed(at)) then return false end
-    ns.db.sights[at] = s
-    add(o, at)
-    return true
-  end
+  if keys[key(o)] then return false end
   -- voll: die ältesten fremden verdrängen, ein Zwanzigstel auf einmal (#61); die Indizes hängen an der Stelle
   if not o.own and ns.SightingCount() >= MAX_STORED then
     if ns.DropOldestForeign(ns.db.sights, ns.ParseSighting, MAX_STORED / 20) == 0 then return false end
@@ -225,28 +213,14 @@ function ns.AddSighting(s)
 end
 
 -- Kennen die mitgelieferten Daten das schon (Name in dieser Sprache, Stufe im Bereich)? Dann nicht teilen.
--- Ein abweichendes Tempo zählt nur als bekannt, wenn die Daten das Tier als Lehrtier eines Tempos führen.
+-- Das Tempo zählt dabei nicht: Es kommt nur aus dem Zauberbuch einer Zähmung (#189).
 local LANG_FIELD = { deDE = "de", enUS = "en", enGB = "en" }
-local NORMAL_SPEED = 2.0
-local traitBeasts
-local function speedKnown(o)
-  if not o.speed or math.abs(o.speed - NORMAL_SPEED) < 0.05 then return true end
-  if not traitBeasts then
-    traitBeasts = {}
-    for _, a in ipairs(D.abilities) do
-      if a.kind == "trait" then
-        for _, t in ipairs(a.teach) do traitBeasts[t[1]] = true end
-      end
-    end
-  end
-  return traitBeasts[o.npc] or false
-end
 local function known(o)
   local b = D.beasts[o.npc]
   if not b then return false end
   local field = LANG_FIELD[o.lang]
   if not (field and b[field]) then return false end
-  return b.min ~= nil and o.level >= b.min and o.level <= (b.max or b.min) and speedKnown(o)
+  return b.min ~= nil and o.level >= b.min and o.level <= (b.max or b.min)
 end
 
 -- Bis zu n eigene Sichtungen (aller eigenen Charaktere) für die Antwort auf einen Gruß (#157), die neuesten zuerst,
@@ -345,13 +319,12 @@ local function record(unit, npc, fam)
   if not rep then return end
   local lang = GetLocale and GetLocale() or "enUS"
   index()
-  local at = keys[npc .. ":" .. level .. ":" .. lang .. ":" .. rep]
-  if at and hasSpeed(at) then return end
-  -- Angriffstempo des wilden Tiers; beim ersten Lesen kann es wie beim Pet geheim sein, dann ohne
+  if keys[npc .. ":" .. level .. ":" .. lang .. ":" .. rep] then return end
+  -- Angriffstempo des wilden Tiers; beim ersten Lesen kann es wie beim Pet geheim sein, dann ohne. Es wird nur
+  -- gespeichert und geteilt (Protokoll), aber nicht ausgewertet: Das Tempo kommt aus dem Zauberbuch (#189).
   local okS, speed = pcall(UnitAttackSpeed, unit)
   speed = okS and tonumber(ns.clean(speed))
   if not (speed and speed >= 0.5 and speed <= 5) then speed = nil end
-  if at and not speed then return end
   local okN, name = pcall(UnitName, unit)
   name = okN and ns.clean(name)
   if type(name) ~= "string" or name == "" or name:find("[;|]") or #name > 60 then return end

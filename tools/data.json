@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-11T00:50:59.624Z",
+ "generatedAt": "2026-11-13T15:12:14.184Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -1387,14 +1387,6 @@
    "max": 18,
    "cls": 0
   },
-  "4067": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": null,
-   "max": null,
-   "cls": 0
-  },
   "4124": {
    "de": null,
    "en": null,
@@ -1586,14 +1578,6 @@
    "min": 10,
    "max": 10,
    "cls": 4
-  },
-  "276189": {
-   "de": null,
-   "en": null,
-   "fam": null,
-   "min": null,
-   "max": null,
-   "cls": 0
   },
   "277645": {
    "de": "Grauer Fuchs",
@@ -6101,16 +6085,6 @@
      "id": 3245,
      "rank": 1,
      "conf": 1
-    },
-    {
-     "id": 3825,
-     "rank": 1,
-     "conf": 1
-    },
-    {
-     "id": 4067,
-     "rank": 1,
-     "conf": 2
     }
    ]
   },
@@ -6181,11 +6155,6 @@
    ],
    "teach": [
     {
-     "id": 118,
-     "rank": 1,
-     "conf": 1
-    },
-    {
      "id": 1199,
      "rank": 1,
      "conf": 1
@@ -6218,28 +6187,22 @@
    ]
   },
   {
-   "en": "Attack speed",
-   "de": "Angriffstempo",
-   "icon": "INV_Misc_PocketWatch_01",
+   "en": null,
+   "de": "Schnellerer Angriff II",
+   "icon": null,
    "kind": "trait",
    "source": "tame",
    "speed": 1.6,
    "families": [],
    "ranks": [
     {
-     "id": -160,
+     "id": 1263100,
      "rank": 1,
      "level": null,
      "tp": null
     }
    ],
-   "teach": [
-    {
-     "id": 5823,
-     "rank": 1,
-     "conf": 1
-    }
-   ]
+   "teach": []
   },
   {
    "en": null,
@@ -6260,11 +6223,6 @@
    "teach": [
     {
      "id": 525,
-     "rank": 1,
-     "conf": 1
-    },
-    {
-     "id": 1922,
      "rank": 1,
      "conf": 1
     }
@@ -6291,11 +6249,6 @@
      "id": 822,
      "rank": 1,
      "conf": 1
-    },
-    {
-     "id": 276189,
-     "rank": 1,
-     "conf": 2
     }
    ]
   }

@@ -121,41 +121,6 @@ function ns.ForeignRankStatus()
   return total, resolved, below
 end
 
--- ---- Angriffstempo als Fähigkeit (#136) ----
--- Ein abweichendes Tempo (nicht 2,0 s) aus Zähmungen und Sichtungen, für das es noch keine Tempo-Fähigkeit gibt, wird
--- zur Laufzeit eine – wie im Generator (traitsFromObservations) mit Ersatz-ID −Tempo × 100. Eigenes gilt sofort,
--- Fremdes nach ns.ForeignConf. Liefert { { speed, conf }, … }; gezählt wird nur neu, wenn sich der Bestand ändert.
-local NORMAL_SPEED = 2.0
-local speedCache, speedKey
-function ns.ObservedSpeedCandidates()
-  local obs, sights = (ns.db and ns.db.obs) or {}, (ns.db and ns.db.sights) or {}
-  local key = #obs .. ":" .. #sights
-  if speedCache and speedKey == key then return speedCache end
-  local bySpeed = {}   -- Tempo × 10 → { own, reps, n }
-  local function see(speed, own, rep)
-    if not speed or math.abs(speed - NORMAL_SPEED) < 0.05 then return end
-    local k = math.floor(speed * 10 + 0.5)
-    local e = bySpeed[k]
-    if not e then e = { own = false, reps = {}, n = 0 }; bySpeed[k] = e end
-    if own then e.own = true elseif not e.reps[rep] then e.reps[rep] = true; e.n = e.n + 1 end
-  end
-  for _, s in ipairs(obs) do
-    local o = ns.ParseObservation(s)
-    if o then see(o.speed, o.own, o.rep) end
-  end
-  for _, s in ipairs(sights) do
-    local o = ns.ParseSighting and ns.ParseSighting(s)
-    if o then see(o.speed, o.own, o.rep) end
-  end
-  local out = {}
-  for k, e in pairs(bySpeed) do
-    local conf = e.own and ns.CONF_SURE or ns.ForeignConf(e.reps, e.n)
-    if conf then out[#out + 1] = { speed = k / 10, conf = conf } end
-  end
-  speedCache, speedKey = out, key
-  return out
-end
-
 -- Beim Einloggen (wenn das Zauberbuch und die Daten stehen) und sobald der Client nachgeladene Daten meldet
 local soon = false
 local function resolveSoon(delay)

@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-11-11T00:50:59.624Z",
+  generatedAt = "2026-11-13T15:12:14.184Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -208,7 +208,6 @@ ns.Data = {
     [3825] = { de = "Geisterpfotenalpha", fam = 1, min = 27, max = 27, cls = 0, zones = { 1440 } },
     [4006] = { fam = 3, min = 19, max = 20, cls = 0, zones = {  } },
     [4007] = { fam = 3, min = 17, max = 18, cls = 0, zones = {  } },
-    [4067] = { cls = 0, zones = {  } },
     [4124] = { cls = 0, zones = { 1441 } },
     [4126] = { cls = 0, zones = { 1441 } },
     [4127] = { de = "Fleischreißerhyäne", fam = 25, min = 15, max = 16, cls = 0, zones = { 1413 } },
@@ -233,7 +232,6 @@ ns.Data = {
     [272096] = { de = "Besudelter Waldweber", fam = 3, min = 11, max = 11, cls = 0, zones = { 1438 } },
     [276101] = { cls = 0, zones = { 1438 } },
     [276111] = { de = "Geistfang", fam = 2, min = 10, max = 10, cls = 4, zones = { 1426 } },
-    [276189] = { cls = 0, zones = {  } },
     [277645] = { de = "Grauer Fuchs", fam = 319, min = 22, max = 23, cls = 0, zones = { 1431 } },
   },
   coords = {
@@ -666,7 +664,7 @@ ns.Data = {
       ranks = {
         { id = 1263107, rank = 1 },
       },
-      teach = { { 2069, 1 }, { 2070, 1 }, { 2071, 1 }, { 2237, 1 }, { 3121, 1 }, { 3241, 1 }, { 3245, 1 }, { 3825, 1 }, { 4067, 1, 2 } },
+      teach = { { 2069, 1 }, { 2070, 1 }, { 2071, 1 }, { 2237, 1 }, { 3121, 1 }, { 3241, 1 }, { 3245, 1 } },
     },
     {
       de = "Schnellerer Angriff IV", kind = "trait", source = "tame", speed = 1.4,
@@ -682,15 +680,15 @@ ns.Data = {
       ranks = {
         { id = 1263102, rank = 1 },
       },
-      teach = { { 118, 1 }, { 1199, 1 }, { 2034, 1 }, { 2958, 1 }, { 2959, 1 }, { 3243, 1 }, { 3415, 1 } },
+      teach = { { 1199, 1 }, { 2034, 1 }, { 2958, 1 }, { 2959, 1 }, { 3243, 1 }, { 3415, 1 } },
     },
     {
-      de = "Angriffstempo", en = "Attack speed", icon = "INV_Misc_PocketWatch_01", kind = "trait", source = "tame", speed = 1.6,
+      de = "Schnellerer Angriff II", kind = "trait", source = "tame", speed = 1.6,
       families = {  },
       ranks = {
-        { id = -160, rank = 1 },
+        { id = 1263100, rank = 1 },
       },
-      teach = { { 5823, 1 } },
+      teach = {  },
     },
     {
       de = "Schnellerer Angriff I", kind = "trait", source = "tame", speed = 1.7,
@@ -698,7 +696,7 @@ ns.Data = {
       ranks = {
         { id = 1263099, rank = 1 },
       },
-      teach = { { 525, 1 }, { 1922, 1 } },
+      teach = { { 525, 1 } },
     },
     {
       de = "Langsamerer Angriff II", kind = "trait", source = "tame", speed = 2.5,
@@ -706,7 +704,7 @@ ns.Data = {
       ranks = {
         { id = 1263113, rank = 1 },
       },
-      teach = { { 822, 1 }, { 276189, 1, 2 } },
+      teach = { { 822, 1 } },
     },
   },
   notTameable = {

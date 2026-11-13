@@ -284,19 +284,12 @@ local function addSeen(out, have, a, r)
   end
 end
 
--- Was eine Zähmung zeigte: Ränge aus dem Zauberbuch, dazu ein Tempo ohne bekannten Zauber
+-- Was eine Zähmung zeigte: Ränge und Angriffstempo aus dem Zauberbuch (das gemessene Tempo zählt nicht, #189)
 local function fromObservation(o, out, have)
   local idx = spellIndex()
   for id in pairs(o.spells) do
     local x = idx[id]
     if x then addSeen(out, have, x.a, x.r) end
-  end
-  if o.speed then
-    for _, a in ipairs(D.abilities) do
-      if a.kind == "trait" and a.ranks[1].id < 0 and a.speed and math.abs(o.speed - a.speed) < 0.05 then
-        addSeen(out, have, a, a.ranks[1])
-      end
-    end
   end
 end
 

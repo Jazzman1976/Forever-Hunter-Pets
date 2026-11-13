@@ -36,6 +36,20 @@ local function spellIndex()
   return bySpell
 end
 
+-- Zauber-ID → Tempo-Fähigkeit (Angriffstempo, #189): der passive Zauber im Zauberbuch des Pets
+local byTrait
+ns.OnAbilitiesChanged(function() byTrait = nil end)
+local function traitIndex()
+  if not byTrait then
+    byTrait = {}
+    for _, a in ipairs(D.abilities) do
+      local r = a.kind == "trait" and a.ranks[1]
+      if r and r.id and r.id > 0 then byTrait[r.id] = { a = a, r = r } end
+    end
+  end
+  return byTrait
+end
+
 -- Steht der Zauber als Rang irgendeiner Fähigkeit in der Liste (auch Knurren und Co.)?
 local allSpells
 ns.OnAbilitiesChanged(function() allSpells = nil end)
@@ -128,10 +142,12 @@ end
 
 -- Was eine einzelne Zähmung über einen Rang sagt: „seen“, „refuted“ oder nil. Widerlegt ist ein Rang
 -- nur, wenn die Stufe beim Zähmen für ihn reichte; das Angriffstempo hängt nicht an der Stufe.
+-- Das Angriffstempo zählt nur nach dem Zauberbuch (#189): Steht sein Zauber darin, ist es gesehen, sonst
+-- widerlegt. Das gemessene Tempo (o.speed) verfälschen Buffs des Jägers, es wird nicht ausgewertet.
 local function verdict(o, a, r)
   if not ns.Learnable(a) then
-    if not (o.speed and a.speed) then return nil end
-    return math.abs(o.speed - a.speed) < 0.05 and "seen" or "refuted"
+    if not (r.id and r.id > 0) then return nil end
+    return o.spells[r.id] and "seen" or "refuted"
   end
   if o.spells[r.id] then return "seen" end
   -- Das Zauberbuch zeigt nur den höchsten Rang. Hat das Tier einen höheren Rang derselben Fähigkeit,
@@ -229,15 +245,11 @@ function ns.ObservedExtra(npcId)
       out[#out + 1] = { a = a, r = r, conf = conf }
     end
   end
+  local traits = traitIndex()
   for _, o in ipairs(list) do
     for id in pairs(o.spells) do
-      local x = idx[id]
+      local x = idx[id] or traits[id]
       if x then try(x.a, x.r) end
-    end
-    if o.speed then
-      for _, a in ipairs(D.abilities) do
-        if not ns.Learnable(a) and a.speed and math.abs(o.speed - a.speed) < 0.05 then try(a, a.ranks[1]) end
-      end
     end
   end
   return out

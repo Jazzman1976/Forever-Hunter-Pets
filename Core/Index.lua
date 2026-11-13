@@ -70,6 +70,21 @@ function ns.Description(r)
   return "…"
 end
 
+-- Tempo eines Tempo-Zaubers in Sekunden aus seiner Beschreibung (#189), nie aus einem gemessenen Tempo: „Erhöht das
+-- Angriffstempo um 25%.“ → 2,0 s ÷ 1,25 = 1,6 s (passt zu allen bekannten: +15 % 1,7 s, +33 % 1,5 s, +50 % 1,3 s).
+-- faster: ob der Zauber schneller macht (die Richtung steht nur in Worten da, sie kommt aus den Zähmungen);
+-- langsamer angenommen als 2,0 s ÷ (1 − p). nil, wenn die Beschreibung fehlt oder keine Prozentzahl nennt.
+local NORMAL_SPEED = 2.0
+function ns.TraitSpeed(id, faster)
+  if not (C_Spell and C_Spell.GetSpellDescription) then return nil end
+  local ok, text = pcall(C_Spell.GetSpellDescription, id)
+  text = ok and ns.clean(text)
+  local p = type(text) == "string" and tonumber(text:match("(%d+)[%s\194\160]*%%"))   -- auch „25 %“ mit Leerzeichen
+  if not (p and p > 0 and p < 100) then return nil end
+  local speed = faster and NORMAL_SPEED / (1 + p / 100) or NORMAL_SPEED / (1 - p / 100)
+  return math.floor(speed * 10 + 0.5) / 10
+end
+
 -- Angriffstempo ist keine erlernbare Fähigkeit, sondern eine Eigenschaft des gezähmten Tiers
 function ns.Learnable(a) return a.kind ~= "trait" end
 function ns.AppliesToAll(a) return a.kind ~= "family" end
@@ -552,7 +567,8 @@ end
 -- Wildtierausbildung, vom Tierausbilder oder aus dem Zauberbuch eines Pets kennt, gelten gleich – nicht erst,
 -- wenn sie über den Import in den Daten stehen. Wie tools/build-data.mjs: Ränge gleichen Namens bilden eine
 -- Fähigkeit; was der Tierausbilder in der Stadt anbietet, gilt für alle Familien, sonst für die Familien der
--- Pets, die den Rang hatten. Ohne Rangnummer (Angriffstempo) bleibt ein Zauber draußen; Tempo kennt die Daten.
+-- Pets, die den Rang hatten. Ohne Rangnummer bleibt ein Zauber draußen; ein Tempo-Zauber aus dem Zauberbuch einer
+-- eigenen Zähmung wird eine Tempo-Fähigkeit (unten, #189).
 -- Wer etwas über die Fähigkeiten zwischenspeichert, hängt sich an ns.OnAbilitiesChanged (oben).
 
 -- Ränge vom Tierausbilder, wie sie die mitgelieferten Daten kennen – festgehalten beim Laden, bevor die
@@ -633,21 +649,52 @@ function ns.MergeSurveyAbilities()
       if a and a.source == "tame" and ns.Learnable(a) then add(c.id, c.name, c.rank, nil, nil, c.fams, false, c.conf) end
     end
   end
-  -- Angriffstempo, das noch keine Tempo-Fähigkeit trägt (#136): eigenes sofort, fremdes ab 2 unsicher, ab 3 belegt
-  for _, c in ipairs(ns.ObservedSpeedCandidates and ns.ObservedSpeedCandidates() or {}) do
-    local conf = c.conf ~= ns.CONF_SURE and c.conf or nil
-    local have
-    for _, a in ipairs(D.abilities) do
-      if a.kind == "trait" and a.speed and math.abs(a.speed - c.speed) < 0.05 then have = a end
+  -- Angriffstempo, das die Daten noch nicht kennen (#189): nur aus dem Zauberbuch einer eigenen Zähmung, nie aus
+  -- einem gemessenen Tempo (Buffs des Jägers verfälschen es). Ein passiver Zauber ohne Rang (der Client hat seine
+  -- Daten, es gibt also keinen), den die Wildtierausbildung nicht kennt, wird eine Tempo-Fähigkeit, wie im Generator.
+  -- Das Tempo in Sekunden kommt aus der Beschreibung des Zaubers (ns.TraitSpeed); die gemessenen Werte der eigenen
+  -- Zähmungen sagen nur, ob schneller oder langsamer als normal, und keiner davon: kein Tempo-Zauber. Fremde
+  -- Zähmungen kommen nur über die Stammdaten.
+  local candidates
+  for id, e in pairs(s.spells or {}) do
+    if type(e) == "table" and e.passive and not e.rank and not knownId[id] and not (s.ranks and s.ranks[id])
+      and type(e.name) == "string" and e.name ~= "" and ns.SpellDataCached then
+      if ns.SpellDataCached(id) then
+        candidates = candidates or {}
+        candidates[id] = { fast = 0, slow = 0 }   -- eigene Zähmungen mit dem Zauber, schneller bzw. langsamer
+      elseif ns.RequestSpellData then
+        ns.RequestSpellData(id)   -- nach dem Laden liest Core/Survey.lua das Zauberbuch neu und ruft dies hier wieder
+      end
     end
-    if not have then
-      D.abilities[#D.abilities + 1] = { de = "Angriffstempo", en = "Attack speed", icon = "INV_Misc_PocketWatch_01",
-        kind = "trait", source = "tame", speed = c.speed, families = {}, teach = {},
-        ranks = { { id = -math.floor(c.speed * 100 + 0.5), rank = 1, conf = conf } }, observed = true }
-      added = true
-    elseif have.observed and have.ranks[1].conf ~= conf then
-      have.ranks[1].conf = conf   -- die Belegung steigt mit neuen Meldern
-      added = true
+  end
+  if candidates then
+    for _, line in ipairs((ns.db and ns.db.obs) or {}) do
+      local o = ns.ParseObservation and ns.ParseObservation(line)
+      if o and o.own and o.speed then
+        for id, c in pairs(candidates) do
+          if o.spells[id] then
+            if o.speed < NORMAL_SPEED - 0.05 then c.fast = c.fast + 1
+            elseif o.speed > NORMAL_SPEED + 0.05 then c.slow = c.slow + 1 end
+          end
+        end
+      end
+    end
+    for id, c in pairs(candidates) do
+      local speed = c.fast ~= c.slow and ns.TraitSpeed(id, c.fast > c.slow)
+      if speed and byName[s.spells[id].name] == nil then
+        local a = { kind = "trait", source = "tame", speed = speed, families = {}, teach = {},
+          ranks = { { id = id, rank = 1 } } }
+        a[LANG] = s.spells[id].name
+        -- nach dem Tempo zwischen die anderen Tempo-Fähigkeiten, wie in den Daten (die Liste übernimmt die Reihenfolge)
+        local at = #D.abilities + 1
+        for i, x in ipairs(D.abilities) do
+          if x.kind == "trait" and x.speed and x.speed > speed then at = i; break end
+        end
+        table.insert(D.abilities, at, a)
+        byName[a[LANG]] = a
+        knownId[id] = true
+        added = true
+      end
     end
   end
   if added then
