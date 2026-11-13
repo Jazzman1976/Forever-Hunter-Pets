@@ -52,14 +52,14 @@ in dem der Jäger einem gezähmten Tier einen Rang abgeschaut hat. Gespeichert w
 
 **Die Lernmeldung nennt nicht die ID des Rangs.** Der Link trägt die ID eines eigenen Zaubers des
 Jägers, nicht die des Pet-Rangs aus den Daten (im Spiel gesehen: Link 26185, Sturmangriff Rang 3 ist
-26178). Eine ID aus dem Link zählt deshalb nur, wenn sie zu genau der genannten Fähigkeit gehört. Bei
-manchen Fähigkeiten, etwa den neuen von Forever, steht der Rang im Namen des Links:
-„[Zwicken (Rang 1)]“. Dann entscheidet die Zahl in der Klammer, eindeutig und auch ohne Pet; das Wort
-davor wird nicht geprüft, so geht es in jeder Sprache (#152). Meist sagt der Link aber nur
-„[Sturmangriff]“. Dann nimmt das Addon den Rang, den das aktive Pet schon kann und der Jäger noch
-nicht; ebenso, wenn es die Zahl aus dem Namen in den Daten nicht gibt. Kann das Pet keinen offenen Rang der Fähigkeit – etwa wenn man beim
-Tierausbilder in der Stadt lernt –, bleibt die Meldung ohne Folge, und der Rang kommt beim nächsten
-Öffnen der Wildtierausbildung dazu. Die letzten 20 Lernmeldungen und was daraus wurde stehen in
+26178). Eine ID aus dem Link zählt deshalb nur, wenn sie zu genau der genannten Fähigkeit gehört.
+Manchmal steht der Rang im Namen des Links, etwa „[Zwicken (Rang 1)]“ beim Abschauen oder
+„[Große Ausdauer (Rang 3)]“ beim Tierausbilder in der Stadt. Dann entscheidet die Zahl in der Klammer,
+eindeutig und auch ohne Pet; das Wort davor wird nicht geprüft, so geht es in jeder Sprache (#152).
+Sonst sagt der Link nur „[Sturmangriff]“, und das Addon nimmt den Rang, den das aktive Pet schon kann
+und der Jäger noch nicht; ebenso, wenn es die Zahl aus dem Namen in den Daten nicht gibt. Kann das
+Pet dann keinen offenen Rang der Fähigkeit, bleibt die Meldung ohne Folge, und der Rang kommt beim
+nächsten Öffnen der Wildtierausbildung dazu. Die letzten 20 Lernmeldungen und was daraus wurde stehen in
 `ForeverHunterPetsDB.learnLog`; `learnUnreadable` zählt Systemmeldungen, die als geheimer Wert kamen.
 
 **Was das Pet kann, ist kein Lernstand.** Ein frisch gezähmtes Tier bringt seinen Rang mit, der Jäger
