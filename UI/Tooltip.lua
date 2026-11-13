@@ -62,7 +62,7 @@ local function statusLine(id, guid)
   if not quiet() and ns.UnitClose("mouseover") then
     ns.AddCells(id, map, cell)
   end
-  return ns.StatusText(id, map)   -- nil bei unentdeckt oder ohne Fundort in der Zone: keine Zeile, wie im Reiter
+  return ns.StatusText(id, map)   -- nil bei „Noch nie gesehen“: keine Zeile
 end
 
 local function addLines(tooltip, guid)

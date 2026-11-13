@@ -1,10 +1,10 @@
 -- Forever Hunter Pets · Reiter „Gebiet“: Fortschrittsbuch je Zone (Meilenstein M2, Inkremente E4 und E5).
 -- Aufbau (Wunsch des Nutzers): oben die Zonenauswahl, vorn „Aktuelle Zone“ (#22). Links die Tiere der Zone, anklickbar, je mit dem Kästchen
--- aus „Fähigkeiten“ (Haken = Fähigkeiten bekannt) und dem Icon der Familie. Rechts oben die Karte, darunter die
+-- aus „Fähigkeiten“ (Haken = Tier studiert) und dem Icon der Familie. Rechts oben die Karte, darunter die
 -- Zähler „X von Y“. Punkte zeigt die Karte nur für das gewählte Tier (ns.Coords), ohne Auswahl nie.
 -- Die Modi (Nutzer, 17.10.2026): Im Komplettmodus steht alles, was bekannt ist, vollständig da – jedes Tier mit
 -- Namen, ohne Status. Im Entdeckermodus zählt nur, was man selbst gefunden hat: Tiere bleiben anonym
--- („? unentdecktes Tier“), bis man eine Fährte hat, ab da mit Namen und Status-Tag.
+-- („verborgenes Tier“), bis man eine Fährte hat, ab da mit Namen und Status-Tag.
 -- Zähler aus Core/Discover.lua (ns.ZoneProgress), X je Modus, immer „X von Y“ (#19).
 -- Gleiches sieht im ganzen Addon gleich aus. Gezählt und gezeichnet wird beim Öffnen, beim Zonenwechsel und bei
 -- einer Auswahl, nichts im Hintergrund. Zahl und Wort sind maßgeblich, Balken und Symbole nur zusätzlich.
@@ -215,13 +215,15 @@ function ns.BuildArea(parent)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText(L["Beasts"], 1, 1, 1)
     if ns.Discovering() then
+      GameTooltip:AddLine(ns.StatusWord("unknown") .. ": "
+        .. L["You have never seen it in this zone, so it is listed as a hidden beast."], 0.8, 0.8, 0.8, true)
       GameTooltip:AddLine(ns.StatusWord("track") .. ": "
         .. L["You saw it in this zone, but were never close to it. It is not on your map yet."], 0.8, 0.8, 0.8, true)
       GameTooltip:AddLine(ns.StatusWord("found") .. ": "
         .. L["You were close to it in this zone, so its spawn point is on your map."], 0.8, 0.8, 0.8, true)
       GameTooltip:AddLine(ns.StatusWord("known") .. ": "
         .. L["Found, and you have tamed it, so you know what it teaches."], 0.8, 0.8, 0.8, true)
-      GameTooltip:AddLine(L["Only “abilities known” moves the progress."], 0.8, 0.8, 0.8, true)
+      GameTooltip:AddLine(L["Only “beast studied” moves the progress."], 0.8, 0.8, 0.8, true)
     else
       GameTooltip:AddLine(L["Known: the data or a taming shows what it teaches."], 0.8, 0.8, 0.8, true)
     end
@@ -232,7 +234,7 @@ function ns.BuildArea(parent)
   local teachers = row(L["Teaching beasts"], false)
   local ranks = row(L["Abilities"], false)
 
-  -- ---- Kacheln (#19): je Lehrtier und je Rang eine, unentdeckt mit dem Fragezeichen der Liste ----
+  -- ---- Kacheln (#19): je Lehrtier und je Rang eine, noch verborgen mit dem Fragezeichen der Liste ----
   -- „Ich muss diese Kachel noch aufdecken“ (Wunsch des Nutzers). Der Tooltip unterscheidet doppelte Icons.
   local function tilePool()
     return W.Pool(function()
@@ -306,7 +308,7 @@ function ns.BuildArea(parent)
       end
     else
       b.icon:SetTexture(ICON_UNKNOWN)
-      b.tip = simpleTip(L["? undiscovered teaching beast"])
+      b.tip = simpleTip(L["teaching beast not studied yet"])
     end
   end
 
@@ -345,7 +347,7 @@ function ns.BuildArea(parent)
       end
     else
       b.icon:SetTexture(ICON_UNKNOWN)
-      b.tip = simpleTip(L["? undiscovered ability"])
+      b.tip = simpleTip(L["rank not discovered yet"])
     end
   end
 
@@ -398,7 +400,7 @@ function ns.BuildArea(parent)
   local function drawList()
     rows:Reset()
     local discover = ns.Discovering()
-    -- Einträge: Entdeckermodus nach Status (bekannt, gefunden, Fährte, unentdeckt), unentdeckte anonym und nicht
+    -- Einträge: Entdeckermodus nach Status (studiert, gefunden, Fährte, noch nie gesehen), noch nie gesehene anonym und nicht
     -- anklickbar; Komplettmodus jedes Tier mit Namen, die mit bekannter Lehre zuerst
     local entries = {}
     for npc, here in pairs(ns.BeastsIn(zone)) do
@@ -446,8 +448,8 @@ function ns.BuildArea(parent)
       local where = {}
       if fam then where[#where + 1] = ns.BeastFamilyText(e.npc) end
       if level then where[#where + 1] = (L["Level %s"]):format(level) end
-      -- Haken = Fähigkeiten bekannt. Entdeckermodus: leeres Kästchen = Tier gefunden, kein Kästchen bei Fährte
-      -- und unentdeckt; Komplettmodus: leeres Kästchen = noch unklar, was es lehrt
+      -- Haken = Tier studiert. Entdeckermodus: leeres Kästchen = Tier gefunden, kein Kästchen bei Fährte
+      -- und noch nie gesehen; Komplettmodus: leeres Kästchen = noch unklar, was es lehrt
       r.box:SetShown(not discover or e.st == "known" or e.st == "found")
       r.box.check:SetShown(e.st == "known")
       if e.pick then
@@ -459,10 +461,10 @@ function ns.BuildArea(parent)
         r.sub:SetText(table.concat(where, " · "))
         r:Enable()
       else
-        -- unentdeckt (nur Entdeckermodus): anonym, bis man eine Fährte hat
+        -- noch nie gesehen (nur Entdeckermodus): anonym, bis man eine Fährte hat
         r.npc = false
         r.icon:SetTexture(ICON_UNKNOWN)
-        r.name:SetText(L["? undiscovered beast"])
+        r.name:SetText(L["hidden beast"])
         -- sonst wirkt es wie eine Lücke in den Daten (#19): man kennt es, muss es aber selbst finden
         r.sub:SetText(L["Go on the prowl and find it."])
         r:Disable()

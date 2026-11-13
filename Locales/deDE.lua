@@ -18,7 +18,7 @@ ns.Locales.deDE = {
   ["Your pet takes over the attack speed of the beast you tame. These beasts attack every %s s, the normal speed is %s s:"] = "Dein Pet übernimmt das Angriffstempo des Tiers, das du zähmst. Diese Tiere greifen alle %s s an, normal sind %s s:",
   ["Learned from the pet trainer."] = "Lernst du beim Tierausbilder.",
   ["No source says how this ability is learned."] = "Keine Quelle sagt, wie man diese Fähigkeit lernt.",
-  ["Not discovered yet – find a beast that teaches it."] = "Noch unentdeckt – finde ein Tier, das es beibringt.",
+  ["Not studied yet – find and tame a beast that teaches it."] = "Noch nicht studiert – finde und zähme ein Tier, das es beibringt.",
   ["%d rank entries from %d abilities"] = "%d Rang-Einträge aus %d Fähigkeiten",
   ["%d abilities, %d ranks, %d families, %d beasts (%d with coordinates), %d zones"] = "%d Fähigkeiten, %d Ränge, %d Familien, %d Tiere (%d mit Fundort), %d Gebiete",
   ["Rank %d"] = "Rang %d",
@@ -160,7 +160,7 @@ ns.Locales.deDE = {
   ["Observed: %s (level %d) brought %s"] = "Beobachtet: %s (Stufe %d) brachte %s mit",
   ["no ability"] = "keine Fähigkeit",
   ["Discovered: %s – %s: %d of %d ranks"] = "Entdeckt: %s – %s: %d von %d Rängen",
-  ["Discovered: abilities of %s known – %s: %d of %d beasts"] = "Entdeckt: Fähigkeiten von %s bekannt – %s: %d von %d Tieren",
+  ["Discovered: %s studied – %s: %d of %d beasts"] = "Entdeckt: %s studiert – %s: %d von %d Tieren",
   ["seen when you tamed it"] = "beim Zähmen von dir gesehen",
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel
@@ -200,11 +200,11 @@ ns.Locales.deDE = {
   ["Show finds of my other characters"] = "Funde anderer Charaktere",
   ["Also counts what your other characters on this account have sighted, found and tamed. Switched off, this character discovers everything on its own."] = "Zählt auch, was deine anderen Charaktere auf diesem Konto gesichtet, gefunden und gezähmt haben. Ausgeschaltet entdeckt dieser Charakter alles selbst.",
   -- Entdecken: Modi in den Ansichten (E3)
-  ["%d undiscovered"] = "%d unentdeckt",
+  ["%d not studied yet"] = "%d noch nicht studiert",
   ["? unknown"] = "? unbekannt",
   ["? Unknown – nobody has found a beast that teaches it yet."] = "? Unbekannt – noch niemand hat ein Tier gefunden, das es beibringt.",
-  ["? undiscovered beast"] = "? unentdecktes Tier",
-  ["? and %d more undiscovered beasts"] = "? und %d weitere unentdeckte Tiere",
+  ["hidden beast"] = "verborgenes Tier",
+  ["and %d more hidden beasts"] = "und %d weitere verborgene Tiere",
   -- Entdecken: Reiter „Gebiet“ (E4)
   ["Zone"] = "Gebiet",
   ["No beasts known in this zone yet."] = "Noch kein Tier in diesem Gebiet bekannt.",
@@ -216,7 +216,8 @@ ns.Locales.deDE = {
   ["You saw it in this zone, but were never close to it. It is not on your map yet."] = "In diesem Gebiet gesehen, aber nie in seiner Nähe gewesen. Es steht noch nicht auf deiner Karte.",
   ["You were close to it in this zone, so its spawn point is on your map."] = "In diesem Gebiet in seiner Nähe gewesen, deshalb steht sein Fundort auf deiner Karte.",
   ["Found, and you have tamed it, so you know what it teaches."] = "Gefunden und gezähmt, deshalb weißt du, was es lehrt.",
-  ["Only “abilities known” moves the progress."] = "Nur „Fähigkeiten bekannt“ lässt den Fortschritt wachsen.",
+  ["You have never seen it in this zone, so it is listed as a hidden beast."] = "In diesem Gebiet noch nie gesehen, deshalb steht es als verborgenes Tier in der Liste.",
+  ["Only “beast studied” moves the progress."] = "Nur „Tier studiert“ lässt den Fortschritt wachsen.",
   ["Known: the data or a taming shows what it teaches."] = "Bekannt: Die Daten oder eine Zähmung nennen, was es lehrt.",
   ["1 spawn point"] = "1 Fundort",
   ["Teaching beasts"] = "Lehrtiere",
@@ -227,8 +228,8 @@ ns.Locales.deDE = {
   ["%d spawn points on the map"] = "%d Fundorte auf der Karte",
   -- Entdecken: Kacheln, Hinweis und Fußnote im Reiter „Gebiet“ (#19)
   ["Go on the prowl and find it."] = "Gehe auf die Pirsch und finde es.",
-  ["? undiscovered teaching beast"] = "? unentdecktes Lehrtier",
-  ["? undiscovered ability"] = "? unentdeckte Fähigkeit",
+  ["teaching beast not studied yet"] = "noch nicht studiertes Lehrtier",
+  ["rank not discovered yet"] = "noch nicht entdeckter Rang",
   ["%d more"] = "%d weitere",
   ["Spawn points: %s"] = "Fundorte: %s",
   -- Entdecken: Tierliste im Reiter „Gebiet“ (E5)
@@ -237,7 +238,8 @@ ns.Locales.deDE = {
   ["teaches %s"] = "lehrt %s",
   ["tracked"] = "Fährte aufgenommen",
   ["beast found"] = "Tier gefunden",
-  ["abilities known"] = "Fähigkeiten bekannt",
+  ["never seen"] = "Noch nie gesehen",
+  ["beast studied"] = "Tier studiert",
   ["No beast found yet"] = "Noch kein Tier gefunden",
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",

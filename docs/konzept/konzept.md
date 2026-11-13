@@ -16,7 +16,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 - **Suchen und Sammeln soll Spaß machen und belohnt werden**, auch wenn es für Raid-Spieler unnötig ist. Das unterscheidet das Addon von anderen.
 - **Lücken sind Aufgaben, keine Schwäche.** Was niemand kennt, kann man entdecken. Daraus sollen später Erfolge werden („Pionier: 10 Tiere gefunden, die die Daten deiner Version noch nicht kannten“, siehe §7).
 - **Was man nicht kennt, sucht man nicht.** Das Addon verrät deshalb im Entdeckermodus, *dass* und *wie viel* es zu finden gibt, aber nicht *was*.
-- **Ziel des Spiels ist „Fähigkeiten bekannt“** (17.10.2026): Nur das treibt den Fortschritt. Fährte und Fund sind Schritte dorthin.
+- **Ziel des Spiels ist „Tier studiert“** (17.10.2026, bis #171 „Fähigkeiten bekannt“): Nur das treibt den Fortschritt. Fährte und Fund sind Schritte dorthin.
 - **Nebenbei werden alte Jäger-Fähigkeiten sinnvoll:** „Wildtiere aufspüren“, „Adlerauge“ und „Augen des Wildtiers“ bringen Fährten – in WoW eher Nebensache, hier Werkzeuge der Suche.
 - **Das Classic-Gefühl zurückholen,** wo der Forever-Client es schlechter macht (Beispiel: Ansicht „Ausbildung“).
 
@@ -48,7 +48,7 @@ Wer etwas ändert, prüft hier zuerst, ob es einer Entscheidung widerspricht. En
 | **Melder, Kürzel** | wer etwas gemeldet hat, als Hash statt Name | `ns.MyRep`, `db.myReps` |
 | **Belegung** | wie sicher ein Lehrtier-Paar ist: belegt, unsicher, unbelegt, widerlegt | `conf`, `ns.CONF_*` |
 | **Status** | wie weit man selbst mit einem Tier in einer Zone ist (nur Entdeckermodus) | `ns.BeastStatus` |
-| **Lernstand: hast du / fehlt dir** | ob der Jäger einen Rang hat; „hat dein Pet“, wenn nur das aktive Pet ihn hat. Jeder Zustand nennt, wen er meint (#77); „bekannt“ heißt nur „Fähigkeiten bekannt“ beim Tier | `ns.IsKnown`, `ns.char.known` |
+| **Lernstand: hast du / fehlt dir** | ob der Jäger einen Rang hat; „hat dein Pet“, wenn nur das aktive Pet ihn hat. Jeder Zustand nennt, wen er meint (#77); beim Tier heißt der Zustand „Tier studiert“ (bis #171 „Fähigkeiten bekannt“) | `ns.IsKnown`, `ns.char.known` |
 | **Komplett-/Entdeckermodus** | was angezeigt wird (alles / nur Eigenes), je Charakter | `ns.Discovering()` |
 
 ## 4 Daten: woher, wohin
@@ -102,9 +102,9 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 
 | Stelle | Komplettmodus | Entdeckermodus |
 | --- | --- | --- |
-| Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes; ab „Fähigkeiten bekannt“ dieselben Daten wie im Komplettmodus (#169) |
+| Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes; ab „Tier studiert“ dieselben Daten wie im Komplettmodus (#169) |
 | Grundgerüst | – | alle Fähigkeiten und Ränge (Spielwissen), **wie viele** Lehrtiere und Tiere es gibt |
-| Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N unentdeckt“ bzw. „? unentdecktes Tier“ |
+| Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N noch nicht studiert“ bzw. „verborgenes Tier“ |
 | Karte (Gebiet, Kartenseite) | alle Fundorte | eigene Zellen; ist das Tier in der Zone studiert, dort alle bekannten Fundorte (#170) |
 | Tier-Tooltip | Ränge aus allen Daten, kein Status | Status-Tag; nach der eigenen Zähmung Ränge aus allen Daten (#169) |
 | Reiter „Gebiet“, Liste | alle Tiere benannt, anklickbar, kein Status | anonym bis zur Fährte, dann Name und Status-Tag |
@@ -116,7 +116,7 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 - **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde anderer Charaktere“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
 - **Der Entdeckermodus ist der empfohlene und der Standard** (Nutzer, 20.10.2026, #42: „Ich möchte niemandem etwas verbieten. Ich möchte überzeugen.“). Der Startdialog zeigt ihn zuerst, mit „Empfohlen.“ als Wort; der Komplettmodus folgt darunter, ehrlich als Weg für alle, die nicht suchen wollen. Wer den Dialog ohne Wahl schließt, spielt im Entdeckermodus; auch „Standard wiederherstellen“ in den Einstellungen ergibt ihn.
 - **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Bis 0.13.0-beta mit einem Absatz zur Beta (ermutigend: Lücken warten darauf, entdeckt zu werden), mit 1.0.0 entfernt. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad; Hover erklärt ihn und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen.
-- **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „? unentdeckt“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus).
+- **Zwei Wörter für Lücken:** „? unbekannt“ – das weiß niemand. „Noch nie gesehen“ – es ist bekannt, du hast es nur noch nicht gefunden (nur Entdeckermodus; in der Liste als „verborgenes Tier“, bis #171 „? unentdeckt“, weil das zu nah an „? unbekannt“ lag).
 - **Tipp Namensplaketten:** ein Satz am Ende der Moduswahl in den Einstellungen, bewusst unauffällig (nicht jeder mag Plaketten).
 
 ## 6 Status eines Tiers
@@ -125,15 +125,15 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 
 | Status (Code) | Tag | Wann | Kästchen |
 | --- | --- | --- | --- |
-| `unknown` | „? unentdecktes Tier“ (anonym) | noch nichts in dieser Zone | keins |
+| `unknown` | **Noch nie gesehen**; in der Liste anonym als „verborgenes Tier“ | noch nichts in dieser Zone | keins |
 | `track` | **Fährte aufgenommen** | in dieser Zone gesehen, nie nah gewesen | keins |
 | `found` | **Tier gefunden** | eigener Fundort in dieser Zone (oder eigene Zähmung dort) | leer |
-| `known` | **Fähigkeiten bekannt** | gefunden und selbst gezähmt | Haken |
+| `known` | **Tier studiert** | gefunden und selbst gezähmt (`ns.Studied`), auch wenn es nichts lehrt | Haken |
 
 - **Je NPC-ID und je Zone.** Jede Zone ist ein eigenes Jagdrevier; ein Tier, das über eine Grenze läuft, muss in jeder Zone selbst gefunden werden. Innerhalb einer Zone reicht ein Tier dieser ID.
 - **Was ein Tier lehrt, gilt zonenübergreifend:** Die Fähigkeiten hängen an der NPC-ID, nur der Rang an der Stufe. „Bekannt“ wird ein Tier in einer Zone trotzdem erst, wenn es dort gefunden ist.
 - **Wo lebt ein Tier?** (`ns.LivesIn`) Wo es einen echten Fundort hat: Daten, Zelle oder eigene Zähmung. Hat es nirgends einen, zählt seine Fährte, wo man es gesehen hat ([§9](#9-fährten)).
-- **Wörter:** Jäger-Sprache, als Zustand formuliert, ohne Icon. Verlauf: „Fährte“ mit Pfoten-Icon, dann „gesichtet / gefunden / bekannt“ – zu nah beieinander, der Unterschied war unklar. Im Code heißt der Status weiter `track`. Texte: `ns.StatusWord`, `ns.StatusText` (liefert im Komplettmodus `nil`).
+- **Wörter:** Jäger-Sprache, als Zustand formuliert, ohne Icon. Verlauf: „Fährte“ mit Pfoten-Icon, dann „gesichtet / gefunden / bekannt“ – zu nah beieinander, der Unterschied war unklar; seit 13.11.2026 (#171) „Noch nie gesehen“ statt „? unentdeckt“ und „Tier studiert“ statt „Fähigkeiten bekannt“, weil das beschreibt, was der Spieler getan hat. „Tier studiert“ ist in allen Punkten gleich „gezähmt“ (später auch über Wildtierkunde, #183). Im Code heißen die Status weiter `unknown`, `track`, `found`, `known`. Texte: `ns.StatusWord`, `ns.StatusText` (liefert im Komplettmodus `nil`).
 - **„lehrt nichts“** steht grau im Tooltip, wenn feststeht, dass ein Tier nichts lehrt (sonst fehlte jeder Hinweis); folgt der Einstellung „Auch Ränge zeigen, die du hast“. „Kein Lehrtier in den Daten“ heißt allein nie „lehrt nichts“ – das klärt erst eine Zähmung; bis dahin „? unklar“.
 
 ## 7 Fortschritt
@@ -147,8 +147,8 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | Fähigkeiten | Ränge, die ein Lehrtier der Zone lehrt | selbst entdeckt | alle |
 | Fundorte | – | was die Karte zeigt: eigene Zellen, bei studierten Tieren alle Fundorte (#170) | alle Fundorte |
 
-- **Nur „Fähigkeiten bekannt“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
-- **Meldung „Entdeckt“** (20.10.2026, #51): Der Fortschritt wächst nur beim Zähmen, und genau dann sagt es der Chat – sonst bliebe der wichtigste Moment des Sammelspiels unbemerkt, bis man den Reiter öffnet. Nur im Entdeckermodus, eine Zeile unter „Beobachtet“, für die Zone, in der man zähmte: neue Rang-Kacheln („Entdeckt: Beißen Rang 3 – Dämmerwald: 5 von 12 Rängen“), sonst das Tier, das „Fähigkeiten bekannt“ wurde („… 4 von 9 Tieren“); nichts Neues, keine Zeile. Die Zahlen sind die des Reiters (`ns.ZoneProgress` vorher und nachher). Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten. Wird das Tier dadurch auch in einer anderen Zone bekannt, sagt das nur der Reiter. Fährten melden sich weiter nicht (sonst liefe der Chat voll).
+- **Nur „Tier studiert“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
+- **Meldung „Entdeckt“** (20.10.2026, #51): Der Fortschritt wächst nur beim Zähmen, und genau dann sagt es der Chat – sonst bliebe der wichtigste Moment des Sammelspiels unbemerkt, bis man den Reiter öffnet. Nur im Entdeckermodus, eine Zeile unter „Beobachtet“, für die Zone, in der man zähmte: neue Rang-Kacheln („Entdeckt: Beißen Rang 3 – Dämmerwald: 5 von 12 Rängen“), sonst das Tier, das studiert wurde („Entdeckt: Wolf studiert – … 4 von 9 Tieren“); nichts Neues, keine Zeile. Die Zahlen sind die des Reiters (`ns.ZoneProgress` vorher und nachher). Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten. Wird das Tier dadurch auch in einer anderen Zone bekannt, sagt das nur der Reiter. Fährten melden sich weiter nicht (sonst liefe der Chat voll).
 - **Neues ist eine gute Nachricht** (21.10.2026, #66): Y wächst auch durch andere (fremde Zellen und Zähmungen, neue Stammdaten), und aus „8 von 8“ wird still „8 von 9“. Damit das nicht wie ein Rückschritt wirkt, steht im Entdeckermodus über den Tieren einmal „+ Seit du zuletzt hier nachgesehen hast, haben andere Jäger 1 neues Tier entdeckt – die Jagd geht weiter.“ Gemerkt werden je Charakter und Zone die Tiere vom letzten Nachsehen (`ForeverHunterPetsCharDB.zoneSeen`), gezählt nur Tiere, die man selbst nicht gefunden hat (Status „unknown“); nur Tiere, keine Ränge, denn neue Ränge kommen auch aus eigenen Zähmungen. Beim ersten Besuch einer Zone wird nur gemerkt. Die Zeile bleibt, bis man eine andere Zone wählt oder das Fenster schließt. Ein Übergang: Wenn alle Tiere bekannt sind, kommt sie nicht mehr.
 - **Erfolge hängen an eigenen Funden** (10.11.2026, #65, für E8). Ein Erfolg zählt, was man selbst gefunden hat („10 Lehrtiere selbst identifiziert“). „Pionier“ heißt „nicht in den Daten der installierten Version“: Ob ein Tier wirklich noch niemand kannte, kann das Addon ohne Server nicht wissen, es kennt nur die ausgelieferten Daten und das eigene Konto. Dabei bleibt eine Spannung, die gewollt ist: Das Projekt will die Lücken schließen, und jedes Release macht Pionier-Funde seltener. Eine spätere Ansicht „Erfolge“ soll auch einen **Gesamtfortschritt über alle Zonen** zeigen, etwa „37 von 134 Tieren, 12 von 80 Rängen entdeckt“ (Idee aus #53).
 - **Ein Erfolg bleibt erreicht** (21.10.2026, #66, für E8): Wird eine Zone später größer, bleibt „Alle Tiere aus Das Brachland gefunden“ erreicht. Die Zone zeigt dann „Neu in dieser Zone“ und es gibt etwas zu holen, aber nichts wird zurückgenommen.
@@ -156,7 +156,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - Ränge vom Tierausbilder und Ränge ohne Lehrtier in der Zone zählen nicht – die muss man dort nicht suchen.
 - **Komplettmodus: Es zählt, was gezeigt wird** (20.10.2026, #40). Die Zähler und Kacheln nehmen die Lehren aus `ns.TeachInfo`, wie Liste und Tooltip. Ist „Unsichere Angaben zeigen“ aus, zählen unsichere Lehren weder in X noch in Y; X wird nie größer als Y. Vorher zählten sie mit, auch wenn die Liste sie verschwieg, und eine einzelne fremde Zähmung zählte sofort. Der Entdeckermodus bleibt: Y ist das Grundgerüst aus allen Daten.
 - Zahl und Wort sind maßgeblich, der Balken nur zusätzlich. Gezählt wird beim Öffnen, Zonenwechsel und Auswählen.
-- **Kacheln statt Balken** bei Lehrtieren und Fähigkeiten (18.10.2026, #19): je Lehrtier bzw. Rang eine Kachel, unentdeckt mit dem roten Fragezeichen der Liste, entdeckt mit dem Icon der Familie bzw. der Fähigkeit – „ich muss diese Kachel noch aufdecken“. Die Reihenfolge ist fest (NPC-ID, Fähigkeit und Rang), eine Kachel dreht sich beim Entdecken an ihrem Platz um. Höchstens zwei Zeilen, der Rest als „+n“. Fundorte stehen als Fußnote unten links.
+- **Kacheln statt Balken** bei Lehrtieren und Fähigkeiten (18.10.2026, #19): je Lehrtier bzw. Rang eine Kachel, verborgen mit dem roten Fragezeichen der Liste, entdeckt mit dem Icon der Familie bzw. der Fähigkeit – „ich muss diese Kachel noch aufdecken“. Die Reihenfolge ist fest (NPC-ID, Fähigkeit und Rang), eine Kachel dreht sich beim Entdecken an ihrem Platz um. Höchstens zwei Zeilen, der Rest als „+n“. Fundorte stehen als Fußnote unten links.
 
 ## 8 Fundorte
 
@@ -231,11 +231,11 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
 - Kästchen aus „Fähigkeiten“, Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile.
-- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ und „? unentdeckt“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang, „unentdeckt“ steht nie bei einem Rang. Seit #169 kann auch im Entdeckermodus „?“ bzw. „!“ hinter einem Rang stehen, wenn ein studiertes Tier unsichere Angaben hat und die Einstellung sie zeigt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
+- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang. Verborgenes trägt seit #171 kein „?“ mehr, nur das Fragezeichen-Icon. Seit #169 kann auch im Entdeckermodus „?“ bzw. „!“ hinter einem Rang stehen, wenn ein studiertes Tier unsichere Angaben hat und die Einstellung sie zeigt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
 - „lehrt nichts“ aus fremden Zähmungen gilt erst ab 3 Meldern, wie Ränge; eine eigene Zähmung zählt sofort (#40). Vorher reichte eine einzige fremde Zähmung, was eine Falschaussage sein konnte.
 - Erklärung der Status im Tooltip des Zählers „Tiere“.
 - Unentdeckte Tiere tragen die zweite Zeile „Gehe auf die Pirsch und finde es.“ (#19) – ohne sie hielten manche das für eine Lücke in den Daten.
-- Kachel-Tooltips knapp: erkanntes Lehrtier wie die Zeile (Name, Lehre, Klick zeigt es auf der Karte), entdeckter Rang Name, Rang und das leichteste Lehrtier der Zone (Klick zeigt es, Bewertung wie in „Fähigkeiten“), Unentdecktes nur „? unentdecktes Lehrtier“ bzw. „? unentdeckte Fähigkeit“.
+- Kachel-Tooltips knapp: erkanntes Lehrtier wie die Zeile (Name, Lehre, Klick zeigt es auf der Karte), entdeckter Rang Name, Rang und das leichteste Lehrtier der Zone (Klick zeigt es, Bewertung wie in „Fähigkeiten“), Verborgenes nur „noch nicht studiertes Lehrtier“ bzw. „noch nicht entdeckter Rang“ (bis #171 „? unentdeckt…“).
 
 **Tier-Tooltip:**
 - Alle Zeilen bündig mit der Kopfzeile „Forever Hunter Pets“.

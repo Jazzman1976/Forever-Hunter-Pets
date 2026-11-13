@@ -2,10 +2,10 @@
 -- Konzept: docs/konzept/konzept.md (5 Die zwei Modi, 6 Status eines Tiers)
 --
 -- Status eines Tiers je NPC-ID und je Zone – jede Zone ist ein eigenes Jagdrevier:
---   „unknown“  unentdeckt
+--   „unknown“  noch nie gesehen
 --   „track“    Fährte aufgenommen: in dieser Zone gesichtet (Ziel, Maus, Plakette)
 --   „found“    gefunden: in dieser Zone aus etwa 10 m gesehen (eigene Fundort-Zelle)
---   „known“    bekannt: in dieser Zone gefunden und alle Fähigkeiten bekannt (eigene Zähmung)
+--   „known“    studiert: in dieser Zone gefunden und selbst gezähmt (ns.Studied), auch wenn es nichts lehrt
 -- Was ein Tier lehrt, ist Wissen über die NPC-ID und gilt in allen Zonen. Ein Tier gehört nur zu Zonen, in
 -- denen es einen echten Fundort hat (Daten oder Zelle) – eine Sichtung über eine Zonengrenze hinweg zählt dort
 -- nicht. Gezählt wird bei Bedarf, nichts im Hintergrund.
@@ -223,17 +223,21 @@ function ns.NoteTrack(npc, map)
 end
 
 -- ---- Texte, überall gleich (Reiter „Gebiet“, Tier-Tooltip, Witterung) ----
--- Status-Tags des Entdeckermodus (Nutzer, 17.10.2026): „Fährte aufgenommen“, „Tier gefunden“, „Fähigkeiten
--- bekannt“ – Jäger-Sprache, ohne Icon. Im Komplettmodus gibt es keinen Status: Dort zählt nicht, was der Spieler
+-- Status-Tags des Entdeckermodus (Nutzer, 17.10.2026; seit #171 „Noch nie gesehen“ und „Tier studiert“, vorher
+-- „? unentdeckt“ und „Fähigkeiten bekannt“): „Noch nie gesehen“, „Fährte aufgenommen“, „Tier gefunden“, „Tier
+-- studiert“ – Jäger-Sprache, ohne Icon. Im Komplettmodus gibt es keinen Status: Dort zählt nicht, was der Spieler
 -- selbst gesehen hat, sondern was überhaupt bekannt ist (docs/konzept/entscheidungen.md).
-local STATUS_WORD = { track = "tracked", found = "beast found", known = "abilities known" }
+local STATUS_WORD = { unknown = "never seen", track = "tracked", found = "beast found", known = "beast studied" }
 function ns.StatusWord(st)
   return STATUS_WORD[st] and ns.L[STATUS_WORD[st]] or nil
 end
--- Tag des Tiers in dieser Zone; nil im Komplettmodus, bei unentdeckt oder ohne Fundort in der Zone
+-- Tag des Tiers in dieser Zone; nil im Komplettmodus und bei „Noch nie gesehen“ (der Tier-Tooltip zeigt dann keine
+-- Status-Zeile, #186)
 function ns.StatusText(npc, map)
   if not ns.Discovering() then return nil end
-  return ns.StatusWord(ns.BeastStatus(npc, map))
+  local st = ns.BeastStatus(npc, map)
+  if st == "unknown" then return nil end
+  return ns.StatusWord(st)
 end
 
 -- „? unklar“, „lehrt nichts“ oder „lehrt“ mit den Icons der Fähigkeiten, ohne Rang (Wunsch des Nutzers: so
@@ -376,7 +380,7 @@ end
 -- ---- Fortschritt einer Zone ----
 -- { beasts, beastsKnown, track, found, known, teachers, teachersKnown, ranks, ranksFound, cells, points }
 -- Y aus allem, was bekannt ist (Daten, Zellen, Zähmungen, Fährten). Ränge: nur die, die ein Lehrtier der Zone
--- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Fähigkeiten bekannt“
+-- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Tier studiert“
 -- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
 --   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown = studierte Lehrtiere,
 --                   ranksFound = Ränge, die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169).

@@ -12,7 +12,7 @@ local SOURCE_COLOR = { tame = "9fd45f", trainer = "66ccff", unknown = "9aa3b5", 
 local BEAST_H = 36
 local EFFORT_COLOR = { easy = { 0.62, 0.83, 0.37 }, medium = { 1, 0.82, 0 }, hard = { 1, 0.45, 0.35 } }
 local CLS_LABEL = { [1] = "Elite", [2] = "Rare elite", [3] = "Boss", [4] = "Rare" }
-local MAX_OPEN = 8   -- „? unentdecktes Tier“-Zeilen höchstens, dann „und n weitere“
+local MAX_OPEN = 8   -- „verborgenes Tier“-Zeilen höchstens, dann „und n weitere“
 local CONF_HEAD = { [2] = "Uncertain – reported by fewer than %d other characters", [3] = "Unproven – estimated, not seen yet" }
 
 local function zonesText(id, b)
@@ -202,10 +202,10 @@ local function metaText(e)
   if r.tp then parts[#parts + 1] = (L["%d TP"]):format(r.tp) end
   if a.source == "tame" then
     -- ohne Lehrtier ist der Rang eine Aufgabe: ein Wort statt „0 Tiere“. „? unbekannt“: niemand kennt eins;
-    -- im Entdeckermodus dazu, wie viele bekannt, aber selbst noch unentdeckt sind
+    -- im Entdeckermodus dazu, wie viele bekannt, aber selbst noch nicht studiert sind
     local n, open = #e.teachers, e.teachers.undiscovered or 0
     if n > 0 then parts[#parts + 1] = n == 1 and L["1 beast"] or (L["%d beasts"]):format(n) end
-    if open > 0 then parts[#parts + 1] = (L["%d undiscovered"]):format(open) end
+    if open > 0 then parts[#parts + 1] = (L["%d not studied yet"]):format(open) end
     if n == 0 and open == 0 then parts[#parts + 1] = L["? unknown"] end
   end
   return table.concat(parts, " · ")
@@ -232,7 +232,7 @@ local function hintText(e)
   if a.source == "trainer" then return L["Learned from the pet trainer."] end
   if a.source == "unknown" then return L["No source says how this ability is learned."] end
   if #e.teachers == 0 and (e.teachers.undiscovered or 0) > 0 then
-    return L["Not discovered yet – find a beast that teaches it."]
+    return L["Not studied yet – find and tame a beast that teaches it."]
   end
   if #e.teachers == 0 then
     local hidden = e.teachers.hidden or 0
@@ -480,15 +480,15 @@ function ns.BuildAbilities(parent)
         end
       end
     end
-    -- Entdeckermodus: je weiterem, bekanntem Lehrtier eine Zeile „? unentdecktes Tier“, ohne Familie und Stufe
+    -- Entdeckermodus: je weiterem, bekanntem Lehrtier eine Zeile „verborgenes Tier“, ohne Familie und Stufe
     local open = e.teachers.undiscovered or 0
     for i = 1, math.min(open, MAX_OPEN) do
       local line = groupHeads:Get()
       line:ClearAllPoints()
       line:SetPoint("TOPLEFT", dc, "TOPLEFT", 16, -(y + 4))
       line:SetWidth(DW - 16)
-      line:SetText(i == MAX_OPEN and open > MAX_OPEN and (L["? and %d more undiscovered beasts"]):format(open - MAX_OPEN + 1)
-        or L["? undiscovered beast"])
+      line:SetText(i == MAX_OPEN and open > MAX_OPEN and (L["and %d more hidden beasts"]):format(open - MAX_OPEN + 1)
+        or L["hidden beast"])
       y = y + line:GetStringHeight() + 8
     end
     detail:SetContentHeight(y + 8)
