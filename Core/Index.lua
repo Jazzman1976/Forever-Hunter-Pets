@@ -450,14 +450,14 @@ function ns.Teachers(a, r, zone)
     local b = ns.BeastInfo(x.id) or { cls = 0 }
     if not listed[x.id] then consider(x.id, b, x.conf, #a.teach + 1) end
   end
-  -- Entdeckermodus: nur Lehrtiere, bei denen eine eigene Zähmung den Rang zeigte; die übrigen zählen als
-  -- unentdeckt (list.undiscovered), damit man weiß, dass es etwas zu finden gibt
+  -- Entdeckermodus: nur Lehrtiere, die man studiert hat, mit der Belegung aus den kompletten Daten (#169; bis 1.2.0
+  -- nur, wenn eine eigene Zähmung genau diesen Rang zeigte). Die übrigen zählen als unentdeckt (list.undiscovered),
+  -- damit man weiß, dass es etwas zu finden gibt
   list.undiscovered = 0
   if ns.Discovering and ns.Discovering() then
     local own = { hidden = 0, undiscovered = 0 }
     for _, t in ipairs(list) do
-      if ns.OwnSeen and ns.OwnSeen(t.id, a, r) then
-        t.conf = ns.CONF_SURE
+      if ns.Studied and ns.Studied(t.id) then
         own[#own + 1] = t
       else
         own.undiscovered = own.undiscovered + 1

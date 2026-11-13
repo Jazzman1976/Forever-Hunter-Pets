@@ -166,7 +166,11 @@ local function ownCells(npc, map)
   return cells and #cells / 2 or 0
 end
 
-local function ownTamed(npc)
+-- Hat der Charakter das Tier studiert? Heute heißt das: selbst gezähmt (je nach „Funde anderer Charaktere“ auch
+-- ein anderer Charakter des Kontos, ns.OwnTame); später auch mit Wildtierkunde betrachtet (#183). Hängt an der
+-- NPC-ID, nicht an der Zone: Was ein Tier lehrt, gilt überall (#169). Der Status je Zone („known“) braucht dazu
+-- noch den eigenen Fund in dieser Zone.
+function ns.Studied(npc)
   for _, o in ipairs(ns.ObservationsOf(npc)) do
     if ns.OwnTame(o) then return true end
   end
@@ -179,7 +183,7 @@ function ns.BeastStatus(npc, map)
     return trackOnly(npc, map) and "track" or "unknown"
   end
   if ownCells(npc, map) > 0 or tamedIn(npc, map) then
-    return ownTamed(npc) and "known" or "found"
+    return ns.Studied(npc) and "known" or "found"
   end
   if seenIn(npc, map) then return "track" end
   return "unknown"
@@ -289,12 +293,16 @@ end
 
 -- Was das Tier lehrt: nil = unklar (keine Zähmung, keine Angabe); sonst { { a, r, conf }, … }, leer = lehrt nichts
 -- (dann info.conf = ns.CONF_UNSURE, wenn das nur 2 fremde Melder sagen, #136).
--- discover = true: nur eigene Zähmungen (Entdeckermodus), alle belegt. Sonst auch Daten und fremde Zähmungen, wie
--- im Tooltip nur, was die Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“
--- (#40, vorher reichte eine einzige fremde Zähmung).
--- Zweiter Wert (nur Komplettmodus): Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch
--- Belege (Hinweiszeile im Tooltip, #40).
+-- Grundlage sind die kompletten Daten: Stammdaten, eigene Zähmungen und fremde; wie im Tooltip nur, was die
+-- Einstellungen zeigen; Fremdes gilt erst ab ns.FOREIGN_SURE Meldern (ns.Observed), auch „lehrt nichts“ (#40, vorher
+-- reichte eine einzige fremde Zähmung).
+-- discover = true (Entdeckermodus): nil, solange das Tier nicht studiert ist (ns.Studied), danach dieselben
+-- kompletten Daten (#169: dieselben Daten wie im Komplettmodus, nur das Wann ist anders; bis 1.2.0 nur die eigene
+-- Zähmung, dann fehlten etwa Ränge, die das Tier erst auf höherer Stufe mitbringt).
+-- Zweiter Wert: Gibt es Angaben unter der Schwelle, gezeigt oder nicht? Dann braucht es noch Belege
+-- (Hinweiszeile im Tooltip, #40).
 function ns.TeachInfo(npc, discover)
+  if discover and not ns.Studied(npc) then return nil, false end
   local out, have, clear, unsure = {}, {}, false, false
   local function add(a, r, conf)
     local e = have[r]
@@ -314,7 +322,7 @@ function ns.TeachInfo(npc, discover)
     if ns.OwnTame(o) then
       clear = true
       for _, e in ipairs(seen) do add(e.a, e.r, ns.CONF_SURE) end
-    elseif not discover then
+    else
       -- mit einem unbekannten Zauber zeigte sie vielleicht doch etwas (#114)
       if #seen == 0 and not empty[o.rep] and not ns.HasUnknownSpell(o) then
         empty[o.rep] = true
@@ -333,29 +341,27 @@ function ns.TeachInfo(npc, discover)
       end
     end
   end
-  if not discover then
-    -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
-    for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
-      if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
-      if ns.ShowConf(e.conf) then
-        clear = true
-        add(e.a, e.r, e.conf)
-      end
+  -- Daten mit wirksamer Belegung; nur, was die Einstellungen zeigen; Widerlegtes nie
+  for _, e in ipairs(ns.AllBeastTeaches(npc) or {}) do
+    if e.conf == ns.CONF_UNSURE or e.conf == ns.CONF_NONE then unsure = true end
+    if ns.ShowConf(e.conf) then
+      clear = true
+      add(e.a, e.r, e.conf)
     end
-    -- fremde Ränge unter der Schwelle: unklar nur, wenn sie nicht schon belegt dastehen (#144)
-    for r in pairs(pending) do
-      if not (have[r] and have[r].conf == ns.CONF_SURE) then unsure = true end
-    end
-    -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
-    -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
-    if nEmpty > 0 then
-      local conf = ns.ForeignConf(empty, nEmpty)
-      if conf == ns.CONF_SURE then
-        clear = true
-      elseif not clear then
-        unsure = true
-        if ns.ForeignShown(conf) then clear = true; out.conf = conf end
-      end
+  end
+  -- fremde Ränge unter der Schwelle: unklar nur, wenn sie nicht schon belegt dastehen (#144)
+  for r in pairs(pending) do
+    if not (have[r] and have[r].conf == ns.CONF_SURE) then unsure = true end
+  end
+  -- „lehrt nichts“ aus fremden Zähmungen: belegt ab ns.FOREIGN_SURE, ab ns.FOREIGN_UNSURE unsicher und nur mit dem
+  -- Schalter, dann als „lehrt nichts?“ (out.conf, #136)
+  if nEmpty > 0 then
+    local conf = ns.ForeignConf(empty, nEmpty)
+    if conf == ns.CONF_SURE then
+      clear = true
+    elseif not clear then
+      unsure = true
+      if ns.ForeignShown(conf) then clear = true; out.conf = conf end
     end
   end
   if not clear then return nil, unsure end
@@ -372,8 +378,8 @@ end
 -- Y aus allem, was bekannt ist (Daten, Zellen, Zähmungen, Fährten). Ränge: nur die, die ein Lehrtier der Zone
 -- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Fähigkeiten bekannt“
 -- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
---   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown und ranksFound selbst
---                   identifiziert.
+--   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown = studierte Lehrtiere,
+--                   ranksFound = Ränge, die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169).
 --   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
 --                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
 --                   Einstellungen ausblenden, zählt weder in X noch in Y.
@@ -460,7 +466,7 @@ function ns.ZoneProgress(map)
         if not discover then
           ranksFound[r] = true
         elseif st == "known" then
-          -- selbst identifiziert: eine eigene Zähmung zeigte diesen Rang
+          -- studiert: die kompletten Daten nennen diesen Rang (#169, bis 1.2.0 nur die eigene Zähmung)
           for _, e in ipairs(ns.TeachInfo(npc, true) or {}) do
             if e.r == r then ranksFound[r] = true end
           end

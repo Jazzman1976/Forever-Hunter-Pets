@@ -56,11 +56,13 @@ The current mode is shown in small letters in the top right corner of the window
 | | Complete mode | Explorer mode |
 | --- | --- | --- |
 | Meant for | players who want the answer | players who want to search |
-| Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself |
+| Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself; once you have tamed a beast, everything that is known about what it teaches |
 | Beasts you have not found | shown with their name, like all others | shown anonymously as *? undiscovered beast*, or as a count (*2 undiscovered*) |
 | Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
 | Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
 | Collecting and sharing | on | on – explorers help everybody |
+
+Both modes rest on the same data; explorer mode only decides *when* you see it. Once you have tamed a beast yourself, the addon shows everything that is known about what it teaches – also ranks your own taming did not show, for example because you tamed it at a lower level – and lists it with every rank it teaches in the Abilities tab.
 
 In explorer mode every character discovers on its own: what your other characters sighted, found or tamed does not count for this one. If you'd rather share your finds across the account, switch on *Show finds of my other characters* below *Explorer mode* in the settings. The mode is chosen per character, and so is this option. Collecting and sharing with other players work the same either way.
 

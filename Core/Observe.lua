@@ -201,14 +201,6 @@ function ns.ForeignShown(conf)
   return conf ~= nil and ns.ShowConf(conf)
 end
 
--- Hat eine eigene Zähmung diesen Rang bei diesem Tier gezeigt? (Entdeckermodus; eigene nach ns.OwnTame)
-function ns.OwnSeen(npcId, a, r)
-  for _, o in ipairs(index()[npcId] or {}) do
-    if ns.OwnTame(o) and verdict(o, a, r) == "seen" then return true end
-  end
-  return false
-end
-
 -- Belegung nach Beobachtungen: gesehen → belegt, widerlegt → ausgeblendet, unsicher → höchstens unsicher, sonst wie
 -- in den Daten
 function ns.EffectiveConf(npcId, a, r, conf)

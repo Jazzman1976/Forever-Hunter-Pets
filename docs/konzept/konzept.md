@@ -89,7 +89,7 @@ Die mitgelieferten Daten sind nur ein Teil. Was das Addon zeigt, setzt sich zusa
 | Name eines Tiers | `ns.BeastName` | eigene Sichtung (Client-Sprache) → Daten → Fernname → fremde Sichtung ab 3 Meldern, die genau diesen Namen nennen (#103) → „Unbekanntes Tier (#ID)“ |
 | Name und Icon einer Familie | `ns.FamilyName`, `ns.FamilyIds`, `ns.FamilyIcon` | Daten → Erhebung → Ersatz-Icon „Wildtier zähmen“ |
 | Lehrtiere eines Rangs | `ns.Teachers`, `ns.ObservedTeachers` | Daten + Zähmungen (eigene und geteilte) |
-| Was lehrt ein Tier? | `ns.TeachInfo(npc, discover)` | Entdeckermodus: eigene Zähmung; sonst Daten + alle Zähmungen |
+| Was lehrt ein Tier? | `ns.TeachInfo(npc, discover)`, `ns.Studied` | Daten + alle Zähmungen; im Entdeckermodus erst, wenn das Tier studiert ist (#169) |
 | Fundorte, Zonen | `ns.Coords`, `ns.ZoneCounts`, `ns.BeastZones`, `ns.TamedZones` | Daten + Zellen (fremde ab 3 Meldern je Tier und Karte, `ns.ForeignCellsOk`) + eigene Zähmungen |
 
 Anlass für den Grundsatz: Ein gezähmter Kojote fehlte bei „Beißen 2“, ein Junger Fleischreißer „brachte keine Fähigkeit mit“ – beides, weil nur die mitgelieferten Daten gelesen wurden.
@@ -102,16 +102,17 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 
 | Stelle | Komplettmodus | Entdeckermodus |
 | --- | --- | --- |
-| Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes |
+| Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes; ab „Fähigkeiten bekannt“ dieselben Daten wie im Komplettmodus (#169) |
 | Grundgerüst | – | alle Fähigkeiten und Ränge (Spielwissen), **wie viele** Lehrtiere und Tiere es gibt |
-| Fähigkeiten, Liste und Details | alle Lehrtiere | eigene; die übrigen als „N unentdeckt“ bzw. „? unentdecktes Tier“ |
+| Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N unentdeckt“ bzw. „? unentdecktes Tier“ |
 | Kartenseite | alle Fundorte | eigene Zellen |
-| Tier-Tooltip | Ränge aus allen Daten, kein Status | Status-Tag, Ränge nur aus eigener Zähmung |
+| Tier-Tooltip | Ränge aus allen Daten, kein Status | Status-Tag; nach der eigenen Zähmung Ränge aus allen Daten (#169) |
 | Reiter „Gebiet“, Liste | alle Tiere benannt, anklickbar, kein Status | anonym bis zur Fährte, dann Name und Status-Tag |
 | Reiter „Gebiet“, Fortschritt | Stand des Datensammelns | eigener Stand |
 | Ausbildung | unverändert | unverändert |
 | Sammeln und Teilen | an | an |
 
+- **Dieselben Daten, nur das Wann ist anders** (Maintainer, 13.11.2026, Epic #186): Auch im Entdeckermodus sind die kompletten Daten die Grundlage – Stammdaten, fremde Meldungen ab 3 Meldern und eigene Funde, mit denselben Einstellungen zur Belegung. Der Modus entscheidet nur, *wann* etwas erscheint; das hängt von der Entdeckung ab, je Zone. Hat man ein Tier selbst gezähmt (`ns.Studied`, NPC-ID), zeigt es seine Lehre aus den kompletten Daten, auch in anderen Zonen ab der Fährte (#169). Bis 1.2.0 zeigte der Entdeckermodus nur, was die eigene Zähmung zeigte; ein Tier, das man auf niedriger Stufe zähmte, verschwieg so für immer die Ränge, die es erst höher mitbringt.
 - **Modus und Funde je Charakter** (#43, 20.10.2026; vorher Funde je Konto). Jeder Charakter wählt seinen Modus und entdeckt im Entdeckermodus alles selbst. Die Unteroption „Funde anderer Charaktere“ (Standard aus, je Charakter) zählt die Funde des ganzen Kontos, wie bis 0.10.0. Gesammelt und geteilt wird weiter kontoweit; jeder Charakter merkt sich seine Fährten und Zellen zusätzlich selbst, eigene Zähmungen erkennt er an seinem Kürzel. Die Funde bis 0.10.0 tragen keinen Charakter: Sie übernimmt einmal der Hauptcharakter, der mit den meisten eigenen Sichtungen und Zähmungen.
 - **Der Entdeckermodus ist der empfohlene und der Standard** (Nutzer, 20.10.2026, #42: „Ich möchte niemandem etwas verbieten. Ich möchte überzeugen.“). Der Startdialog zeigt ihn zuerst, mit „Empfohlen.“ als Wort; der Komplettmodus folgt darunter, ehrlich als Weg für alle, die nicht suchen wollen. Wer den Dialog ohne Wahl schließt, spielt im Entdeckermodus; auch „Standard wiederherstellen“ in den Einstellungen ergibt ihn.
 - **Startdialog** beim ersten Öffnen je Charakter; bis zur Wahl zeigt das Addon nichts, was spoilern könnte (Tooltip leer), sammelt aber. Bis 0.13.0-beta mit einem Absatz zur Beta (ermutigend: Lücken warten darauf, entdeckt zu werden), mit 1.0.0 entfernt. Umschaltbar in den Einstellungen. Der aktuelle Modus steht klein oben rechts vor dem Zahnrad; Hover erklärt ihn und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen.
@@ -230,7 +231,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **„Aktuelles Gebiet“** ist vorgewählt und folgt dem Spieler bei jedem Gebietswechsel, wie „Aktuelle Zone“ in „Fähigkeiten“ (#22). Ein fest gewähltes Gebiet bleibt stehen. In einem Gebiet ohne bekannte Tiere bleibt die Auswahl dort und die Liste sagt „Noch kein Tier in diesem Gebiet bekannt.“ – kein stilles Springen. Die Gebietsliste wird beim Öffnen und Gebietswechsel neu gelesen.
 - Kästchen aus „Fähigkeiten“, Familien-Icon.
 - „lehrt“ mit Fähigkeits-Icons ohne Rang (passt auch bei mehreren); Namen und Ränge im Tooltip der Zeile.
-- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ und „? unentdeckt“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang, „unentdeckt“ gibt es nur im Entdeckermodus, und dort ist alles belegt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
+- Nicht Belegtes trägt dasselbe „?“ bzw. „!“ (`ns.ConfMark`) wie Tooltip und „Fähigkeiten“ (#40): in der Zeile hinter dem Icon, im Tooltip der Zeile und der Lehrtier-Kachel hinter dem Rang, im Tooltip der Rang-Kachel, wenn kein gezeigtes Lehrtier der Zone den Rang belegt lehrt. Gezeigt wird nur, was die Einstellungen erlauben. Das „?“ von „? unklar“ und „? unentdeckt“ steht vorn als eigenes Wort, das Belegungszeichen hinten am Rang. Beide treffen nie in einer Zeile zusammen: „? unklar“ hat keinen Rang, „unentdeckt“ steht nie bei einem Rang. Seit #169 kann auch im Entdeckermodus „?“ bzw. „!“ hinter einem Rang stehen, wenn ein studiertes Tier unsichere Angaben hat und die Einstellung sie zeigt. Ein drittes Zeichen hätte „Gleiches gleich“ gebrochen; wenn einmal alles belegt ist, spielt die Doppelbedeutung keine Rolle mehr (Maintainer).
 - „lehrt nichts“ aus fremden Zähmungen gilt erst ab 3 Meldern, wie Ränge; eine eigene Zähmung zählt sofort (#40). Vorher reichte eine einzige fremde Zähmung, was eine Falschaussage sein konnte.
 - Erklärung der Status im Tooltip des Zählers „Tiere“.
 - Unentdeckte Tiere tragen die zweite Zeile „Gehe auf die Pirsch und finde es.“ (#19) – ohne sie hielten manche das für eine Lücke in den Daten.
