@@ -84,6 +84,7 @@ ns.Locales.deDE = {
   ["training points: %d"] = "Trainingspunkte: %d",
   -- Lernstand: Jeder Zustand nennt, wen er meint (#77)
   ["You have it"] = "Hast du",
+  ["You lack it"] = "Fehlt dir",
   ["you have it"] = "hast du",
   ["you lack it"] = "fehlt dir",
   ["Your pet already knows this rank, you do not yet. Let it use the ability in combat until the game reports that you learned it. Don't release the pet before."] = "Dein Pet kann diesen Rang schon, du noch nicht. Lass es die Fähigkeit im Kampf einsetzen, bis das Spiel meldet, dass du sie gelernt hast. Lass das Tier vorher nicht frei.",

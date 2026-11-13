@@ -519,7 +519,8 @@ function ns.BuildAbilities(parent)
     b.box.row = b
     b.box:SetPoint("LEFT", 6, 0)
     -- Abhaken von Hand nur mit der Einstellung „Manuelles Editieren“; sonst wählt ein Klick die Zeile.
-    -- Der Tooltip erscheint in beiden Fällen: Das Kästchen hat keine Spaltenüberschrift.
+    -- Der Tooltip erscheint in beiden Fällen: Das Kästchen hat keine Spaltenüberschrift. Sein Titel nennt den
+    -- Zustand, „Hast du“ bzw. „Fehlt dir“ (#188; vorher immer „Hast du“, auch bei fehlendem Rang).
     b.box:SetScript("OnClick", function(self)
       local e = self.row.entry
       if ns.db.ui.manualEdit then
@@ -531,7 +532,7 @@ function ns.BuildAbilities(parent)
     b.box:SetScript("OnEnter", function(self)
       local e = self.row.entry
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText(L["You have it"], 1, 1, 1)
+      GameTooltip:SetText(ns.IsKnown(e.r) and L["You have it"] or L["You lack it"], 1, 1, 1)
       GameTooltip:AddLine(ns.IsKnown(e.r) and L["You have learned this rank."] or L["You have not learned this rank yet."], 1, 0.82, 0)
       GameTooltip:AddLine(L["The tick shows which ranks you can teach your pets. The addon sets it on its own from the Beast Training window and when the game reports that you learned the spell. A tick counts for this rank only."], 0.8, 0.8, 0.8, true)
       if ns.db.ui.manualEdit then
