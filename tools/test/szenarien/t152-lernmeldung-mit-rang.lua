@@ -63,3 +63,18 @@ ok(#PRINTED == 0, "[Kürschnerei]: nichts gelernt")
 learn(1978, "Schlangenbiss (Rang 1)")
 ok(#PRINTED == 0, "[Schlangenbiss (Rang 1)]: nichts gelernt")
 ok(lastLog():find("kein Rang erkannt", 1, true) ~= nil, "… Protokoll „kein Rang erkannt“")
+
+-- Meldungen aus dem Protokoll vom 12.11.2026 (beim Tierausbilder, ohne offenen Rang am Pet): damals „kein Rang
+-- erkannt“, jetzt eindeutig über die Zahl
+local stamina, armor = ability("Große Ausdauer"), ability("Natürliche Rüstung")
+learn(4195, "Große Ausdauer (Rang 1)")
+learn(24547, "Natürliche Rüstung (Rang 1)")
+learn(4197, "Große Ausdauer (Rang 3)")
+learn(24557, "Natürliche Rüstung (Rang 3)")
+ok(known(stamina.ranks[1]) and known(stamina.ranks[3]), "Große Ausdauer Rang 1 und 3 vom Tierausbilder gelernt")
+ok(not known(stamina.ranks[2]), "… Rang 2 bleibt offen")
+ok(known(armor.ranks[1]) and known(armor.ranks[3]), "Natürliche Rüstung Rang 1 und 3 vom Tierausbilder gelernt")
+-- Zauber des Jägers mit Rang im Namen bleiben außen vor
+learn(14318, "Aspekt des Falken (Rang 2)")
+learn(13550, "Schlangenbiss (Rang 3)")
+ok(#PRINTED == 0, "[Aspekt des Falken (Rang 2)], [Schlangenbiss (Rang 3)]: nichts gelernt")
