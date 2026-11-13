@@ -204,6 +204,7 @@ ns.Locales.deDE = {
   ["%d not studied yet"] = "%d noch nicht studiert",
   -- „Keine Daten bekannt“ mit rotem X (ns.NoData, #172), vorher „? unbekannt“ und „? unklar“
   ["No data known"] = "Keine Daten bekannt",
+  ["No data"] = "Keine Daten",   -- kurz, nur in der Zeile im Reiter „Gebiet“ (sonst schnitt sie ab)
   ["No data known – nobody has found a beast that teaches it yet."] = "Keine Daten bekannt – noch niemand hat ein Tier gefunden, das es beibringt.",
   ["hidden beast"] = "verborgenes Tier",
   ["and %d more hidden beasts"] = "und %d weitere verborgene Tiere",

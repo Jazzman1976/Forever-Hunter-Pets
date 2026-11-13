@@ -12,11 +12,12 @@ ok(nd:find("|T", 1, true) and nd:find("ReadyCheck-NotReady", 1, true), "mit rote
 ok(not nd:find("?", 1, true), "kein „?“")
 ok(NS.NoData("x"):sub(-1) == "x", "eigener Text hinter dem X")
 
-ok(NS.TeachText(990172) == nd, "Tier ohne jede Angabe: " .. NS.TeachText(990172))
-ok(not NS.TeachText(2323):find(L["No data known"], 1, true), "Tier mit Lehre: kein „Keine Daten bekannt“")
+-- in der Zeile im Reiter „Gebiet“ kurz „Keine Daten“ (sonst schnitt sie ab), mit demselben X
+ok(NS.TeachText(990172) == NS.NoData(L["No data"]), "Tier ohne jede Angabe, Zeile: " .. NS.TeachText(990172))
+ok(not NS.TeachText(2323):find(L["No data"], 1, true), "Tier mit Lehre: kein „Keine Daten“")
 
 -- deutsche Texte stehen in Locales/deDE.lua, die alten Schlüssel sind weg
 local de = NS.Locales.deDE
-ok(de["No data known"] == "Keine Daten bekannt", "deutsch: Keine Daten bekannt")
+ok(de["No data known"] == "Keine Daten bekannt" and de["No data"] == "Keine Daten", "deutsch: Keine Daten bekannt, kurz Keine Daten")
 ok(de["? unknown"] == nil and de["? unclear"] == nil
   and de["? Unknown – nobody has found a beast that teaches it yet."] == nil, "alte Schlüssel entfernt")

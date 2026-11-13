@@ -33,13 +33,15 @@ end
 ok(NS.BeastStatus(TRACK, MAP) == "track", "Fährte")
 
 local function text(npc) return NS.TeachText(npc, NS.BeastStatus(npc, MAP)) end
+local SHORT = NS.NoData(L["No data"])   -- Zeile im Reiter „Gebiet“: kurz „Keine Daten“
+ok(NS.TeachSummary(NODATA) == NS.NoData(), "Tooltips: voller Text „Keine Daten bekannt“")
 ok(text(TEACHES) == L["teaches something"], "gefunden, Daten nennen einen Rang: " .. tostring(text(TEACHES)))
 ok(select(2, NS.TeachSummary(TEACHES)) == "something", "Art: something")
 ok(text(NOTHING) == L["teaches nothing"], "gefunden, 3 fremde Zähmungen ohne Rang: " .. tostring(text(NOTHING)))
 ok(select(2, NS.TeachSummary(NOTHING)) == "nothing", "Art: nothing")
-ok(text(TWO) == NS.NoData(), "gefunden, 2 fremde Melder ohne Rang, Schalter aus: Keine Daten bekannt")
-ok(text(TWO_RANK) == NS.NoData(), "gefunden, 2 fremde Melder mit Rang, Schalter aus: Keine Daten bekannt")
-ok(text(NODATA) == NS.NoData(), "gefunden, nichts bekannt: Keine Daten bekannt")
+ok(text(TWO) == SHORT, "gefunden, 2 fremde Melder ohne Rang, Schalter aus: Keine Daten")
+ok(text(TWO_RANK) == SHORT, "gefunden, 2 fremde Melder mit Rang, Schalter aus: Keine Daten")
+ok(text(NODATA) == SHORT, "gefunden, nichts bekannt: Keine Daten")
 ok(select(2, NS.TeachSummary(NODATA)) == "none", "Art: none")
 ok(text(TRACK) == nil, "Fährte: kein Text")
 ok(NS.TeachText(TEACHES, "unknown") == nil, "noch nie gesehen: kein Text")
@@ -65,7 +67,7 @@ ok(t and t:find("|T", 1, true) and t:find((L["teaches %s"]):gsub("%%s.*", ""), 1
 -- Komplettmodus unverändert
 NS.char.discover = false
 ok(NS.TeachText(TEACHES):find("|T", 1, true) ~= nil, "Komplettmodus: lehrt mit Icons")
-ok(NS.TeachText(NODATA) == NS.NoData(), "Komplettmodus: Keine Daten bekannt")
+ok(NS.TeachText(NODATA) == SHORT, "Komplettmodus: Keine Daten")
 ok(NS.TeachText(NOTHING) == L["teaches nothing"], "Komplettmodus: lehrt nichts")
 
 ok(NS.Locales.deDE["teaches something"] == "lehrt etwas", "deutsch: lehrt etwas")
