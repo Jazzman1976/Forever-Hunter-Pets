@@ -507,14 +507,10 @@ function ns.BuildArea(parent)
     showCount(teachers, p.teachersKnown, p.teachers, "%d of %d identified")
     showCount(ranks, p.ranksFound, p.ranks, "%d of %d ranks discovered")
     layoutTiles(p)
-    -- Fundorte als Fußnote: im Entdeckermodus die eigenen Zellen, im Komplettmodus alle Fundorte der Zone
-    local where
-    if ns.Discovering() then
-      where = p.cells == 1 and L["1 cell"] or (L["%d cells"]):format(p.cells)
-    else
-      where = p.points == 1 and L["1 spawn point"] or (L["%d spawn points"]):format(p.points)
-    end
-    foot:SetText((L["Spawn points: %s"]):format(where))
+    -- Fundorte als Fußnote: so viele, wie die Karte über alle Tiere zeigt – im Entdeckermodus eigene Zellen und bei
+    -- studierten Tieren alle Fundorte (#170), im Komplettmodus alle Fundorte der Zone
+    local n = ns.Discovering() and p.shown or p.points
+    foot:SetText((L["Spawn points: %s"]):format(n == 1 and L["1 spawn point"] or (L["%d spawn points"]):format(n)))
   end
 
   -- Moduswechsel und Zonenwechsel: neu zeichnen, wenn der Reiter gerade zu sehen ist (sonst beim Öffnen)

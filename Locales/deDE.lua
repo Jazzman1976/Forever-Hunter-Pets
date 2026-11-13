@@ -223,8 +223,6 @@ ns.Locales.deDE = {
   ["%d of %d identified"] = "%d von %d identifiziert",
   ["%d of %d ranks discovered"] = "%d von %d Rängen entdeckt",
   ["Spawn points"] = "Fundorte",
-  ["%d cells"] = "%d Zellen",
-  ["1 cell"] = "1 Zelle",
   ["1 spawn point on the map"] = "1 Fundort auf der Karte",
   ["%d spawn points on the map"] = "%d Fundorte auf der Karte",
   -- Entdecken: Kacheln, Hinweis und Fußnote im Reiter „Gebiet“ (#19)

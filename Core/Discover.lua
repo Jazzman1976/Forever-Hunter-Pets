@@ -383,11 +383,12 @@ end
 --   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
 --                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
 --                   Einstellungen ausblenden, zählt weder in X noch in Y.
--- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone.
+-- track, found und known zählen die Status je Tier (für /fhp gebiet), points alle Fundorte der Zone, shown die, die
+-- die Karte zeigt (Entdeckermodus: studierte Tiere alle, sonst die eigenen Zellen, #170).
 function ns.ZoneProgress(map)
   local discover = ns.Discovering()
   local p = { beasts = 0, beastsKnown = 0, track = 0, found = 0, known = 0, teachers = 0, teachersKnown = 0,
-    ranks = 0, ranksFound = 0, cells = 0, points = 0 }
+    ranks = 0, ranksFound = 0, cells = 0, points = 0, shown = 0 }
   local teaches = {}   -- npc → { [r] = Belegung }
   local info = {}      -- npc → ns.TeachInfo(npc, false) (Komplettmodus)
   local abilityOf, order = {}, {}   -- Rang → Fähigkeit und Platz in den Daten, für die Kacheln (#19)
@@ -448,7 +449,10 @@ function ns.ZoneProgress(map)
       p.beastsKnown = p.beastsKnown + 1
     end
     p.cells = p.cells + ownCells(npc, map)
-    p.points = p.points + (ns.ZoneCounts(npc, true)[map] or 0)
+    local points = ns.ZoneCounts(npc, true)[map] or 0
+    p.points = p.points + points
+    -- so viele, wie die Karte für das Tier zeigt (ns.Coords): studiert alle, sonst die eigenen (#170)
+    p.shown = p.shown + ((not discover or st == "known") and points or ownCells(npc, map))
     if teaches[npc] then
       p.teachers = p.teachers + 1
       local known = not discover or st == "known"

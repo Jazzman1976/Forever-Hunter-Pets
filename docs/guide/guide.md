@@ -87,7 +87,7 @@ Every pet ability, rank by rank, and the beasts that teach it.
 
 **Details (right).** Icon, name, rank, description, which families can learn it, and the teaching beasts – the easiest first, split into *Tameable at your level* and *Above your level*. The recommended beast has a star. Hover over a beast for its level, classification, family, zones and an **effort** rating (easy, medium, hard – based on level, elite or rare, dungeon or raid, number of known spawn points, enemy faction territory). Uncertain beasts are listed under their own heading and marked **?** (see [trustworthy data](#trustworthy-data)). In explorer mode, teaching beasts you have not identified yourself appear as *? undiscovered beast*.
 
-**Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points. The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
+**Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points (in explorer mode: all known ones in the zones where you found and tamed it). The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
 
 ## Zone
 
@@ -111,14 +111,14 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
   When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
 - **Complete mode:** every beast with its name, no status. The checkbox is ticked when it is known what the beast teaches. Beasts with known abilities come first.
 
-**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points. Click another beast to switch.
+**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch.
 
 **The counters (below the map).**
 - **Beasts** – *X of Y known*. Only *abilities known* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.
 - **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Undiscovered tiles only say *? undiscovered teaching beast*.
 - **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
 - Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
-- **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
+- **Spawn points** – at the bottom left: as many as the map shows over all beasts of the zone – in explorer mode your own spots plus all spawn points of the beasts you have tamed, in complete mode all known spawn points of the zone.
 
 All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come. In complete mode the counters and tiles count what the list shows: with uncertain beasts switched off, uncertain ranks count nowhere; switched on, they count, and the rank tile's tooltip carries a **?** unless another beast of the zone teaches that rank for sure.
 

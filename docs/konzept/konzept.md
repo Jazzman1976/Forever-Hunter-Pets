@@ -105,7 +105,7 @@ Wortlaut des Nutzers (17.10.2026), maßgeblich:
 | Lehrtiere, Namen, Fundorte | alles Bekannte | nur Eigenes; ab „Fähigkeiten bekannt“ dieselben Daten wie im Komplettmodus (#169) |
 | Grundgerüst | – | alle Fähigkeiten und Ränge (Spielwissen), **wie viele** Lehrtiere und Tiere es gibt |
 | Fähigkeiten, Liste und Details | alle Lehrtiere | selbst gezähmte, bei jedem Rang, den sie nach den Daten lehren (#169); die übrigen als „N unentdeckt“ bzw. „? unentdecktes Tier“ |
-| Kartenseite | alle Fundorte | eigene Zellen |
+| Karte (Gebiet, Kartenseite) | alle Fundorte | eigene Zellen; ist das Tier in der Zone studiert, dort alle bekannten Fundorte (#170) |
 | Tier-Tooltip | Ränge aus allen Daten, kein Status | Status-Tag; nach der eigenen Zähmung Ränge aus allen Daten (#169) |
 | Reiter „Gebiet“, Liste | alle Tiere benannt, anklickbar, kein Status | anonym bis zur Fährte, dann Name und Status-Tag |
 | Reiter „Gebiet“, Fortschritt | Stand des Datensammelns | eigener Stand |
@@ -145,7 +145,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 | Tiere „X von Y bekannt“ | Tiere der Zone | selbst gezähmt (`known`) | irgendwer weiß, was es lehrt |
 | Lehrtiere | Tiere der Zone, die etwas lehren | selbst identifiziert | alle |
 | Fähigkeiten | Ränge, die ein Lehrtier der Zone lehrt | selbst entdeckt | alle |
-| Fundorte | – | eigene Zellen | alle Fundorte |
+| Fundorte | – | was die Karte zeigt: eigene Zellen, bei studierten Tieren alle Fundorte (#170) | alle Fundorte |
 
 - **Nur „Fähigkeiten bekannt“ treibt den Fortschritt.** Fährte und Fund bewegen den Balken nicht.
 - **Meldung „Entdeckt“** (20.10.2026, #51): Der Fortschritt wächst nur beim Zähmen, und genau dann sagt es der Chat – sonst bliebe der wichtigste Moment des Sammelspiels unbemerkt, bis man den Reiter öffnet. Nur im Entdeckermodus, eine Zeile unter „Beobachtet“, für die Zone, in der man zähmte: neue Rang-Kacheln („Entdeckt: Beißen Rang 3 – Dämmerwald: 5 von 12 Rängen“), sonst das Tier, das „Fähigkeiten bekannt“ wurde („… 4 von 9 Tieren“); nichts Neues, keine Zeile. Die Zahlen sind die des Reiters (`ns.ZoneProgress` vorher und nachher). Der Zonenname steht vorne, weil deutsche Zonen sonst je einen eigenen Artikel bräuchten. Wird das Tier dadurch auch in einer anderen Zone bekannt, sagt das nur der Reiter. Fährten melden sich weiter nicht (sonst liefe der Chat voll).
@@ -166,7 +166,7 @@ Nur im Entdeckermodus. Im Komplettmodus gibt es keinen Status.
 - **Kampf:** Während des Kampfs ruht das Addon (geheime Werte). Fundorte entstehen trotzdem – beim Heranlaufen und danach neben dem toten Tier. Eine eigene Behandlung brachte in der Probe nichts.
 - **Fernsicht:** Während „Augen des Wildtiers“ (1002) und „Adlerauge“ (6197) entstehen keine Zellen (`ns.Possessing`), weil der Jäger woanders steht als das, was er sieht. `CheckInteractDistance` misst dabei vom Jäger aus; die Sperre ist die zweite Sicherung.
 - **Je Tier und Zelle einmal.** Wandernde Tiere ergeben eine Kette – für die Suche nützlicher als ein Punkt.
-- **Karte:** Punkte nur für das gewählte Tier, ohne Auswahl nie (sonst hunderte). Die Karte ist so weit aufgedeckt, wie der Charakter die Zone erkundet hat – eine fremde Overlay-Tabelle wurde aus Lizenzgründen abgelehnt, und das eigene Erkunden gehört zum Suchen.
+- **Karte:** Punkte nur für das gewählte Tier, ohne Auswahl nie (sonst hunderte). Alle Punkte sehen gleich aus, rund und rot (gold bei seltenen Tieren): Die Karte unterscheidet nicht, woher ein Fundort stammt (Maintainer, 13.11.2026, #170: „Einem Spieler sollte es egal sein, woher die Daten kommen.“). Die Karte ist so weit aufgedeckt, wie der Charakter die Zone erkundet hat – eine fremde Overlay-Tabelle wurde aus Lizenzgründen abgelehnt, und das eigene Erkunden gehört zum Suchen.
 
 ## 9 Fährten
 
