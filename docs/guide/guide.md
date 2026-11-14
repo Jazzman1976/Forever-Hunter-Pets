@@ -42,12 +42,16 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for.
-- **Complete mode** – if you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost.
+- **Explorer mode** – you go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab.
+- **Complete mode** – you find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself.
+
+The data is still being collected and grows more complete over time, so don't be surprised if something is still missing.
 
 If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
+
+In explorer mode, a short **tour** follows the first time you open the window: speech bubbles show you where the beasts, the checkboxes, the map and your progress are, and what the other tabs are for. Close it any time with the X or Esc. It comes once per account; `/fhp tour` shows it again.
 
 The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
@@ -252,6 +256,8 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
 | `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session) |
+| `/fhp mode` | switch between explorer mode and complete mode; before complete mode it asks first |
+| `/fhp tour` | show the explorer mode tour again |
 | `/fhp zones` | zones the addon has no map for |
 | `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 

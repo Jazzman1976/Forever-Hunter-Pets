@@ -83,7 +83,8 @@ local function create()
   end
   showMode()
   ns.OnModeChanged(showMode)
-  -- Hover erklärt den Modus und wirbt für den Entdeckermodus, Klick öffnet die Einstellungen (#42). Die Schrift
+  -- Hover erklärt den Modus und wirbt im Komplettmodus für den Entdeckermodus, ohne ihn zu empfehlen (#177);
+  -- Klick öffnet die Einstellungen (#42). Die Schrift
   -- selbst empfängt keine Maus, deshalb ein unsichtbarer Knopf darüber; ohne Text (vor der Wahl) ist er 0 breit.
   f.modeHover = CreateFrame("Button", nil, f)
   f.modeHover:SetAllPoints(f.mode)
@@ -93,7 +94,7 @@ local function create()
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
     if ns.Discovering() then
       GameTooltip:SetText(L["Explorer mode"], 1, 1, 1)
-      GameTooltip:AddLine(L["You are in explorer mode – our recommendation. If you would rather see all details right away, switch explorer mode off in the settings."], 0.8, 0.8, 0.8, true)
+      GameTooltip:AddLine(L["You are in explorer mode. If you would rather see all details right away, switch explorer mode off in the settings."], 0.8, 0.8, 0.8, true)
     else
       GameTooltip:SetText(L["Complete mode"], 1, 1, 1)
       GameTooltip:AddLine(L["You are in complete mode. There are no challenges here and no hunt of your own, but you see all details. Why not give explorer mode a try?"], 0.8, 0.8, 0.8, true)
@@ -164,6 +165,9 @@ local function create()
     if areaPane:IsShown() then f.area:Render() end
   end)
 
+  -- für die Tour (UI/Tour.lua, #178): Reiter umschalten und auf ihre Knöpfe zeigen
+  f.ShowView, f.tabs = show, tabs
+
   local view = ns.db.ui.view
   show((view == "training" or view == "area") and view or "abilities")
   return f
@@ -180,4 +184,6 @@ function ns.Toggle()
     ns.frame = main
   end
   main:SetShown(not main:IsShown())
+  -- beim ersten Öffnen im Entdeckermodus die Tour (#178), auch gleich nach der Wahl in der Startansicht
+  if main:IsShown() and ns.MaybeTour then ns.SafeCall("tour", ns.MaybeTour) end
 end
