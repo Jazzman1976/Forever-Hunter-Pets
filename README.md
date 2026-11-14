@@ -4,12 +4,21 @@
 
 **Taming is a game again.** Explore **WoW Forever**, find the beasts that teach each pet ability rank, tame them and train your pet the classic way. What nobody has found yet is your next hunt.
 
-Nothing is copied from websites or databases: everything the addon knows was found in the game by its players. What you see and tame is noted and shared, and the catalogue grows with every hunter – which beast teaches which rank, where it lives, and which ranks you have learned. Play in **complete mode** to see everything that is known, or in **explorer mode** to see only what you discovered yourself and how much is still out there.
+Nothing is copied from websites or databases: everything the addon knows was found in the game by its players. What you see and tame is noted and shared, and the catalogue grows with every hunter – which beast teaches which rank, where it lives, and which ranks you have learned.
+
+## Two ways to play
+
+The first time a character opens the addon, it asks how you want to play:
+
+- **Explorer mode** – you go hunting yourself. The addon reveals the information bit by bit: first that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. A short tour shows you around, and your hunter rank rises with the beasts you find.
+- **Complete mode** – you see everything that is known right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left to discover yourself.
+
+Both modes rest on the same data and collect and share the same way. Switch any time in the settings or with `/fhp mode`. The data is still growing, so some beasts and ranks are not known yet – finding them is part of the game.
 
 ## What it does
 
 - **Abilities** – every rank, the beasts that teach it, their spawn points on the zone map, and which ranks you have learned.
-- **Zone** – a progress book per zone: which beasts live here, what they teach, and how many you know.
+- **Zone** – a progress book per zone: which beasts live here, what they teach, and how many you know – in explorer mode with your progress per zone in the zone list.
 - **Training** – what your active pet can learn right now, like the classic training window.
 - **Beast tooltips** – what a beast teaches and whether you know it already, as you hover over it.
 - **Collects as you play** – targeting, hovering, nameplates, *Track Beasts*, taming and *Beast Training* all feed the catalogue, and players of the addon share with each other in the game.
