@@ -186,6 +186,16 @@ ns.Locales.deDE = {
   ["How do you want to play?"] = "Wie möchtest du spielen?",
   ["Complete mode"] = "Komplettmodus",
   ["Explorer mode"] = "Entdeckermodus",
+  -- Jägerrang in der Titelzeile (#181)
+  ["Tracker"] = "Fährtenleser",
+  ["Stalker"] = "Pirschjäger",
+  ["Warden"] = "Wildhüter",
+  ["Master of the Wild"] = "Meister der Wildnis",
+  ["Hunter rank: %s"] = "Jägerrang: %s",
+  ["You have found 1 beast."] = "Du hast 1 Tier gefunden.",
+  ["You have found %d beasts."] = "Du hast %d Tiere gefunden.",
+  ["Next rank: %s from %d beasts found."] = "Nächster Rang: %s ab %d gefundenen Tieren.",
+  ["Highest rank reached."] = "Höchster Rang erreicht.",
   -- Startdialog und Modusanzeige (#42)
   ["Forever Hunter Pets turns finding pets into a hunt of your own – or simply shows you everything that is known."] = "Forever Hunter Pets macht die Suche nach Pets zu deiner eigenen Jagd – oder zeigt dir einfach alles, was bekannt ist.",
   -- Startansicht: Modi nebeneinander, ohne Empfehlung (#177)

@@ -608,6 +608,25 @@ function ns.ZoneTallies(zones)
   return out, total
 end
 
+-- ---- Jägerrang (#181) ----
+-- Ein Titel nach den gefundenen Tieren über alle Zonen, derselben Summe wie die Gesamtzeile der Zonenauswahl
+-- (ns.ZoneTallies, #180), damit Rang und Zeile nie auseinanderlaufen. Feste Zahlen statt Anteile: Neue Stammdaten und
+-- Funde anderer machen Y größer, mit Anteilen verlöre man einen Rang wieder; ein erreichtes Ziel soll bleiben (wie
+-- bei Erfolgen, #66). Nur im Entdeckermodus, nur lokal, nichts gespeichert oder geteilt.
+local HUNTER_RANKS = {
+  { at = 0, name = "Tracker" },
+  { at = 20, name = "Stalker" },
+  { at = 60, name = "Warden" },
+  { at = 120, name = "Master of the Wild" },
+}
+ns.HUNTER_RANKS = HUNTER_RANKS
+-- Rang zu so vielen gefundenen Tieren und der nächste (nil beim höchsten): je { at = Schwelle, name = Schlüssel in L }
+function ns.HunterRank(found)
+  local i = 1
+  while HUNTER_RANKS[i + 1] and (found or 0) >= HUNTER_RANKS[i + 1].at do i = i + 1 end
+  return HUNTER_RANKS[i], HUNTER_RANKS[i + 1]
+end
+
 -- /fhp gebiet: Fortschritt der aktuellen Zone im Chat (Entwicklerwerkzeug, nur deutsch)
 function ns.DiscoverStatus()
   local map = ns.CellHere and ns.CellHere()

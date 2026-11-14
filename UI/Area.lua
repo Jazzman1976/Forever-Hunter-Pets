@@ -85,7 +85,7 @@ function ns.BuildArea(parent)
   empty:SetText(L["No zone with beasts known yet."])
   empty:SetShown(#zones == 0)
   if #zones == 0 then
-    function v:Render() end
+    function v:Render() if ns.ShowHunterRank then ns.ShowHunterRank() end end   -- Jägerrang (#181)
     return v
   end
 
@@ -123,6 +123,8 @@ function ns.BuildArea(parent)
     else
       tallies, sum = {}, nil
     end
+    -- dieselbe Summe trägt der Jägerrang in der Titelzeile (#181); im Komplettmodus verbirgt er sich
+    if ns.ShowHunterRank then ns.ShowHunterRank(sum) end
     dd:SetOptions(zoneOptions())
     if not follow then return end
     local here = hereZone()

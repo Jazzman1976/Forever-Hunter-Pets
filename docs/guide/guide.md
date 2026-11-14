@@ -63,7 +63,8 @@ The current mode is shown in small letters in the top right corner of the window
 | Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself; once you have tamed a beast, everything that is known about what it teaches |
 | Beasts you have not found | shown with their name, like all others | shown anonymously as *hidden beast*, or as a count (*2 not studied yet*) |
 | Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
-| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
+| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know, and per zone in the zone list |
+| Hunter rank in the title bar | – | grows with the beasts you have found |
 | Collecting and sharing | on | on – explorers help everybody |
 
 Both modes rest on the same data; explorer mode only decides *when* you see it. Once you have tamed a beast yourself, the addon shows everything that is known about what it teaches – also ranks your own taming did not show, for example because you tamed it at a lower level – and lists it with every rank it teaches in the Abilities tab.
@@ -75,6 +76,17 @@ In explorer mode every character discovers on its own: what your other character
 ## The window
 
 Three tabs: **Abilities**, **Zone** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
+
+**Hunter rank.** In explorer mode your hunter rank stands in gold left of the mode. It grows with the beasts you have found across all zones – the same number as *All zones: … beasts found* at the top of the zone list in the Zone tab:
+
+| Hunter rank | from beasts found |
+| --- | --- |
+| Tracker | 0 |
+| Stalker | 20 |
+| Warden | 60 |
+| Master of the Wild | 120 |
+
+Hover over it to see how many beasts you have found and from how many you reach the next rank. The thresholds are fixed numbers, so a rank, once reached, stays – even when new data makes the zones bigger. The rank is only shown to you; nothing is saved or shared. Complete mode has no hunter rank.
 
 ## Abilities
 
