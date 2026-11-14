@@ -541,7 +541,7 @@ function ns.BuildArea(parent)
     showCount(teachers, p.teachersKnown, p.teachers,
       discover and "You have studied %d of %d teaching beasts" or "%d of %d teaching beasts are known")
     showCount(ranks, p.ranksFound, p.ranks,
-      discover and "Doing so, you have discovered %d of %d ranks in this zone" or "They teach %d of %d ranks in this zone")
+      discover and "Doing so, you have discovered %d of %d ranks" or "%d of %d ranks are known")
     layoutCounters(p)
     -- Fundorte als Fußnote: so viele, wie die Karte über alle Tiere zeigt – im Entdeckermodus eigene Zellen und bei
     -- studierten Tieren alle Fundorte (#170), im Komplettmodus alle Fundorte der Zone

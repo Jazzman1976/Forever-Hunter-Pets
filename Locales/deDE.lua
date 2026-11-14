@@ -225,10 +225,10 @@ ns.Locales.deDE = {
   -- Zähler im Reiter „Gebiet“ als ganze Sätze (#176), je Modus
   ["You have found %d of %d beasts"] = "Du hast %d von %d Tieren gefunden",
   ["You have studied %d of %d teaching beasts"] = "Du hast %d von %d Lehrtieren studiert",
-  ["Doing so, you have discovered %d of %d ranks in this zone"] = "Dabei hast du %d von %d Rängen dieses Gebiets entdeckt",
+  ["Doing so, you have discovered %d of %d ranks"] = "Dabei hast du %d von %d Rängen entdeckt",
   ["For %d of %d beasts it is known what they teach"] = "Bei %d von %d Tieren ist bekannt, was sie lehren",
   ["%d of %d teaching beasts are known"] = "%d von %d Lehrtieren sind bekannt",
-  ["They teach %d of %d ranks in this zone"] = "Sie lehren %d von %d Rängen dieses Gebiets",
+  ["%d of %d ranks are known"] = "%d von %d Rängen sind bekannt",   -- wie die Lehrtiere (Maintainer, 14.11.2026)
   ["Spawn points"] = "Fundorte",
   ["1 spawn point on the map"] = "1 Fundort auf der Karte",
   ["%d spawn points on the map"] = "%d Fundorte auf der Karte",

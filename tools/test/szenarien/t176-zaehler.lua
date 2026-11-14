@@ -50,8 +50,9 @@ NS.char.discover = true
 
 -- Texte
 ok(de["You have found %d of %d beasts"] == "Du hast %d von %d Tieren gefunden", "deutsch: Tiere gefunden")
-ok((de["Doing so, you have discovered %d of %d ranks in this zone"]):format(3, 8)
-  == "Dabei hast du 3 von 8 Rängen dieses Gebiets entdeckt", "deutsch: Ränge")
+ok((de["Doing so, you have discovered %d of %d ranks"]):format(3, 8)
+  == "Dabei hast du 3 von 8 Rängen entdeckt", "deutsch: Ränge")
+ok((de["%d of %d ranks are known"]):format(9, 9) == "9 von 9 Rängen sind bekannt", "deutsch: Komplettmodus Ränge")
 ok((de["For %d of %d beasts it is known what they teach"]):format(15, 22)
   == "Bei 15 von 22 Tieren ist bekannt, was sie lehren", "deutsch: Komplettmodus Tiere")
 ok((L["Discovered: %s studied – %s: %d of %d beasts studied"]):format("Wolf", "Brachland", 4, 9)
