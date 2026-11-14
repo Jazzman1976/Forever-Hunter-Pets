@@ -248,6 +248,7 @@ ns.Locales.deDE = {
   ["Doing so, you have discovered %d of %d ranks"] = "Dabei hast du %d von %d Rängen entdeckt",
   ["For %d of %d beasts it is known what they teach"] = "Bei %d von %d Tieren ist bekannt, was sie lehren",
   ["%d of %d teaching beasts are known"] = "%d von %d Lehrtieren sind bekannt",
+  ["All zones: %d of %d beasts found"] = "Alle Gebiete: %d von %d Tieren gefunden",   -- Zonenauswahl (#180)
   ["%d of %d ranks are known"] = "%d von %d Rängen sind bekannt",   -- wie die Lehrtiere (Maintainer, 14.11.2026)
   ["Spawn points"] = "Fundorte",
   ["1 spawn point on the map"] = "1 Fundort auf der Karte",
