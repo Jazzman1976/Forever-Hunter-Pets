@@ -296,6 +296,53 @@ function ns.TeachText(npc, st)
   return (L["teaches %s"]):format(table.concat(parts, " "))
 end
 
+-- ---- Hinweise: was als Nächstes zu tun ist (#175) ----
+-- Jede Stufe sagt im Reiter „Gebiet“ selbst, wie es weitergeht: ganze Sätze im Tooltip der Zeile (ns.StatusHint)
+-- und auf der Karte, solange sie für das Tier keinen Fundort zeigt (ns.MapHint). Nur im Entdeckermodus; eine
+-- bewusste Ausnahme von „knapp“ (Grundsatz 7, Rückmeldungen der Spieler, #186). Der Tier-Tooltip in der Welt bleibt
+-- ohne. Die Namen der Jägerzauber kommen vom Client, damit sie in jeder Sprache stimmen; fehlt einer, steht der
+-- übersetzte Name aus Locales/ da.
+local HUNTER_SPELLS = { { 1494, "Track Beasts" }, { 6197, "Eagle Eye" }, { 1002, "Eyes of the Beast" } }
+local function hunterSpell(i)
+  local id, name = HUNTER_SPELLS[i][1], HUNTER_SPELLS[i][2]
+  if C_Spell and C_Spell.GetSpellName then
+    local ok, v = pcall(C_Spell.GetSpellName, id)
+    v = ok and ns.clean(v) or nil
+    if type(v) == "string" and v ~= "" then return v end
+  end
+  return ns.L[name]
+end
+
+-- Satz für den Tooltip der Zeile; nil im Komplettmodus und bei „Tier studiert“ (dort steht die Lehre)
+function ns.StatusHint(st)
+  if not ns.Discovering() then return nil end
+  local L = ns.L
+  if st == "unknown" then
+    return (L["You only need to see it somewhere to pick up its trail. Then you find out more about the beast. “%s”, “%s” or “%s” work too."])
+      :format(hunterSpell(1), hunterSpell(2), hunterSpell(3))
+  elseif st == "track" then
+    -- derselbe Satz, auch wenn die Lehre aus einer anderen Zone schon bekannt ist
+    return L["You need to get closer to find it. Then you can tell whether it might teach you something."]
+  elseif st == "found" then
+    return L["Tame it to find out its abilities."]
+  end
+  return nil
+end
+
+-- Satz für die Karte, solange sie für das Tier keinen Fundort zeigt; nil im Komplettmodus und ab „Tier gefunden“
+-- (dann stehen die eigenen Fundorte da). Bei „Noch nie gesehen“ ohne Namen: Der Name verriete, was die Liste verbirgt.
+function ns.MapHint(st, npc)
+  if not ns.Discovering() then return nil end
+  local L = ns.L
+  if st == "unknown" then
+    return L["Somewhere in this zone this beast is hiding. You have just never seen it."]
+  elseif st == "track" then
+    return (L["You have already picked up the trail of %s, but you can only tell where exactly it lives once you get closer."])
+      :format(ns.BeastName(npc))
+  end
+  return nil
+end
+
 -- ---- Was ein Tier lehrt ----
 -- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo
 local bySpell
@@ -414,10 +461,10 @@ end
 -- ---- Fortschritt einer Zone ----
 -- { beasts, beastsKnown, track, found, known, teachers, teachersKnown, ranks, ranksFound, cells, points }
 -- Y aus allem, was bekannt ist (Daten, Zellen, Zähmungen, Fährten). Ränge: nur die, die ein Lehrtier der Zone
--- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. Den Fortschritt treibt nur „Tier studiert“
--- (Nutzer, 17.10.2026): Fährte und Fund bewegen ihn nicht.
---   Entdeckermodus: X aus eigenen Funden – beastsKnown = selbst gezähmt, teachersKnown = studierte Lehrtiere,
---                   ranksFound = Ränge, die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169).
+-- lehrt; Tierausbilder und Ränge ohne Lehrtier zählen nicht. beastsKnown ist X des Zählers „Tiere“, je Modus:
+--   Entdeckermodus: X aus eigenen Funden – beastsKnown = gefunden oder studiert (ab „Tier gefunden“, #176; bis dahin
+--                   nur „Tier studiert“, Nutzer, 17.10.2026), teachersKnown = studierte Lehrtiere, ranksFound = Ränge,
+--                   die ein studiertes Tier der Zone nach den kompletten Daten lehrt (#169). Die Fährte zählt nirgends.
 --   Komplettmodus:  X aus allem, was gezeigt wird (ns.TeachInfo, #40) – beastsKnown = irgendwer weiß, was es
 --                   lehrt (Daten oder Zähmung); Lehrtiere und Ränge sind damit alle bekannt (X = Y). Was die
 --                   Einstellungen ausblenden, zählt weder in X noch in Y.
@@ -482,7 +529,7 @@ function ns.ZoneProgress(map)
     local st = ns.BeastStatus(npc, map)
     if p[st] then p[st] = p[st] + 1 end
     if discover then
-      if st == "known" then p.beastsKnown = p.beastsKnown + 1 end
+      if st == "found" or st == "known" then p.beastsKnown = p.beastsKnown + 1 end
     elseif info[npc] then
       p.beastsKnown = p.beastsKnown + 1
     end
@@ -538,9 +585,10 @@ function ns.DiscoverStatus()
   local map = ns.CellHere and ns.CellHere()
   if not map then ns.Print("Keine Karte für den Standort."); return end
   local p = ns.ZoneProgress(map)
-  ns.Print(("%s (%s): Tiere %d von %d bekannt (%d Fährten, %d gefunden, %d bekannt) · Lehrtiere %d von %d · "
+  ns.Print(("%s (%s): Tiere %d von %d %s (%d Fährten, %d gefunden, %d studiert) · Lehrtiere %d von %d · "
     .. "Ränge %d von %d · %d eigene Zellen"):format(ns.ZoneName(map), ns.Discovering() and "Entdecker" or "Komplett",
-    p.beastsKnown, p.beasts, p.track, p.found, p.known, p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
+    p.beastsKnown, p.beasts, ns.Discovering() and "gefunden" or "bekannt", p.track, p.found, p.known,
+    p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
   local owner = ns.db and ns.db.discoverOwner
   ns.Print(("Funde: %s · dieser Charakter %s · bisherige Funde %s"):format(
     ns.Finds() == ns.db and "Konto" or "Charakter", ns.MyRep() or "?",

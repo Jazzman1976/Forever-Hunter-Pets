@@ -161,7 +161,7 @@ ns.Locales.deDE = {
   ["Observed: %s (level %d) brought %s"] = "Beobachtet: %s (Stufe %d) brachte %s mit",
   ["no ability"] = "keine Fähigkeit",
   ["Discovered: %s – %s: %d of %d ranks"] = "Entdeckt: %s – %s: %d von %d Rängen",
-  ["Discovered: %s studied – %s: %d of %d beasts"] = "Entdeckt: %s studiert – %s: %d von %d Tieren",
+  ["Discovered: %s studied – %s: %d of %d beasts studied"] = "Entdeckt: %s studiert – %s: %d von %d Tieren studiert",
   ["seen when you tamed it"] = "beim Zähmen von dir gesehen",
   ["missing when you tamed it"] = "fehlte, als du es gezähmt hast",
   -- Teilen im Spiel
@@ -214,17 +214,21 @@ ns.Locales.deDE = {
   ["+ Since you last looked here, other hunters have discovered %d new beasts – the hunt goes on."] = "+ Seit du zuletzt hier nachgesehen hast, haben andere Jäger %d neue Tiere entdeckt – die Jagd geht weiter.",
   ["No zone with beasts known yet."] = "Noch kein Gebiet mit Tieren bekannt.",
   ["Beasts"] = "Tiere",
-  ["%d of %d known"] = "%d von %d bekannt",
   ["You saw it in this zone, but were never close to it. It is not on your map yet."] = "In diesem Gebiet gesehen, aber nie in seiner Nähe gewesen. Es steht noch nicht auf deiner Karte.",
   ["You were close to it in this zone, so its spawn point is on your map."] = "In diesem Gebiet in seiner Nähe gewesen, deshalb steht sein Fundort auf deiner Karte.",
   ["Found, and you have tamed it, so you know what it teaches."] = "Gefunden und gezähmt, deshalb weißt du, was es lehrt.",
   ["You have never seen it in this zone, so it is listed as a hidden beast."] = "In diesem Gebiet noch nie gesehen, deshalb steht es als verborgenes Tier in der Liste.",
-  ["Only “beast studied” moves the progress."] = "Nur „Tier studiert“ lässt den Fortschritt wachsen.",
+  ["The “%s” counter grows from “%s”, teaching beasts and ranks with “%s”."] = "Der Zähler „%s“ wächst ab „%s“, Lehrtiere und Ränge mit „%s“.",   -- #176
   ["Known: the data or a taming shows what it teaches."] = "Bekannt: Die Daten oder eine Zähmung nennen, was es lehrt.",
   ["1 spawn point"] = "1 Fundort",
   ["Teaching beasts"] = "Lehrtiere",
-  ["%d of %d identified"] = "%d von %d identifiziert",
-  ["%d of %d ranks discovered"] = "%d von %d Rängen entdeckt",
+  -- Zähler im Reiter „Gebiet“ als ganze Sätze (#176), je Modus
+  ["You have found %d of %d beasts"] = "Du hast %d von %d Tieren gefunden",
+  ["You have studied %d of %d teaching beasts"] = "Du hast %d von %d Lehrtieren studiert",
+  ["Doing so, you have discovered %d of %d ranks"] = "Dabei hast du %d von %d Rängen entdeckt",
+  ["For %d of %d beasts it is known what they teach"] = "Bei %d von %d Tieren ist bekannt, was sie lehren",
+  ["%d of %d teaching beasts are known"] = "%d von %d Lehrtieren sind bekannt",
+  ["%d of %d ranks are known"] = "%d von %d Rängen sind bekannt",   -- wie die Lehrtiere (Maintainer, 14.11.2026)
   ["Spawn points"] = "Fundorte",
   ["1 spawn point on the map"] = "1 Fundort auf der Karte",
   ["%d spawn points on the map"] = "%d Fundorte auf der Karte",
@@ -248,6 +252,16 @@ ns.Locales.deDE = {
   ["dot"] = "Punkt",
   ["tick"] = "Haken",
   ["No beast found yet"] = "Noch kein Tier gefunden",
+  -- Hinweise im Reiter „Gebiet“, was als Nächstes zu tun ist (#175)
+  ["You only need to see it somewhere to pick up its trail. Then you find out more about the beast. “%s”, “%s” or “%s” work too."] = "Du musst es nur irgendwo sehen, um seine Fährte aufzunehmen. Dann findest du mehr über das Tier heraus. Das geht auch mit „%s“, „%s“ oder „%s“.",
+  ["You need to get closer to find it. Then you can tell whether it might teach you something."] = "Du musst näher ran, um es zu finden. Dann kannst du einschätzen, ob es etwas beibringen könnte.",
+  ["Tame it to find out its abilities."] = "Durch Zähmen findest du seine Fähigkeiten heraus.",
+  ["Somewhere in this zone this beast is hiding. You have just never seen it."] = "Irgendwo in diesem Gebiet versteckt sich dieses Tier. Du hast es nur noch nie gesehen.",
+  ["You have already picked up the trail of %s, but you can only tell where exactly it lives once you get closer."] = "Du hast bereits die Fährte von %s aufgenommen, kannst aber erst sagen, wo genau es lebt, wenn du näher herangehst.",
+  -- Rückfall, wenn der Client den Namen des Jägerzaubers nicht liefert (#175)
+  ["Track Beasts"] = "Wildtiere aufspüren",
+  ["Eagle Eye"] = "Adlerauge",
+  ["Eyes of the Beast"] = "Augen des Wildtiers",
   -- Tooltip im Komplettmodus: niemand weiß, was das Tier lehrt (#23)
   ["No hunter knows yet what this beast teaches. Tame it and help!"] = "Was dieses Tier lehrt, weiß noch kein Jäger. Zähme es und hilf mit!",
   ["Hunters need more proof of what this beast teaches. Tame it!"] = "Die Jäger brauchen noch mehr Belege, was dieses Tier lehrt. Zähme es!",

@@ -108,17 +108,21 @@ A progress book for one zone at a time. At the top, *Current zone* is selected: 
 
   What it teaches shows step by step: nothing while you only tracked it; once you found it, whether it teaches anything – *teaches something*, *teaches nothing*, or a red ✖ with *No data* when nobody knows yet (attack speed counts as something); once you studied it, *teaches* with the ability icons. A beast you have studied in another zone shows its icons as soon as you track it, because what a beast teaches is the same everywhere.
 
-  Sorted by status: studied first, never seen last. Hidden beasts can't be selected.
+  Sorted by status: studied first, never seen last. Every row can be selected, hidden beasts too – their name stays hidden in the map title and in the tooltip.
+
+  **What to do next.** Hover over a row: below what it teaches, a gold line tells you how to get to the next step – for a hidden beast, that you only need to see it somewhere to pick up its trail, and that *Track Beasts*, *Eagle Eye* or *Eyes of the Beast* work too; for a tracked beast, that you need to get closer to find it; for a found beast, that taming it tells you its abilities. While the map shows no spawn point for the selected beast, it says the same in its middle: that a hidden beast is hiding somewhere in this zone, or that you have picked up the trail of a tracked beast but need to get closer to see where it lives.
 
   When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
 - **Complete mode:** every beast with its name, no status. The checkbox is ticked when it is known what the beast teaches. Beasts with known abilities come first.
 
-**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch.
+**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch. In explorer mode, a beast without spawn points on the map gets a hint in the middle of the map instead (see *What to do next* above).
 
 **The counters (below the map).**
-- **Beasts** – *X of Y known*. Only *beast studied* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.
-- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Hidden tiles only say *teaching beast not studied yet*.
-- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
+Each counter is a full sentence next to its short title; a long sentence wraps.
+
+- **Beasts** – explorer mode: *You have found X of Y beasts*. Finding a beast moves the bar (and studying it, of course); tracking it doesn't. Complete mode: *For X of Y beasts it is known what they teach*. Hover over it to read what the statuses mean.
+- **Teaching beasts** – explorer mode: *You have studied X of Y teaching beasts*; complete mode: *X of Y teaching beasts are known*. Beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Hidden tiles only say *teaching beast not studied yet*.
+- **Abilities** – explorer mode: *Doing so, you have discovered X of Y ranks*; complete mode: *X of Y ranks are known*. Ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
 - Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
 - **Spawn points** – at the bottom left: as many as the map shows over all beasts of the zone – in explorer mode your own spots plus all spawn points of the beasts you have tamed, in complete mode all known spawn points of the zone.
 
@@ -171,7 +175,7 @@ The game only tells the addon where **you** are, not where the beast is. So a sp
 
 ### Taming
 
-When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *beast studied* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: … studied – Duskwood: 4 of 9 beasts* when the beast becomes *beast studied* there. Taming a beast you already knew stays quiet.
+When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *beast studied* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: … studied – Duskwood: 4 of 9 beasts studied* when the beast becomes *beast studied* there. Finding a beast stays quiet in the chat. Taming a beast you already knew stays quiet.
 
 ### Beast Training and the pet trainer
 

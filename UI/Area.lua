@@ -1,7 +1,8 @@
 -- Forever Hunter Pets · Reiter „Gebiet“: Fortschrittsbuch je Zone (Meilenstein M2, Inkremente E4 und E5).
 -- Aufbau (Wunsch des Nutzers): oben die Zonenauswahl, vorn „Aktuelle Zone“ (#22). Links die Tiere der Zone, anklickbar, je mit dem Kästchen
 -- aus „Fähigkeiten“ (Haken = Tier studiert) und dem Icon der Familie. Rechts oben die Karte, darunter die
--- Zähler „X von Y“. Punkte zeigt die Karte nur für das gewählte Tier (ns.Coords), ohne Auswahl nie.
+-- Zähler „X von Y“. Punkte zeigt die Karte nur für das gewählte Tier (ns.Coords), ohne Auswahl nie. Im
+-- Entdeckermodus sagen Tooltip der Zeile und Karte, was als Nächstes zu tun ist (#175).
 -- Die Modi (Nutzer, 17.10.2026): Im Komplettmodus steht alles, was bekannt ist, vollständig da – jedes Tier mit
 -- Namen, ohne Status. Im Entdeckermodus zählt nur, was man selbst gefunden hat: Tiere bleiben anonym
 -- („verborgenes Tier“), bis man eine Fährte hat, ab da mit Namen und Status-Tag.
@@ -44,11 +45,15 @@ end
 -- Nicht Belegtes mit „?“ bzw. „!“ hinter dem Rang, wie im Tooltip des Tiers (#40).
 -- Entdeckermodus, noch nicht studiert (#173): bei „Tier gefunden“ nur, ob es etwas lehrt (ns.TeachSummary), bei der
 -- Fährte nichts. st: Status in der Zone (nil bei den Kacheln, dort stehen nur studierte Tiere).
+-- Darunter in Gold der Hinweis, was als Nächstes zu tun ist (#175, ns.StatusHint). Ein verborgenes Tier (Noch nie
+-- gesehen) trägt als Titel „verborgenes Tier“ und nur den Hinweis: Name und Lehre verrieten, was die Liste verbirgt.
 local function teachTooltip(owner, npc, st)
   GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-  GameTooltip:SetText(ns.BeastName(npc))
-  local info = ns.TeachInfo(npc, ns.Discovering())
-  if ns.Discovering() and not ns.Studied(npc) then
+  local hidden = st == "unknown"
+  GameTooltip:SetText(hidden and L["hidden beast"] or ns.BeastName(npc))
+  local info = not hidden and ns.TeachInfo(npc, ns.Discovering())
+  if hidden then   -- nur der Hinweis unten
+  elseif ns.Discovering() and not ns.Studied(npc) then
     if st == "found" then GameTooltip:AddLine((ns.TeachSummary(npc)), 0.8, 0.8, 0.8) end
   elseif not info then
     GameTooltip:AddLine(ns.NoData(), 0.8, 0.8, 0.8)
@@ -61,6 +66,8 @@ local function teachTooltip(owner, npc, st)
         .. (rank ~= "" and (" · " .. rank) or "") .. ns.ConfMark(e.conf), 1, 1, 1)
     end
   end
+  local hint = st and ns.StatusHint(st)
+  if hint then GameTooltip:AddLine(hint, 1, 0.82, 0, true) end   -- gold wie die Hinweise im Tier-Tooltip (#23)
   GameTooltip:AddLine(L["Click: show on the map"], 0.4, 0.8, 1)
   GameTooltip:Show()
 end
@@ -174,15 +181,15 @@ function ns.BuildArea(parent)
   mapInfo:SetWidth(RIGHT_W)
 
   local barW = RIGHT_W - LABEL_W - 8
-  local y = -(mapH + 30)
+  local yBeasts = -(mapH + 30)
+  -- Titel links kurz, daneben der Wert als ganzer Satz (#176), der umbrechen darf; Lage setzt layoutCounters
   local function row(label, withBar)
     local r = {}
     r.label = W.Text(right, "GameFontNormal")
-    r.label:SetPoint("TOPLEFT", 0, y)
     r.label:SetWidth(LABEL_W)
     r.label:SetText(label)
-    r.value = W.Text(right, "GameFontHighlight")
-    r.value:SetPoint("TOPLEFT", LABEL_W, y)
+    r.value = W.Text(right, "GameFontHighlight", true)
+    r.value:SetWidth(RIGHT_W - LABEL_W)
     if withBar then
       r.bar = CreateFrame("Frame", nil, right)
       r.bar:SetSize(barW, BAR_H)
@@ -193,7 +200,6 @@ function ns.BuildArea(parent)
       r.fill:SetPoint("BOTTOMLEFT")
       r.fill:SetColorTexture(0.62, 0.83, 0.37, 0.9)
     end
-    y = y - (withBar and 34 or 24)
     return r
   end
   local function setBar(r, x, total)
@@ -204,16 +210,18 @@ function ns.BuildArea(parent)
   end
   -- Immer „X von Y …“, auch wenn alles bekannt ist (#19): eine nackte Zahl wirkte über den Kacheln wie ein
   -- kaputter Umbruch, und alle drei Zähler sollen gleich aussehen (Wunsch des Nutzers). Der Balken bleibt, dann voll.
+  -- Seit #176 ganze Sätze, je Modus eigene: „Du hast 5 von 22 Tieren gefunden“ bzw. „Bei 15 von 22 Tieren ist
+  -- bekannt, was sie lehren“.
   local function showCount(r, x, total, fmt)
     r.value:SetText((L[fmt]):format(x, total))
     setBar(r, x, total)
   end
-  local yBeasts = y
   local beasts = row(L["Beasts"], true)
-  -- Was die Status bedeuten, beim Überfahren des Zählers (Wunsch des Nutzers: nicht selbsterklärend)
+  -- Was die Status bedeuten, beim Überfahren des Zählers (Wunsch des Nutzers: nicht selbsterklärend); die Höhe
+  -- folgt dem Satz (layoutCounters)
   local beastsHover = CreateFrame("Frame", nil, right)
   beastsHover:SetPoint("TOPLEFT", 0, yBeasts)
-  beastsHover:SetSize(RIGHT_W, yBeasts - y)
+  beastsHover:SetSize(RIGHT_W, 34)
   beastsHover:EnableMouse(true)
   beastsHover:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -227,14 +235,15 @@ function ns.BuildArea(parent)
       line("track", "empty box", "You saw it in this zone, but were never close to it. It is not on your map yet.")
       line("found", "dot", "You were close to it in this zone, so its spawn point is on your map.")
       line("known", "tick", "Found, and you have tamed it, so you know what it teaches.")
-      GameTooltip:AddLine(L["Only “beast studied” moves the progress."], 0.8, 0.8, 0.8, true)
+      -- seit #176 wächst der Zähler „Tiere“ schon mit dem Fund
+      GameTooltip:AddLine((L["The “%s” counter grows from “%s”, teaching beasts and ranks with “%s”."]):format(
+        L["Beasts"], ns.StatusWord("found"), ns.StatusWord("known")), 0.8, 0.8, 0.8, true)
     else
       GameTooltip:AddLine(L["Known: the data or a taming shows what it teaches."], 0.8, 0.8, 0.8, true)
     end
     GameTooltip:Show()
   end)
   beastsHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  local yTeachers = y
   local teachers = row(L["Teaching beasts"], false)
   local ranks = row(L["Abilities"], false)
 
@@ -355,20 +364,27 @@ function ns.BuildArea(parent)
     end
   end
 
-  -- Die Zähler unter der Karte stehen untereinander; die Kacheln schieben die folgenden nach unten
+  -- Die Zähler unter der Karte stehen untereinander; Sätze, die umbrechen, und die Kacheln schieben die folgenden
+  -- nach unten (#176: um die tatsächliche Höhe, vorher feste 22 px je Zeile)
   local function anchor(r, top)
     r.label:ClearAllPoints()
     r.label:SetPoint("TOPLEFT", 0, top)
     r.value:ClearAllPoints()
     r.value:SetPoint("TOPLEFT", LABEL_W, top)
   end
-  local function layoutTiles(p)
-    local top = yTeachers
+  local function textH(r) return math.max(14, math.ceil(r.value:GetStringHeight())) end
+  local function layoutCounters(p)
+    local top = yBeasts
+    anchor(beasts, top)
+    local h = textH(beasts) + 5 + BAR_H + 7   -- Satz, Abstand, Balken, Luft (bei einer Zeile wie bisher 34)
+    beastsHover:SetHeight(h)
+    top = top - h
     anchor(teachers, top)
-    local lines = drawTiles(teacherTiles, p.teacherList, top - 22, fillTeacher)
-    top = top - 22 - lines * (TILE + TILE_GAP) - (lines > 0 and 8 or 2)
+    local below = textH(teachers) + 8
+    local lines = drawTiles(teacherTiles, p.teacherList, top - below, fillTeacher)
+    top = top - below - lines * (TILE + TILE_GAP) - (lines > 0 and 8 or 2)
     anchor(ranks, top)
-    drawTiles(rankTiles, p.rankList, top - 22, fillRank)
+    drawTiles(rankTiles, p.rankList, top - (textH(ranks) + 8), fillRank)
   end
 
   -- ---- Neu in dieser Zone (#66) ----
@@ -404,20 +420,21 @@ function ns.BuildArea(parent)
   local function drawList()
     rows:Reset()
     local discover = ns.Discovering()
-    -- Einträge: Entdeckermodus nach Status (studiert, gefunden, Fährte, noch nie gesehen), noch nie gesehene anonym und nicht
-    -- anklickbar; Komplettmodus jedes Tier mit Namen, die mit bekannter Lehre zuerst
+    -- Einträge: Entdeckermodus nach Status (studiert, gefunden, Fährte, noch nie gesehen), noch nie gesehene anonym,
+    -- aber anklickbar (#175: Tooltip und Karte sagen, was zu tun ist); Komplettmodus jedes Tier mit Namen, die mit
+    -- bekannter Lehre zuerst
     local entries = {}
     for npc, here in pairs(ns.BeastsIn(zone)) do
       local e = { npc = npc, unsure = here == ns.CONF_UNSURE }
       if discover then
         e.st = ns.BeastStatus(npc, zone)
-        e.pick = STATUS[e.st] ~= nil
-        e.order = e.pick and STATUS[e.st].order or 9
+        e.hidden = STATUS[e.st] == nil
+        e.order = e.hidden and 9 or STATUS[e.st].order
       else
         e.st = ns.TeachInfo(npc, false) and "known" or "open"
-        e.pick, e.order = true, e.st == "known" and 1 or 2
+        e.order = e.st == "known" and 1 or 2
       end
-      if e.pick then
+      if not e.hidden then
         e.name = ns.BeastName(npc)
         -- nur durch unsichere fremde Fundorte in dieser Zone (#136): „?“ hinter dem Namen, einmal
         if e.unsure and e.name:sub(-1) ~= "?" then e.name = e.name .. ns.ConfMark(ns.CONF_UNSURE) end
@@ -430,12 +447,13 @@ function ns.BuildArea(parent)
       return a.npc < b.npc
     end)
     -- Sobald es in der Zone etwas anzuklicken gibt, ist immer ein Tier gewählt (Wunsch des Nutzers: sonst
-    -- stehen hunderte Punkte auf der Karte). Fehlt die Auswahl in der Liste, nimmt sie das erste Tier.
+    -- stehen hunderte Punkte auf der Karte). Fehlt die Auswahl in der Liste, nimmt sie das erste Tier – erst die mit
+    -- Status, dann die verborgenen (#175).
     local keep
     for _, e in ipairs(entries) do
-      if e.pick and e.npc == selected then keep = true break end
+      if e.npc == selected then keep = true break end
     end
-    if not keep then selected = entries[1] and entries[1].pick and entries[1].npc or nil end
+    if not keep then selected = entries[1] and entries[1].npc or nil end
     none:SetShown(#entries == 0)
     local ry = 0
     news:SetShown(newsN > 0)
@@ -458,44 +476,49 @@ function ns.BuildArea(parent)
       r.box:SetShown(not discover or e.st ~= "unknown")
       r.box.dot:SetShown(e.st == "found")
       r.box.check:SetShown(e.st == "known")
-      if e.pick then
-        r.npc, r.st = e.npc, discover and e.st or nil
+      r.npc, r.st = e.npc, discover and e.st or nil
+      if not e.hidden then
         r.icon:SetTexture((ns.FamilyIcon(fam)))
         r.name:SetText(e.name)
         if discover then table.insert(where, 1, ns.StatusWord(e.st)) end   -- Status-Tag nur im Entdeckermodus
         local teach = ns.TeachText(e.npc, r.st)   -- Entdeckermodus: bei der Fährte nichts (#173)
         if teach then where[#where + 1] = teach end
         r.sub:SetText(table.concat(where, " · "))
-        r:Enable()
       else
-        -- noch nie gesehen (nur Entdeckermodus): anonym, bis man eine Fährte hat
-        r.npc = false
+        -- noch nie gesehen (nur Entdeckermodus): anonym, bis man eine Fährte hat, aber anklickbar (#175)
         r.icon:SetTexture(ICON_UNKNOWN)
         r.name:SetText(L["hidden beast"])
         -- sonst wirkt es wie eine Lücke in den Daten (#19): man kennt es, muss es aber selbst finden
         r.sub:SetText(L["Go on the prowl and find it."])
-        r:Disable()
       end
-      r.sel:SetShown(r.npc and e.npc == selected or false)
+      r.sel:SetShown(e.npc == selected)
       ry = ry + ROW_H
     end
     list:SetContentHeight(ry)
   end
 
   local function drawMap()
-    local pts = {}
+    local pts, hint = {}, nil
     if selected then
       pts = ns.Coords(selected, zone)
-      mapTitle:SetText(ns.BeastName(selected))
+      local st = ns.Discovering() and ns.BeastStatus(selected, zone)
+      -- ein verborgenes Tier ohne Namen, sonst verriete der Titel, was die Liste verbirgt (#175)
+      mapTitle:SetText(st == "unknown" and L["hidden beast"] or ns.BeastName(selected))
+      -- ohne Fundort sagt die Karte im Entdeckermodus, wie es weitergeht (#175)
+      if st and #pts == 0 then hint = ns.MapHint(st, selected) end
     else
       -- nichts anklickbar: leere Karte, in beiden Modi gleich
       mapTitle:SetText(L["No beast found yet"])
     end
     local shown = ns.Sample(pts, MAX_PINS)
     local ok = canvas:Show_(ns.MapForZone(zone), shown, false)
+    -- ohne Kartenbild steht dort schon „keine Karte“; der Hinweis rückt dann in die Zeile darunter
+    canvas:SetHint(ok and hint or nil)
     local text
     if not selected then
       text = ""
+    elseif hint then
+      text = ok and "" or hint
     elseif #pts == 0 then
       text = L["Spawn point unknown"]
     else
@@ -512,10 +535,14 @@ function ns.BuildArea(parent)
     drawList()
     drawMap()
     local p = ns.ZoneProgress(zone)
-    showCount(beasts, p.beastsKnown, p.beasts, "%d of %d known")
-    showCount(teachers, p.teachersKnown, p.teachers, "%d of %d identified")
-    showCount(ranks, p.ranksFound, p.ranks, "%d of %d ranks discovered")
-    layoutTiles(p)
+    local discover = ns.Discovering()
+    showCount(beasts, p.beastsKnown, p.beasts,
+      discover and "You have found %d of %d beasts" or "For %d of %d beasts it is known what they teach")
+    showCount(teachers, p.teachersKnown, p.teachers,
+      discover and "You have studied %d of %d teaching beasts" or "%d of %d teaching beasts are known")
+    showCount(ranks, p.ranksFound, p.ranks,
+      discover and "Doing so, you have discovered %d of %d ranks" or "%d of %d ranks are known")
+    layoutCounters(p)
     -- Fundorte als Fußnote: so viele, wie die Karte über alle Tiere zeigt – im Entdeckermodus eigene Zellen und bei
     -- studierten Tieren alle Fundorte (#170), im Komplettmodus alle Fundorte der Zone
     local n = ns.Discovering() and p.shown or p.points

@@ -17,17 +17,17 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `Core/Observe.lua` | Beobachtungen beim Zähmen: was ein Tier wirklich mitbringt, und was daraus für die Belegung folgt |
 | `Core/Sightings.lua` | Sichtung beim Anvisieren: Name, Stufe, Einstufung, Familie |
 | `Core/Places.lua` | Fundorte als Zellen eines Rasters, nur aus der Nähe |
-| `Core/Discover.lua` | Entdecken: Status je Tier und Zone, was ein Tier lehrt, Fortschritt je Zone; `/fhp gebiet` |
+| `Core/Discover.lua` | Entdecken: Status je Tier und Zone, was ein Tier lehrt, Hinweise, was als Nächstes zu tun ist (`ns.StatusHint`, `ns.MapHint`), Fortschritt je Zone; `/fhp gebiet` |
 | `Core/Comm.lua` | Teilen im Spiel: Addon-Nachrichten über Gilde und Gruppe, Antworten per Flüstern |
 | `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`, `/fhp besitzer`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
 | `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
 | `Core/ForeignRanks.lua` | Fremde Ränge (#103): unbekannte Zauber aus fremden Zähmungen über den eigenen Client in Name und Rang auflösen |
 | `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool, Markierung der gewählten Zeile (`W.Selection`) |
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
-| `UI/MapCanvas.lua` | Karte mit Fundorten, 3D-Modell und die Kartenseite eines Tiers |
+| `UI/MapCanvas.lua` | Karte mit Fundorten und Hinweisfläche (`SetHint`, #175), 3D-Modell und die Kartenseite eines Tiers |
 | `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |
 | `UI/ModeDialog.lua` | Startdialog: Entdecker- (empfohlen) oder Komplettmodus, einmal je Charakter; Schließen = Entdeckermodus; `/fhp start` |
-| `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y bekannt“ (fertig: nur die Zahl) |
+| `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y“ als ganze Sätze (#176); im Entdeckermodus auch verborgene Tiere anklickbar, Hinweise im Tooltip der Zeile und auf der Karte (#175) |
 | `UI/Main.lua` | Fenster, Reiter, Zahnrad zu den Einstellungen (`ns.OpenSettings` öffnet per `Settings.OpenToCategory` die eigene Kategorie und schließt das Fenster) |
 | `UI/Settings.lua` | Seite im Addon-Menü, Knopf an der Minikarte; oben das Logo als eigenes Element (`Settings.CreateElementInitializer` mit der Vorlage aus `UI/Settings.xml`, #5) |
 | `UI/Settings.xml` | Vorlage `ForeverHunterPetsLogoTemplate` für das Logo (aus `media/logo.tga`): erbt von der Überschrift des Clients (`SettingsListSectionHeaderTemplate`) und damit deren `Init`, bringt Höhe und Bild mit. Eigene Vorlage heißt eigener Pool in der Einstellungsliste – die Rahmen erscheinen nie auf fremden Seiten, und beim Aufbau der Liste läuft kein Code des Addons |
