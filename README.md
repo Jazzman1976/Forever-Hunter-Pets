@@ -13,6 +13,8 @@ The first time a character opens the addon, it asks how you want to play:
 - **Explorer mode** – you go hunting yourself. The addon reveals the information bit by bit: first that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. A short tour shows you around, and your hunter rank rises with the beasts you find.
 - **Complete mode** – you see everything that is known right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left to discover yourself.
 
+![The start view: explorer mode and complete mode side by side (German client)](docs/images/start.jpg)
+
 Both modes rest on the same data and collect and share the same way. Switch any time in the settings or with `/fhp mode`. The data is still growing, so some beasts and ranks are not known yet – finding them is part of the game.
 
 ## What it does
@@ -25,7 +27,7 @@ Both modes rest on the same data and collect and share the same way. Switch any 
 
 The addon is available in English and German and follows the language of your client.
 
-![The Abilities tab: ranks with pet level, training points and teaching beasts, and a selected beast with its spawn points on the zone map (German client)](docs/images/abilities.jpg)
+![The Zone tab in explorer mode: the beasts of Loch Modan with their status, the selected beast's spawn points on the map, and your progress in the zone (German client)](docs/images/area.jpg)
 
 More screenshots in the [User Guide](https://github.com/Jazzman1976/Forever-Hunter-Pets/blob/main/docs/guide/guide.md).
 
