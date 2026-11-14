@@ -2,7 +2,7 @@
 
 Everything the addon does, how it works and why it behaves the way it does. Short version in the [README](../../README.md).
 
-**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
+**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Pet frame](#pet-frame) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
 
 ## The idea
 
@@ -47,7 +47,7 @@ Type `/fhp` or click the button at the minimap. The first time a character opens
 
 The data is still being collected and grows more complete over time, so don't be surprised if something is still missing.
 
-If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`.
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
 
@@ -68,6 +68,8 @@ The current mode is shown in small letters in the top right corner of the window
 | Collecting and sharing | on | on – explorers help everybody |
 
 Both modes rest on the same data; explorer mode only decides *when* you see it. Once you have tamed a beast yourself, the addon shows everything that is known about what it teaches – also ranks your own taming did not show, for example because you tamed it at a lower level – and lists it with every rank it teaches in the Abilities tab.
+
+**Switching.** Tick or untick *Explorer mode* in the settings (the gear, or a click on the mode in the title bar), or type `/fhp mode`. Before it switches to complete mode, `/fhp mode` asks first – complete mode reveals everything at once. Your finds are kept either way: the addon collects in complete mode too, so nothing is lost when you switch back.
 
 In explorer mode every character discovers on its own: what your other characters sighted, found or tamed does not count for this one. If you'd rather share your finds across the account, switch on *Show finds of my other characters* below *Explorer mode* in the settings. The mode is chosen per character, and so is this option. Collecting and sharing with other players work the same either way.
 
@@ -223,7 +225,7 @@ Switch **Share observations** off and nothing is sent or received.
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different characters** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Characters, not people: the game does not show which characters belong to one account, so someone with several characters counts once per character. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other characters found does not show up in *Area* yet.
+- **What other players report** counts once **3 different characters** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Characters, not people: the game does not show which characters belong to one account, so someone with several characters counts once per character. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other characters found does not show up in the *Zone* tab yet.
 - **Uncertain:** what **2 other characters** have reported is *uncertain* – which beast teaches a rank, a new rank or attack speed, a beast's name, family or level, where it lives, *teaches nothing*. It is hidden by default; switch on *Show uncertain data* and it appears marked **?** right after the value (*Rank 5?*, *Level 12?*), and it counts in *X of Y*. What only one other character reports is kept, but not shown.
 - **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 characters saw it (2 with *Show uncertain data*, marked **?**), it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
