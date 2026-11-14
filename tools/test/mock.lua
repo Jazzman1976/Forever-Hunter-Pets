@@ -26,6 +26,7 @@ local frameMT = { __index = function(t, k)
     if k == "RegisterEvent" then local e = ...; self.events[e] = true end
     if k == "Show" then self.shown = true end
     if k == "Hide" then self.shown = false end
+    if k == "SetShown" then self.shown = (...) and true or false end
     if k == "IsShown" then return self.shown ~= false end
     if k == "SetValue" then self.value = ... end
     if k == "SetText" then self.text = ... end

@@ -580,6 +580,53 @@ function ns.ZoneProgress(map)
   return p
 end
 
+-- ---- Stand über alle Zonen (#180) ----
+-- Je Zone die gefundenen Tiere (gefunden und studiert, wie X des Zählers „Tiere“, #176) und alle Tiere, dazu die
+-- Summe: { [map] = { found = 3, beasts = 12 } }, { found = 37, beasts = 134 }. Ein Tier, das in mehreren Zonen lebt,
+-- zählt in jeder Zone; in der Summe einmal, gefunden, sobald es in irgendeiner Zone gefunden ist. Bewusst nicht
+-- ns.ZoneProgress je Zone: Das rechnet auch Lehrtiere, Ränge und Kacheln und wäre für alle Zonen zu viel. Gezählt
+-- wird nur beim Zeichnen (Reiter „Gebiet“, Jägerrang), nie im Hintergrund. Die Summe ist auch die Grundlage des
+-- Jägerrangs (#181). zones: Liste der Zonen, sonst ns.DiscoverZones().
+function ns.ZoneTallies(zones)
+  local out, all, found = {}, {}, {}
+  for _, map in ipairs(zones or ns.DiscoverZones()) do
+    local t = { found = 0, beasts = 0 }
+    for npc in pairs(ns.BeastsIn(map)) do
+      t.beasts = t.beasts + 1
+      all[npc] = true
+      local st = ns.BeastStatus(npc, map)
+      if st == "found" or st == "known" then
+        t.found = t.found + 1
+        found[npc] = true
+      end
+    end
+    out[map] = t
+  end
+  local total = { found = 0, beasts = 0 }
+  for _ in pairs(all) do total.beasts = total.beasts + 1 end
+  for _ in pairs(found) do total.found = total.found + 1 end
+  return out, total
+end
+
+-- ---- Jägerrang (#181) ----
+-- Ein Titel nach den gefundenen Tieren über alle Zonen, derselben Summe wie die Gesamtzeile der Zonenauswahl
+-- (ns.ZoneTallies, #180), damit Rang und Zeile nie auseinanderlaufen. Feste Zahlen statt Anteile: Neue Stammdaten und
+-- Funde anderer machen Y größer, mit Anteilen verlöre man einen Rang wieder; ein erreichtes Ziel soll bleiben (wie
+-- bei Erfolgen, #66). Nur im Entdeckermodus, nur lokal, nichts gespeichert oder geteilt.
+local HUNTER_RANKS = {
+  { at = 0, name = "Tracker" },
+  { at = 20, name = "Stalker" },
+  { at = 60, name = "Warden" },
+  { at = 120, name = "Master of the Wild" },
+}
+ns.HUNTER_RANKS = HUNTER_RANKS
+-- Rang zu so vielen gefundenen Tieren und der nächste (nil beim höchsten): je { at = Schwelle, name = Schlüssel in L }
+function ns.HunterRank(found)
+  local i = 1
+  while HUNTER_RANKS[i + 1] and (found or 0) >= HUNTER_RANKS[i + 1].at do i = i + 1 end
+  return HUNTER_RANKS[i], HUNTER_RANKS[i + 1]
+end
+
 -- /fhp gebiet: Fortschritt der aktuellen Zone im Chat (Entwicklerwerkzeug, nur deutsch)
 function ns.DiscoverStatus()
   local map = ns.CellHere and ns.CellHere()

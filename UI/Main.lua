@@ -104,6 +104,43 @@ local function create()
   end)
   f.modeHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+  -- Jägerrang vor der Modusanzeige, in Gold (#181): nur im Entdeckermodus, aus den gefundenen Tieren über alle Zonen
+  -- (ns.ZoneTallies, dieselbe Summe wie die Gesamtzeile im Reiter „Gebiet“). Gezählt wird beim Öffnen des Fensters
+  -- und beim Zeichnen des Reiters „Gebiet“ (der reicht seine Summe herein), nie im Hintergrund. Kein Hinweis im Chat
+  -- beim Aufstieg, das gehört zu den Erfolgen (#184).
+  f.rank = ns.W.Text(f, "GameFontNormalSmall")
+  f.rank:SetPoint("RIGHT", f.mode, "LEFT", -12, 0)
+  local rankFound
+  function ns.ShowHunterRank(total)
+    if not ns.Discovering() then
+      rankFound = nil
+      f.rank:SetText("")
+      return
+    end
+    if not total then total = select(2, ns.ZoneTallies()) end
+    rankFound = total.found
+    f.rank:SetText(L[ns.HunterRank(rankFound).name])
+  end
+  f.rankHover = CreateFrame("Frame", nil, f)
+  f.rankHover:SetAllPoints(f.rank)
+  f.rankHover:EnableMouse(true)
+  f.rankHover:SetScript("OnEnter", function(self)
+    if not rankFound then return end
+    local rank, nextRank = ns.HunterRank(rankFound)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+    GameTooltip:SetText((L["Hunter rank: %s"]):format(L[rank.name]), 1, 1, 1)
+    GameTooltip:AddLine(rankFound == 1 and L["You have found 1 beast."]
+      or (L["You have found %d beasts."]):format(rankFound), 0.8, 0.8, 0.8, true)
+    if nextRank then
+      GameTooltip:AddLine((L["Next rank: %s from %d beasts found."]):format(L[nextRank.name], nextRank.at),
+        0.8, 0.8, 0.8, true)
+    else
+      GameTooltip:AddLine(L["Highest rank reached."], 0.8, 0.8, 0.8, true)
+    end
+    GameTooltip:Show()
+  end)
+  f.rankHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
   -- Inhaltsbereich unter der Titelzeile, je Ansicht ein eigener Rahmen an derselben Stelle
   f.content = CreateFrame("Frame", nil, f)
   f.content:SetPoint("TOPLEFT", PAD, -TOP)
@@ -162,7 +199,12 @@ local function create()
 
   f:SetScript("OnShow", function()
     if trainingPane:IsShown() then f.training:Render() end
-    if areaPane:IsShown() then f.area:Render() end
+    -- der Reiter „Gebiet“ zählt ohnehin und setzt dabei den Jägerrang (#181); sonst einmal hier zählen
+    if areaPane:IsShown() then f.area:Render() else ns.ShowHunterRank() end
+  end)
+  -- Moduswechsel bei offenem Fenster: Rang zeigen bzw. verbergen; ist „Gebiet“ zu sehen, zeichnet der neu und setzt ihn
+  ns.OnModeChanged(function()
+    if f:IsShown() and not areaPane:IsShown() then ns.ShowHunterRank() end
   end)
 
   -- für die Tour (UI/Tour.lua, #178): Reiter umschalten und auf ihre Knöpfe zeigen

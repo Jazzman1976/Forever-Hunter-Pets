@@ -63,7 +63,8 @@ The current mode is shown in small letters in the top right corner of the window
 | Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself; once you have tamed a beast, everything that is known about what it teaches |
 | Beasts you have not found | shown with their name, like all others | shown anonymously as *hidden beast*, or as a count (*2 not studied yet*) |
 | Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
-| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
+| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know, and per zone in the zone list |
+| Hunter rank in the title bar | – | grows with the beasts you have found |
 | Collecting and sharing | on | on – explorers help everybody |
 
 Both modes rest on the same data; explorer mode only decides *when* you see it. Once you have tamed a beast yourself, the addon shows everything that is known about what it teaches – also ranks your own taming did not show, for example because you tamed it at a lower level – and lists it with every rank it teaches in the Abilities tab.
@@ -75,6 +76,17 @@ In explorer mode every character discovers on its own: what your other character
 ## The window
 
 Three tabs: **Abilities**, **Zone** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
+
+**Hunter rank.** In explorer mode your hunter rank stands in gold left of the mode. It grows with the beasts you have found across all zones – the same number as *All zones: … beasts found* at the top of the zone list in the Zone tab:
+
+| Hunter rank | from beasts found |
+| --- | --- |
+| Tracker | 0 |
+| Stalker | 20 |
+| Warden | 60 |
+| Master of the Wild | 120 |
+
+Hover over it to see how many beasts you have found and from how many you reach the next rank. The thresholds are fixed numbers, so a rank, once reached, stays – even when new data makes the zones bigger. The rank is only shown to you; nothing is saved or shared. Complete mode has no hunter rank.
 
 ## Abilities
 
@@ -96,6 +108,8 @@ Every pet ability, rank by rank, and the beasts that teach it.
 ## Zone
 
 A progress book for one zone at a time. At the top, *Current zone* is selected: it shows the zone you are in and follows you when you move to another zone. Pick a zone from the list to stay on it, and *Current zone* to follow again. In a zone without known beasts (a capital city, for example) the list says so. A zone you discover appears in the list right away.
+
+**Where is the hunt worth it?** In explorer mode, every zone in the list shows how far you are there: *The Barrens 3/12* means you have found 3 of its 12 beasts (the same number as the *Beasts* counter below the map; a track doesn't count yet). A zone where you have found every beast also carries a ✔ tick. At the very top of the list, a line you can't select sums it up: *All zones: 37 of 134 beasts found*. A beast that lives in several zones counts in each of them, but only once in this sum. The zones stay in alphabetical order. In complete mode the list shows just the names.
 
 ![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
 

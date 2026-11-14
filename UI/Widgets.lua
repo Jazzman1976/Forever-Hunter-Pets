@@ -123,7 +123,9 @@ function W.Scroll(parent, width, height)
 end
 
 -- Auswahlliste: ein Knopf mit dem gewählten Eintrag, darunter klappt eine scrollbare Liste auf.
--- options = { { value = …, label = "…" }, … }; onSelect(value) läuft bei jeder Wahl.
+-- options = { { value = …, label = "…" }, { header = "…" }, … }; onSelect(value) läuft bei jeder Wahl.
+-- Ein Eintrag mit header ist eine Zeile ohne Wahl, grau wie die Überschriften in W.MultiDropdown (im Reiter „Gebiet“
+-- die Gesamtzeile, #180).
 -- dd:SetOptions(options) tauscht die Einträge aus (der Reiter „Gebiet“ lernt neue Gebiete dazu, #22).
 local DD_ROW, DD_MAX = 20, 320
 function W.Dropdown(parent, width, options, onSelect)
@@ -167,12 +169,13 @@ function W.Dropdown(parent, width, options, onSelect)
     self.value = value
     for i = 1, count do
       local row = rows[i]
-      local on = row.option.value == value
-      if on then
-        self.label:SetText(row.option.label)
-        row.label:SetTextColor(1, 0.82, 0)
-      else
-        row.label:SetTextColor(1, 1, 1)
+      if not row.option.header then
+        if row.option.value == value then
+          self.label:SetText(row.option.label)
+          row.label:SetTextColor(1, 0.82, 0)
+        else
+          row.label:SetTextColor(1, 1, 1)
+        end
       end
     end
   end
@@ -199,7 +202,11 @@ function W.Dropdown(parent, width, options, onSelect)
         rows[i] = row
       end
       row.option = option
-      row.label:SetText(option.label)
+      -- Zeile ohne Wahl: grau, ohne Hervorhebung, nimmt keinen Klick an
+      row.label:SetFontObject(option.header and "GameFontDisableSmall" or "GameFontHighlightSmall")
+      row.label:SetText(option.header or option.label)
+      if option.header then row.label:SetTextColor(0.5, 0.5, 0.5) end   -- Farbe von GameFontDisable, auch nach SetValue
+      row:EnableMouse(not option.header)
       row:Show()
     end
     for i = #list + 1, #rows do rows[i]:Hide() end
@@ -214,7 +221,9 @@ function W.Dropdown(parent, width, options, onSelect)
 
   dd:SetScript("OnClick", function() catcher:SetShown(not catcher:IsShown()) end)
   dd:SetScript("OnHide", function() catcher:Hide() end)
-  dd:SetValue(options[1] and options[1].value)
+  for _, option in ipairs(options) do
+    if not option.header then dd:SetValue(option.value) break end
+  end
   return dd
 end
 

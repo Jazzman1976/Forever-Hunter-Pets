@@ -19,6 +19,7 @@ local ROW_H, LABEL_W, BAR_H = 40, 110, 8
 local TILE, TILE_GAP, TILE_LINES = 24, 4, 2   -- Kacheln unter „Lehrtiere“ und „Fähigkeiten“ (#19)
 local MAX_PINS = 150
 local ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
+local ICON_DONE = "Interface\\RAIDFRAME\\ReadyCheck-Ready"   -- Zone, in der alles gefunden ist (#180)
 local STATUS = { known = { order = 1 }, found = { order = 2 }, track = { order = 3 } }   -- Entdeckermodus
 
 local CURRENT = "current"   -- Wert der Auswahl „Aktuelle Zone“ (#22), wie in „Fähigkeiten“
@@ -84,7 +85,7 @@ function ns.BuildArea(parent)
   empty:SetText(L["No zone with beasts known yet."])
   empty:SetShown(#zones == 0)
   if #zones == 0 then
-    function v:Render() end
+    function v:Render() if ns.ShowHunterRank then ns.ShowHunterRank() end end   -- Jägerrang (#181)
     return v
   end
 
@@ -93,20 +94,43 @@ function ns.BuildArea(parent)
   -- Zone bleibt, bis man wieder „Aktuelle Zone“ wählt. Gemerkt wird nichts über die Sitzung hinaus.
   local zone, selected, follow = nil, nil, true
   local dd
+  -- „Wo lohnt sich die Jagd?“ (#180): Im Entdeckermodus trägt jede Zone ihren eigenen Stand, „Brachland 3/12“
+  -- (gefundene von allen Tieren, wie der Zähler „Tiere“), eine Zone mit allem gefunden zusätzlich einen Haken, damit
+  -- „fertig“ nicht nur an der Zahl hängt. Ganz oben eine Zeile ohne Wahl mit der Summe über alle Gebiete
+  -- (Gesamtfortschritt, #53). Sortiert bleibt alphabetisch (ns.DiscoverZones). Im Komplettmodus kein Stand: „3/12“
+  -- hieße dort „bei 3 von 12 ist die Lehre bekannt“, ein Stand des Datensammelns, kein eigener.
+  local tallies, sum = {}, nil
+  local function zoneLabel(z)
+    local t = tallies[z]
+    if not t then return ns.ZoneName(z) end
+    local done = t.beasts > 0 and t.found >= t.beasts
+    return (done and ("|T%s:14:14|t "):format(ICON_DONE) or "") .. ("%s %d/%d"):format(ns.ZoneName(z), t.found, t.beasts)
+  end
   local function zoneOptions()
-    local options = { { value = CURRENT, label = L["Current zone"] } }
-    for _, z in ipairs(zones) do options[#options + 1] = { value = z, label = ns.ZoneName(z) } end
+    local options = {}
+    if sum then
+      options[1] = { header = (L["All zones: %d of %d beasts found"]):format(sum.found, sum.beasts) }
+    end
+    options[#options + 1] = { value = CURRENT, label = L["Current zone"] }
+    for _, z in ipairs(zones) do options[#options + 1] = { value = z, label = zoneLabel(z) } end
     return options
   end
-  -- Zonenliste neu lesen (eine frisch entdeckte Zone erscheint ohne /reload) und der aktuellen Zone folgen
+  -- Zonenliste neu lesen (eine frisch entdeckte Zone erscheint ohne /reload), neu zählen und der aktuellen Zone folgen
   local function followZone()
     zones = ns.DiscoverZones()
+    if ns.Discovering() then
+      tallies, sum = ns.ZoneTallies(zones)
+    else
+      tallies, sum = {}, nil
+    end
+    -- dieselbe Summe trägt der Jägerrang in der Titelzeile (#181); im Komplettmodus verbirgt er sich
+    if ns.ShowHunterRank then ns.ShowHunterRank(sum) end
     dd:SetOptions(zoneOptions())
     if not follow then return end
     local here = hereZone()
     if here ~= zone then selected = nil end
     zone = here or zone or zones[1]   -- ohne Karte (etwa in mancher Instanz) bleibt die letzte Zone
-    dd.label:SetText(L["Current zone"] .. (zone and (": " .. ns.ZoneName(zone)) or ""))
+    dd.label:SetText(L["Current zone"] .. (zone and (": " .. zoneLabel(zone)) or ""))
   end
   dd = W.Dropdown(parent, LEFT_W, zoneOptions(), function(value)
     follow = value == CURRENT
