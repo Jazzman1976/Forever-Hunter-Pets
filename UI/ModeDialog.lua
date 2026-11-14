@@ -1,14 +1,20 @@
 -- Forever Hunter Pets · Startdialog: Komplett- oder Entdeckermodus (Meilenstein M2, Inkrement E2).
 -- Erscheint, wenn ein Charakter das Addon öffnet, der noch keinen Modus gewählt hat – jeder Charakter wird
--- einmal gefragt. Bis zur Wahl zeigt das Addon nichts, was spoilern könnte. Der Entdeckermodus steht oben und
--- ist empfohlen; wer den Dialog ohne Wahl schließt (ESC), hat ihn gewählt (#42). Zeigt /fhp start den Dialog
--- bei schon gewähltem Modus, ändert Schließen nichts.
+-- einmal gefragt. Bis zur Wahl zeigt das Addon nichts, was spoilern könnte. Beide Modi stehen nebeneinander, je
+-- mit Icon, Beschreibung und Knopf, ohne Empfehlung (#177). Wer den Dialog ohne Wahl schließt (ESC), bekommt den
+-- Entdeckermodus, den Standard (#42). Zeigt /fhp start den Dialog bei schon gewähltem Modus, ändert Schließen nichts.
 local _, ns = ...
 local L = ns.L
 local W = ns.W
 
-local DW = 520
+local DW, GAP = 640, 24
+local COL = (DW - 16 * 2 - GAP) / 2   -- Breite einer Spalte
+local ICON = 56
 local LOGO = "Interface\\AddOns\\Forever-Hunter-Pets\\media\\logo"
+-- Icons aus dem Client: Fernrohr für die eigene Suche, Buch für das komplette Wissen
+local SPYGLASS = "Interface\\Icons\\INV_Misc_Spyglass_02"
+local BOOK = "Interface\\Icons\\INV_Misc_Book_09"
+local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local dialog, after
 
 local function border(f)
@@ -73,22 +79,51 @@ local function create()
   -- Die Höhe folgt den Texten (je nach Sprache verschieden lang): y läuft von oben nach unten mit
   local y = -16 - math.max(96, 4 + title:GetStringHeight() + 10 + intro:GetStringHeight()) - 14
 
-  -- zwei Wahlmöglichkeiten untereinander, der Entdeckermodus zuerst: Knopf, daneben die Erklärung
-  for _, c in ipairs({
-    { true, L["Explorer mode"], L["Recommended. Track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for."] },
-    { false, L["Complete mode"], L["If you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost."] },
-  }) do
+  -- zwei Spalten nebeneinander: Icon, Name, Beschreibung, Knopf. Die Knöpfe stehen auf einer Höhe, deshalb
+  -- richten sich beide Spalten nach der längeren Beschreibung.
+  local cols = {
+    { true, SPYGLASS, L["Explorer mode"], L["You go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab."] },
+    { false, BOOK, L["Complete mode"], L["You find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself."] },
+  }
+  local top, bottom = y, y
+  for i, c in ipairs(cols) do
+    local x = 16 + (i - 1) * (COL + GAP)
+    local icon = f:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(ICON, ICON)
+    icon:SetPoint("TOP", f, "TOPLEFT", x + COL / 2, top)
+    icon:SetTexture(c[2])
+    -- rund ausschneiden wie der Knopf an der Minikarte, wo der Client Masken kennt
+    pcall(function()
+      local mask = f:CreateMaskTexture()
+      mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+      mask:SetAllPoints(icon)
+      icon:AddMaskTexture(mask)
+    end)
+    local name = W.Text(f, "GameFontNormalLarge")
+    name:SetPoint("TOP", icon, "BOTTOM", 0, -8)
+    name:SetText(c[3])
+    local ty = top - ICON - 8 - name:GetStringHeight() - 8
+    local text = W.Text(f, "GameFontHighlightSmall", true)
+    text:SetPoint("TOPLEFT", x, ty)
+    text:SetWidth(COL)
+    text:SetText(c[4])
+    bottom = math.min(bottom, ty - text:GetStringHeight())
+  end
+  for i, c in ipairs(cols) do
     local b = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
     b:SetSize(180, 26)
-    b:SetPoint("TOPLEFT", 16, y)
-    b:SetText(c[2])
+    b:SetPoint("TOP", f, "TOPLEFT", 16 + (i - 1) * (COL + GAP) + COL / 2, bottom - 12)
+    b:SetText(c[3])
     b:SetScript("OnClick", function() ns.SafeCall("mode", choose, c[1]) end)
-    local text = W.Text(f, "GameFontHighlightSmall", true)
-    text:SetPoint("TOPLEFT", b, "TOPRIGHT", 12, 0)
-    text:SetWidth(DW - 180 - 16 * 2 - 12)
-    text:SetText(c[3])
-    y = y - math.max(26, text:GetStringHeight()) - 14
   end
+  y = bottom - 12 - 26 - 18
+
+  -- die Daten wachsen noch (#177): damit niemand eine Lücke für einen Fehler hält
+  local data = W.Text(f, "GameFontHighlightSmall", true)
+  data:SetPoint("TOPLEFT", 16, y)
+  data:SetWidth(DW - 32)
+  data:SetText(L["The data is still being collected and grows more complete over time. So don't be surprised if something is still missing."])
+  y = y - data:GetStringHeight() - 10
 
   local chars = W.Text(f, "GameFontHighlightSmall", true)
   chars:SetPoint("TOPLEFT", 16, y)

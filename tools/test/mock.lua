@@ -29,8 +29,12 @@ local frameMT = { __index = function(t, k)
     if k == "IsShown" then return self.shown ~= false end
     if k == "SetValue" then self.value = ... end
     if k == "SetText" then self.text = ... end
+    -- Maße für Dialoge, deren Höhe den Texten folgt (#177): ohne Schrift im Test immer 0
+    if k:match("^Get.*Height$") or k:match("^Get.*Width$") then return 0 end
   end end }
 function CreateFrame() local f = setmetatable({ scripts = {}, events = {} }, frameMT); frames[#frames + 1] = f; return f end
+UIParent = CreateFrame()
+UISpecialFrames = {}   -- Fenster, die ESC schließt
 function FireEvent(e, ...)
   for _, f in ipairs(frames) do
     if f.events[e] and f.scripts.OnEvent then f.scripts.OnEvent(f, e, ...) end
