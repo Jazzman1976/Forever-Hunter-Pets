@@ -26,7 +26,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
 | `UI/MapCanvas.lua` | Karte mit Fundorten und Hinweisfläche (`SetHint`, #175), 3D-Modell und die Kartenseite eines Tiers |
 | `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |
-| `UI/ModeDialog.lua` | Startansicht: Entdecker- und Komplettmodus nebeneinander, je mit Icon und Knopf (#177), einmal je Charakter; Schließen = Entdeckermodus; `/fhp start` |
+| `UI/ModeDialog.lua` | Startansicht: Entdecker- und Komplettmodus nebeneinander, je mit Icon und Knopf (#177), einmal je Charakter; Schließen = Entdeckermodus; `/fhp start`; `/fhp modus` (#179: über die Einstellung `ns.modeSetting`, vor dem Komplettmodus eine Rückfrage per `StaticPopup`) |
 | `UI/Tour.lua` | Tour beim ersten Öffnen im Entdeckermodus (#178): Sprechblase mit sieben Schritten, goldener Rahmen um das Ziel, schaltet die Reiter über `ns.frame.ShowView`; Ziele aus `ns.frame.tabs` und `ns.frame.area.tour` (Liste, Kästchen, Karte, Zähler); einmal je Account (`ForeverHunterPetsDB.tourSeen`); `/fhp tour` |
 | `UI/Area.lua` | Reiter „Gebiet“: Zonenauswahl, links die Tiere der Zone (immer eins gewählt; Entdeckermodus mit Status-Tag und anonym bis zur Fährte, Komplettmodus alle benannt), rechts dessen Fundorte auf der Karte und die Zähler „X von Y“ als ganze Sätze (#176); im Entdeckermodus auch verborgene Tiere anklickbar, Hinweise im Tooltip der Zeile und auf der Karte (#175) |
 | `UI/Main.lua` | Fenster, Reiter, Zahnrad zu den Einstellungen (`ns.OpenSettings` öffnet per `Settings.OpenToCategory` die eigene Kategorie und schließt das Fenster) |

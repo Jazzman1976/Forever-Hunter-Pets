@@ -85,3 +85,8 @@ function Login(db)
   FireEvent("ADDON_LOADED", "Forever-Hunter-Pets")
   FireEvent("PLAYER_LOGIN")
 end
+
+-- Rückfragen des Spiels (#179): StaticPopup_Show merkt sich den Namen, das Szenario klickt selbst
+StaticPopupDialogs = {}
+POPUPS = {}
+function StaticPopup_Show(name) POPUPS[#POPUPS + 1] = name end

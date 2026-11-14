@@ -162,3 +162,35 @@ function ns.ShowModeDialog(onChosen)
   dialog.Layout()
   dialog:Show()
 end
+
+-- ---- /fhp modus (#179) ----
+-- Umschalten über dieselbe Einstellung wie im Menü, damit das Häkchen gleich den neuen Stand zeigt; deren Rückruf
+-- setzt modeChosen und baut alle Ansichten neu (ns.ModeChanged). Ohne Einstellung (alter Client) über ns.SetMode.
+local function switchTo(discover)
+  if ns.modeSetting then ns.modeSetting:SetValue(discover) else ns.SetMode(discover) end
+  ns.Print(discover and L["You are now in explorer mode."] or L["You are now in complete mode."])
+end
+
+-- Aus dem Entdeckermodus erst nach Rückfrage, denn der Komplettmodus verrät alles; zurück sofort. Ohne gewählten
+-- Modus die Startansicht. Der Befehl steht nur in der Hilfe, beworben wird er nirgends.
+function ns.ModeCommand()
+  if not ns.ModeChosen() then
+    ns.ShowModeDialog()
+    return
+  end
+  if not ns.Discovering() then
+    switchTo(true)
+    return
+  end
+  StaticPopupDialogs.FOREVERHUNTERPETS_COMPLETE_MODE = StaticPopupDialogs.FOREVERHUNTERPETS_COMPLETE_MODE or {
+    text = L["Switch to complete mode? Then you see everything that is known right away, including what you have not discovered yet."],
+    button1 = L["Switch"],
+    button2 = L["Cancel"],
+    OnAccept = function() ns.SafeCall("mode", switchTo, false) end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+  }
+  StaticPopup_Show("FOREVERHUNTERPETS_COMPLETE_MODE")
+end
