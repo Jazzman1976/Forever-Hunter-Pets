@@ -165,6 +165,9 @@ local function create()
     if areaPane:IsShown() then f.area:Render() end
   end)
 
+  -- für die Tour (UI/Tour.lua, #178): Reiter umschalten und auf ihre Knöpfe zeigen
+  f.ShowView, f.tabs = show, tabs
+
   local view = ns.db.ui.view
   show((view == "training" or view == "area") and view or "abilities")
   return f
@@ -181,4 +184,6 @@ function ns.Toggle()
     ns.frame = main
   end
   main:SetShown(not main:IsShown())
+  -- beim ersten Öffnen im Entdeckermodus die Tour (#178), auch gleich nach der Wahl in der Startansicht
+  if main:IsShown() and ns.MaybeTour then ns.SafeCall("tour", ns.MaybeTour) end
 end

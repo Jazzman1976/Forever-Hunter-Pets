@@ -51,6 +51,8 @@ If you close the window without choosing, you play in explorer mode. Until you c
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
 
+In explorer mode, a short **tour** follows the first time you open the window: speech bubbles show you where the beasts, the checkboxes, the map and your progress are, and what the other tabs are for. Close it any time with the X or Esc. It comes once per account; `/fhp tour` shows it again.
+
 The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
 ## Complete mode and explorer mode
@@ -254,6 +256,7 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
 | `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session) |
+| `/fhp tour` | show the explorer mode tour again |
 | `/fhp zones` | zones the addon has no map for |
 | `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 

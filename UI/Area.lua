@@ -554,5 +554,14 @@ function ns.BuildArea(parent)
   ns.OnModeChanged(refresh)
   ns.On("ZONE_CHANGED_NEW_AREA", refresh)
   ns.On("PLAYER_ENTERING_WORLD", refresh)
+
+  -- Ziele der Tour (UI/Tour.lua, #178): Liste, Spalte der Kästchen, Karte, Zähler; unsichtbar, ohne Maus
+  local boxCol = CreateFrame("Frame", nil, parent)
+  boxCol:SetPoint("TOPLEFT", list, "TOPLEFT", 0, 0)
+  boxCol:SetSize(30, H - COUNT_H)
+  local counters = CreateFrame("Frame", nil, right)
+  counters:SetPoint("TOPLEFT", 0, yBeasts + 4)
+  counters:SetPoint("BOTTOMRIGHT")
+  v.tour = { list = list, box = boxCol, map = canvas, counters = counters }
   return v
 end
