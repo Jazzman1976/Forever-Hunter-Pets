@@ -79,7 +79,7 @@ Jede hier wurde ausdrücklich getroffen. Vor einer Änderung an der betroffenen 
 ## Projekt
 
 - **Leitbild: Zähmen als Spiel** (15.10.2026, Wunsch des Nutzers). Suchen und Sammeln soll Spaß machen und belohnt werden, auch wenn es für Raid-Spieler unnötig ist. Damit grenzt sich das Addon von anderen ab.
-  - Lücken in den Daten sind Aufgaben, keine Schwäche. Wer etwas zuerst findet, entdeckt es; daraus werden Erfolge („Pionier: 10 Tiere gefunden, die die Daten deiner Version noch nicht kannten“, „Herr der Spinnen“, „Meister der Tiere“). Erfolge hängen an eigenen Funden; „noch niemand“ lässt sich ohne Server nicht prüfen (10.11.2026, #65, siehe §7 in [konzept.md](konzept.md)).
+  - Lücken in den Daten sind Aufgaben, keine Schwäche. Wer etwas zuerst findet, entdeckt es; daraus werden Erfolge („Herr der Spinnen“, „Meister der Tiere“; eigenes Konzept in #184). Erfolge hängen an eigenen Funden; „noch niemand“ lässt sich ohne Server nicht prüfen (10.11.2026, #65, siehe §7 in [konzept.md](konzept.md)). Der Erfolg „Pionier“ („Tiere gefunden, die die Daten deiner Version noch nicht kannten“) ist verworfen (13.11.2026, Epic #186): Das Sammeln läuft still im Hintergrund.
   - Das Classic-Gefühl zurückholen, wo der Forever-Client es schlecht macht; ein Beispiel ist die Ansicht „Ausbildung“.
 - **Nur eigene Daten und was der Client liefert** (15.10.2026). Ausgeliefert wird nur, was im Spiel selbst erhoben wurde (Sichtung, Zähmen, Ausbildungsfenster) oder was der Client zur Laufzeit nennt.
   - Anlass: In frühen Entwicklungsständen stammten Daten aus fremden Quellen, deren Bedingungen das Weiterverbreiten nicht erlaubten oder bei denen sich die Rechte nicht zweifelsfrei klären ließen. Dieser Bestand wurde vollständig verworfen; alles wurde neu im Spiel erhoben.
