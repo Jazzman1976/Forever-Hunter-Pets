@@ -12,7 +12,7 @@ local SOURCE_COLOR = { tame = "9fd45f", trainer = "66ccff", unknown = "9aa3b5", 
 local BEAST_H = 36
 local EFFORT_COLOR = { easy = { 0.62, 0.83, 0.37 }, medium = { 1, 0.82, 0 }, hard = { 1, 0.45, 0.35 } }
 local CLS_LABEL = { [1] = "Elite", [2] = "Rare elite", [3] = "Boss", [4] = "Rare" }
-local MAX_OPEN = 8   -- „? unentdecktes Tier“-Zeilen höchstens, dann „und n weitere“
+local MAX_OPEN = 8   -- „verborgenes Tier“-Zeilen höchstens, dann „und n weitere“
 local CONF_HEAD = { [2] = "Uncertain – reported by fewer than %d other characters", [3] = "Unproven – estimated, not seen yet" }
 
 local function zonesText(id, b)
@@ -63,13 +63,14 @@ local function buildEntries(abilities, fam, zone)
   for _, x in ipairs(abilities) do
     local a = x.a
     if not fam or ns.AppliesToAll(a) or contains(a.families, fam) then
-      -- gezählt wird nur, was die Einstellungen zeigen (unsichere und unbelegte Lehrtiere sind sonst aus)
+      -- gezählt wird nur, was die Einstellungen zeigen (unsichere und unbelegte Lehrtiere sind sonst aus); wer in
+      -- der Zone lebt, sagen in beiden Modi die kompletten Daten (#193)
       local inZone, shown = 0, 0
       for _, t in ipairs(a.teach) do
         if ns.ShowConf(t[3]) then
           shown = shown + 1
           local b = zone and D.beasts[t[1]]
-          if b and inZones(ns.BeastZones(t[1]), zone) then inZone = inZone + 1 end
+          if b and inZones(ns.BeastZonesAll(t[1]), zone) then inZone = inZone + 1 end
         end
       end
       -- dazu, was eigene Zähmungen zeigten, auch bei Tieren, die (noch) nicht in den Daten stehen
@@ -77,7 +78,7 @@ local function buildEntries(abilities, fam, zone)
         for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do
           if ns.ShowConf(x.conf) then
             shown = shown + 1
-            if zone and inZones(ns.BeastZones(x.id), zone) then inZone = inZone + 1 end
+            if zone and inZones(ns.BeastZonesAll(x.id), zone) then inZone = inZone + 1 end
           end
         end
       end
@@ -97,7 +98,8 @@ local function buildEntries(abilities, fam, zone)
               end
               teachers = own
             end
-            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0) then
+            -- verborgene Lehrtiere (Entdeckermodus) zählen mit: Der Rang ist in der Zone zu finden (#193)
+            if not ((trait or (a.source == "tame" and filtered)) and #teachers == 0 and (teachers.undiscovered or 0) == 0) then
               entries[#entries + 1] = { a = a, r = r, name = x.name, teachers = teachers }
             end
           end
@@ -106,6 +108,12 @@ local function buildEntries(abilities, fam, zone)
     end
   end
   return entries
+end
+
+-- Die Zeilen für Familie und Zone (beide optional), wie die Liste sie vor den Status-Filtern hat; für die
+-- Prüfung ohne Spiel (#193)
+function ns.AbilityEntries(fam, zone)
+  return buildEntries(orderedAbilities(), fam, zone)
 end
 
 local function familyOptions()
@@ -117,7 +125,8 @@ local function familyOptions()
   return options
 end
 
--- Nur Zonen, in denen überhaupt ein Lehrtier steht. Der Wert einer Auswahl ist eine Menge von
+-- Nur Zonen, in denen überhaupt ein Lehrtier steht, in beiden Modi nach den kompletten Daten (#193: dass es einen
+-- Rang in einer Zone gibt, darf der Entdeckermodus verraten, nicht wo genau). Der Wert einer Auswahl ist eine Menge von
 -- Zonen-IDs: Forever führt manche Zone unter zwei IDs (Desolace), die gehören zusammen. Eine
 -- Instanz, die wie eine Zone heißt (Vorgebirge von Hillsbrad), bleibt getrennt und wird benannt.
 local function zoneOptions()
@@ -130,7 +139,7 @@ local function zoneOptions()
       for _, x in ipairs(ns.ObservedTeachers and ns.ObservedTeachers(a, r) or {}) do ids[#ids + 1] = x.id end
     end
     for _, npc in ipairs(ids) do
-      for _, z in ipairs(ns.BeastZones(npc)) do
+      for _, z in ipairs(ns.BeastZonesAll(npc)) do
         if not seen[z] then
           seen[z] = true
           local name, inst = ns.ZoneName(z), (D.zones[z] and D.zones[z].inst) and true or false
@@ -201,12 +210,12 @@ local function metaText(e)
   if r.level and r.level > 0 and a.kind ~= "trait" then parts[#parts + 1] = (L["from pet level %d"]):format(r.level) end
   if r.tp then parts[#parts + 1] = (L["%d TP"]):format(r.tp) end
   if a.source == "tame" then
-    -- ohne Lehrtier ist der Rang eine Aufgabe: ein Wort statt „0 Tiere“. „? unbekannt“: niemand kennt eins;
-    -- im Entdeckermodus dazu, wie viele bekannt, aber selbst noch unentdeckt sind
+    -- ohne Lehrtier ist der Rang eine Aufgabe: ein Wort statt „0 Tiere“. „Keine Daten“ mit rotem X:
+    -- niemand kennt eins (#172); im Entdeckermodus dazu, wie viele bekannt, aber selbst noch nicht studiert sind
     local n, open = #e.teachers, e.teachers.undiscovered or 0
     if n > 0 then parts[#parts + 1] = n == 1 and L["1 beast"] or (L["%d beasts"]):format(n) end
-    if open > 0 then parts[#parts + 1] = (L["%d undiscovered"]):format(open) end
-    if n == 0 and open == 0 then parts[#parts + 1] = L["? unknown"] end
+    if open > 0 then parts[#parts + 1] = (L["%d not studied yet"]):format(open) end
+    if n == 0 and open == 0 then parts[#parts + 1] = ns.NoData() end
   end
   return table.concat(parts, " · ")
 end
@@ -232,7 +241,7 @@ local function hintText(e)
   if a.source == "trainer" then return L["Learned from the pet trainer."] end
   if a.source == "unknown" then return L["No source says how this ability is learned."] end
   if #e.teachers == 0 and (e.teachers.undiscovered or 0) > 0 then
-    return L["Not discovered yet – find a beast that teaches it."]
+    return L["Not studied yet – find and tame a beast that teaches it."]
   end
   if #e.teachers == 0 then
     local hidden = e.teachers.hidden or 0
@@ -240,7 +249,7 @@ local function hintText(e)
       return (hidden == 1 and L["No confirmed beast for this rank. 1 uncertain or unproven beast is hidden; you can show it in the settings."]
         or L["No confirmed beast for this rank. %d uncertain or unproven beasts are hidden; you can show them in the settings."]):format(hidden)
     end
-    return L["? Unknown – nobody has found a beast that teaches it yet."]
+    return ns.NoData(L["No data – nobody has found a beast that teaches it yet."])
   end
   return L["Tameable beasts that know this rank, the easiest to reach first:"]
 end
@@ -255,7 +264,8 @@ end
 
 -- Stand eines Rangs aus Sicht des Jägers: "known" ist abgehakt, "available" kann er jetzt lernen
 -- (ein Lehrtier bis zu seiner Stufe, oder beim Tierausbilder), sonst "unavailable". Die Lehrtiere
--- sind schon auf die gewählte Zone gekürzt, „verfügbar“ heißt dann: in dieser Zone.
+-- sind schon auf die gewählte Zone gekürzt, „verfügbar“ heißt dann: in dieser Zone. Im Entdeckermodus zählen die noch
+-- nicht studierten Lehrtiere mit (undiscoveredMin, #192), sonst wäre dort fast nichts erreichbar.
 -- Zähmen lässt sich ein Tier höchstens auf der eigenen Stufe. Das gilt auch für Angeborenes
 -- (Angriffstempo); „bekannt“ wird es nie, weil es sich nicht lehren lässt.
 local function status(e, level)
@@ -268,6 +278,8 @@ local function status(e, level)
     for _, t in ipairs(e.teachers) do
       if not level or (t.beast.min or 0) <= level then return "available" end
     end
+    local min = e.teachers.undiscoveredMin
+    if min and (not level or min <= level) then return "available" end
   end
   return "unavailable"
 end
@@ -480,15 +492,15 @@ function ns.BuildAbilities(parent)
         end
       end
     end
-    -- Entdeckermodus: je weiterem, bekanntem Lehrtier eine Zeile „? unentdecktes Tier“, ohne Familie und Stufe
+    -- Entdeckermodus: je weiterem, bekanntem Lehrtier eine Zeile „verborgenes Tier“, ohne Familie und Stufe
     local open = e.teachers.undiscovered or 0
     for i = 1, math.min(open, MAX_OPEN) do
       local line = groupHeads:Get()
       line:ClearAllPoints()
       line:SetPoint("TOPLEFT", dc, "TOPLEFT", 16, -(y + 4))
       line:SetWidth(DW - 16)
-      line:SetText(i == MAX_OPEN and open > MAX_OPEN and (L["? and %d more undiscovered beasts"]):format(open - MAX_OPEN + 1)
-        or L["? undiscovered beast"])
+      line:SetText(i == MAX_OPEN and open > MAX_OPEN and (L["and %d more hidden beasts"]):format(open - MAX_OPEN + 1)
+        or L["hidden beast"])
       y = y + line:GetStringHeight() + 8
     end
     detail:SetContentHeight(y + 8)
@@ -519,7 +531,8 @@ function ns.BuildAbilities(parent)
     b.box.row = b
     b.box:SetPoint("LEFT", 6, 0)
     -- Abhaken von Hand nur mit der Einstellung „Manuelles Editieren“; sonst wählt ein Klick die Zeile.
-    -- Der Tooltip erscheint in beiden Fällen: Das Kästchen hat keine Spaltenüberschrift.
+    -- Der Tooltip erscheint in beiden Fällen: Das Kästchen hat keine Spaltenüberschrift. Sein Titel nennt den
+    -- Zustand, „Hast du“ bzw. „Fehlt dir“ (#188; vorher immer „Hast du“, auch bei fehlendem Rang).
     b.box:SetScript("OnClick", function(self)
       local e = self.row.entry
       if ns.db.ui.manualEdit then
@@ -531,7 +544,7 @@ function ns.BuildAbilities(parent)
     b.box:SetScript("OnEnter", function(self)
       local e = self.row.entry
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-      GameTooltip:SetText(L["You have it"], 1, 1, 1)
+      GameTooltip:SetText(ns.IsKnown(e.r) and L["You have it"] or L["You lack it"], 1, 1, 1)
       GameTooltip:AddLine(ns.IsKnown(e.r) and L["You have learned this rank."] or L["You have not learned this rank yet."], 1, 0.82, 0)
       GameTooltip:AddLine(L["The tick shows which ranks you can teach your pets. The addon sets it on its own from the Beast Training window and when the game reports that you learned the spell. A tick counts for this rank only."], 0.8, 0.8, 0.8, true)
       if ns.db.ui.manualEdit then

@@ -2,7 +2,7 @@
 
 Everything the addon does, how it works and why it behaves the way it does. Short version in the [README](../../README.md).
 
-**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
+**Contents:** [The idea](#the-idea) · [Getting started](#getting-started) · [Complete mode and explorer mode](#complete-mode-and-explorer-mode) · [The window](#the-window) · [Abilities](#abilities) · [Zone](#zone) · [Training](#training) · [Beast tooltip](#beast-tooltip) · [How the addon learns](#how-the-addon-learns) · [Your learning progress](#your-learning-progress) · [Sharing with other players](#sharing-with-other-players) · [Trustworthy data](#trustworthy-data) · [Pet frame](#pet-frame) · [Settings](#settings) · [Commands](#commands) · [Questions and answers](#questions-and-answers)
 
 ## The idea
 
@@ -12,7 +12,7 @@ Forever Hunter Pets answers that – and turns the search into a game:
 
 - **Find everything.** The addon catalogues every ability, every rank, every beast that teaches it and every place it was seen.
 - **Collected in the game.** Nothing comes from websites or other addons. What the addon knows was found by players of the addon – by you, and by others who share what they see.
-- **Gaps are tasks.** What nobody has found yet is shown as such (*? unknown*, *spawn point unknown*). Finding it is part of the fun.
+- **Gaps are tasks.** What nobody has found yet is shown as such (a red ✖ with *No data*, *spawn point unknown*). Finding it is part of the fun.
 - **Your choice how much you want to see.** In *complete mode* you get everything that is known. In *explorer mode* you only see what you found yourself – and how much there is left to discover.
 
 The addon follows the language of your client (English and German).
@@ -42,12 +42,20 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** (recommended) – track the beasts down yourself: every beast you sight, find and tame is added to the Zone tab, your guide to the beasts of each zone. This is what the addon is made for.
-- **Complete mode** – if you would rather not search: shows everything hunters have identified with the addon so far. You see all details at once, but part of the fun is lost.
+- **Explorer mode** – you go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab.
+- **Complete mode** – you find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself.
 
-If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings.
+![Start view: explorer mode and complete mode side by side, each with a short description and a button, below the notes on the data, your characters and sharing (German client)](../images/start.jpg)
+
+The data is still being collected and grows more complete over time, so don't be surprised if something is still missing.
+
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`.
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
+
+In explorer mode, a short **tour** follows the first time you open the window: speech bubbles show you where the beasts, the checkboxes, the map and your progress are, and what the other tabs are for. Close it any time with the X or Esc. It comes once per account; `/fhp tour` shows it again.
+
+![Tour, step 2 of 7: the list of beasts is framed in gold, and a speech bubble explains hidden, tracked, found and studied beasts (German client)](../images/tour.jpg)
 
 The current mode is shown in small letters in the top right corner of the window, next to the gear. Hover over it for a short explanation; click it to open the settings.
 
@@ -56,11 +64,16 @@ The current mode is shown in small letters in the top right corner of the window
 | | Complete mode | Explorer mode |
 | --- | --- | --- |
 | Meant for | players who want the answer | players who want to search |
-| Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself |
-| Beasts you have not found | shown with their name, like all others | shown anonymously as *? undiscovered beast*, or as a count (*2 undiscovered*) |
+| Teaching beasts, names, spawn points | everything that is known: the shipped data, what other players shared, what you found | only what you found yourself; once you have tamed a beast, everything that is known about what it teaches |
+| Beasts you have not found | shown with their name, like all others | shown anonymously as *hidden beast*, or as a count (*2 not studied yet*) |
 | Status of a beast (*tracked* …) | not shown – it doesn't matter there | shown in the beast tooltip and in the Zone tab |
-| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know |
+| Progress in the Zone tab | how much of the zone is known at all (the state of data collection) | how much of the zone **you** know, and per zone in the zone list |
+| Hunter rank in the title bar | – | grows with the beasts you have found |
 | Collecting and sharing | on | on – explorers help everybody |
+
+Both modes rest on the same data; explorer mode only decides *when* you see it. Once you have tamed a beast yourself, the addon shows everything that is known about what it teaches – also ranks your own taming did not show, for example because you tamed it at a lower level – and lists it with every rank it teaches in the Abilities tab.
+
+**Switching.** Tick or untick *Explorer mode* in the settings (the gear, or a click on the mode in the title bar), or type `/fhp mode`. Before it switches to complete mode, `/fhp mode` asks first – complete mode reveals everything at once. Your finds are kept either way: the addon collects in complete mode too, so nothing is lost when you switch back.
 
 In explorer mode every character discovers on its own: what your other characters sighted, found or tamed does not count for this one. If you'd rather share your finds across the account, switch on *Show finds of my other characters* below *Explorer mode* in the settings. The mode is chosen per character, and so is this option. Collecting and sharing with other players work the same either way.
 
@@ -70,53 +83,76 @@ In explorer mode every character discovers on its own: what your other character
 
 Three tabs: **Abilities**, **Zone** and **Training**. Top right: the current mode, the gear (opens the settings) and the close button.
 
+**Hunter rank.** In explorer mode your hunter rank stands in gold left of the mode. It grows with the beasts you have found across all zones – the same number as *All zones: … beasts found* at the top of the zone list in the Zone tab:
+
+| Hunter rank | from beasts found |
+| --- | --- |
+| Tracker | 0 |
+| Stalker | 20 |
+| Warden | 60 |
+| Master of the Wild | 120 |
+
+Hover over it to see how many beasts you have found and from how many you reach the next rank. The thresholds are fixed numbers, so a rank, once reached, stays – even when new data makes the zones bigger. The rank is only shown to you; nothing is saved or shared. Complete mode has no hunter rank.
+
 ## Abilities
 
 Every pet ability, rank by rank, and the beasts that teach it.
 
-![Abilities tab: ranks with pet level, training points and teaching beasts on the left, a selected beast with its spawn points on the zone map on the right (German client)](../images/abilities.jpg)
+![Abilities tab in explorer mode: ranks with pet level, training points, teaching beasts and how many are not studied yet on the left; the selected rank on the right with the beasts you have studied, the easiest one starred, and the hidden beasts still to find (German client)](../images/abilities.jpg)
 
-**The list (left).** One row per rank: name, rank, from which pet level, training point cost, and how many beasts teach it (*3 beasts*). In explorer mode, beasts you have not identified yet are counted instead (*2 undiscovered*). *? unknown* means nobody has found a beast for this rank yet. The checkbox shows whether **you, the hunter,** have learned the rank (see [learning progress](#your-learning-progress)). *your pet has it* marks ranks your current pet has, but you don't have yet – don't release that pet too early.
+**The list (left).** One row per rank: name, rank, from which pet level, training point cost, and how many beasts teach it (*3 beasts*). In explorer mode, beasts you have not studied yet are counted instead (*2 not studied yet*). A red ✖ with *No data* means nobody has found a beast for this rank yet. The checkbox shows whether **you, the hunter,** have learned the rank (see [learning progress](#your-learning-progress)); its tooltip says *You have it* or *You lack it*. *your pet has it* marks ranks your current pet has, but you don't have yet – don't release that pet too early.
 
 **Filters (top).**
-- **Show** (left) – a multi-select. By status, from the hunter's point of view: **you lack it, in reach** (a beast up to your level or the pet trainer teaches it), **you lack it, out of reach** (every known teaching beast is above your level, or none is known), **you have it**. By source: **innate** (what a beast brings along and can never be taught, like its attack speed) and **Pet trainer** (learned from the trainer, no taming needed). A tick means "is shown".
-- **Zone** and **family** (right). *Current zone* follows where you stand, *Current family* your active pet. With a zone selected, *in reach* means in reach in this zone.
+- **Show** (left) – a multi-select. By status, from the hunter's point of view: **you lack it, in reach** (a beast up to your level or the pet trainer teaches it), **you lack it, out of reach** (every known teaching beast is above your level, or none is known), **you have it**. In explorer mode, beasts you have not studied yet count as well: *in reach* then tells you there is something to find at your level, not which beast it is. By source: **innate** (what a beast brings along and can never be taught, like its attack speed) and **Pet trainer** (learned from the trainer, no taming needed). A tick means "is shown".
+- **Zone** and **family** (right). *Current zone* follows where you stand, *Current family* your active pet. With a zone selected, *in reach* means in reach in this zone. In explorer mode, the zone list and the ranks per zone are the same as in complete mode: you learn that a rank can be found in a zone, but beasts you have not studied stay hidden.
 - The addon remembers your filters per character (setting *Remember filters*).
 
-**Details (right).** Icon, name, rank, description, which families can learn it, and the teaching beasts – the easiest first, split into *Tameable at your level* and *Above your level*. The recommended beast has a star. Hover over a beast for its level, classification, family, zones and an **effort** rating (easy, medium, hard – based on level, elite or rare, dungeon or raid, number of known spawn points, enemy faction territory). Uncertain beasts are listed under their own heading and marked **?** (see [trustworthy data](#trustworthy-data)). In explorer mode, teaching beasts you have not identified yourself appear as *? undiscovered beast*.
+**Details (right).** Icon, name, rank, description, which families can learn it, and the teaching beasts – the easiest first, split into *Tameable at your level* and *Above your level*. The recommended beast has a star. Hover over a beast for its level, classification, family, zones and an **effort** rating (easy, medium, hard – based on level, elite or rare, dungeon or raid, number of known spawn points, enemy faction territory). Uncertain beasts are listed under their own heading and marked **?** (see [trustworthy data](#trustworthy-data)). In explorer mode, teaching beasts you have not studied yourself appear as *hidden beast*.
 
-**Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points. The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
+**Beast page.** Click a beast: its 3D model (drag to rotate) and the zone map with its spawn points (in explorer mode: all known ones in the zones where you found and tamed it). The map is revealed as far as your character has explored the zone, like the world map. Spawn points show the area, not the exact spot (see [spawn points](#spawn-points)).
+
+![Beast page: a boar with its level, family and the rank it teaches, its 3D model, and its spawn points on the map of Loch Modan (German client)](../images/beast.jpg)
 
 ## Zone
 
 A progress book for one zone at a time. At the top, *Current zone* is selected: it shows the zone you are in and follows you when you move to another zone. Pick a zone from the list to stay on it, and *Current zone* to follow again. In a zone without known beasts (a capital city, for example) the list says so. A zone you discover appears in the list right away.
 
-![Zone tab for Westfall: the beasts of the zone with family, level and what they teach on the left, the selected beast's spawn points and the zone's totals on the right (German client)](../images/area.jpg)
+![Zone tab for Loch Modan in explorer mode: the beasts of the zone with status, checkbox, family, level and what they teach on the left; the selected studied beast's spawn points and the counters with their tiles on the right; the hunter rank in the title bar (German client)](../images/area.jpg)
 
-**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or *? unclear* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other characters have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
+**Where is the hunt worth it?** In explorer mode, every zone in the list shows how far you are there: *The Barrens 3/12* means you have found 3 of its 12 beasts (the same number as the *Beasts* counter below the map; a track doesn't count yet). A zone where you have found every beast also carries a ✔ tick. At the very top of the list, a line you can't select sums it up: *All zones: 37 of 134 beasts found*. A beast that lives in several zones counts in each of them, but only once in this sum. The zones stay in alphabetical order. In complete mode the list shows just the names.
 
-- **Explorer mode:** each beast carries its status, and the checkbox follows it:
+![Zone list in explorer mode: at the top the sum over all zones, then every zone with the beasts you have found there, a finished zone with a tick (German client)](../images/zones.jpg)
+
+**The beasts (left).** Every beast of the zone, with the checkbox from *Abilities*, its family icon, its name and below: family, level and what it teaches – *teaches* followed by the ability icons (hover over the row for names and ranks), *teaches nothing*, or a red ✖ with *No data* when nobody knows yet. In complete mode an uncertain rank carries a **?** right after its icon and after the rank in the row's tooltip, as in the beast tooltip (only if you switched uncertain data on). The same **?** follows anything else that only 2 other characters have reported: a name, family or level, *teaches nothing*, or a beast that is listed in the zone only because of their spawn points.
+
+- **Explorer mode:** each beast carries its status, and the checkbox follows it – a different shape at each step, so you can tell them apart without colour:
 
   | Status | Meaning | Checkbox |
   | --- | --- | --- |
-  | *? undiscovered beast* | you haven't come across it in this zone yet – name hidden. The beast is known, you just have to find it: *Go on the prowl and find it.* | none |
-  | **tracked** | you have seen it in this zone, but were never close to it | none |
-  | **beast found** | you were close to it in this zone, so its spawn point is on your map | empty |
-  | **abilities known** | found, and you have tamed it – you know what it teaches | ticked |
+  | **never seen** – listed as *hidden beast* | you haven't come across it in this zone yet – name hidden. The beast is known, you just have to find it: *Go on the prowl and find it.* | none |
+  | **tracked** | you have seen it in this zone, but were never close to it | empty |
+  | **beast found** | you were close to it in this zone, so its spawn point is on your map | dot |
+  | **beast studied** | found, and you have tamed it – you know what it teaches (also when it teaches nothing) | ticked |
 
-  Sorted by status: known first, undiscovered last. Undiscovered beasts can't be selected.
+  What it teaches shows step by step: nothing while you only tracked it; once you found it, whether it teaches anything – *teaches something*, *teaches nothing*, or a red ✖ with *No data* when nobody knows yet (attack speed counts as something); once you studied it, *teaches* with the ability icons. A beast you have studied in another zone shows its icons as soon as you track it, because what a beast teaches is the same everywhere.
+
+  Sorted by status: studied first, never seen last. Every row can be selected, hidden beasts too – their name stays hidden in the map title and in the tooltip.
+
+  **What to do next.** Hover over a row: below what it teaches, a gold line tells you how to get to the next step – for a hidden beast, that you only need to see it somewhere to pick up its trail, and that *Track Beasts*, *Eagle Eye* or *Eyes of the Beast* work too; for a tracked beast, that you need to get closer to find it; for a found beast, that taming it tells you its abilities. While the map shows no spawn point for the selected beast, it says the same in its middle: that a hidden beast is hiding somewhere in this zone, or that you have picked up the trail of a tracked beast but need to get closer to see where it lives.
 
   When other hunters have discovered beasts in a zone since you last looked at it, a line above the beasts says so: *+ Since you last looked here, other hunters have discovered 1 new beast – the hunt goes on.* That is why a zone can grow from *8 of 8* to *8 of 9*: there is something new to find, nothing was lost. Beasts you found yourself never count here. The line stays until you pick another zone or close the window.
 - **Complete mode:** every beast with its name, no status. The checkbox is ticked when it is known what the beast teaches. Beasts with known abilities come first.
 
-**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points. Click another beast to switch.
+**The map (right).** Shows the spawn points of the selected beast – one beast is always selected, otherwise the map would be covered in pins. In explorer mode only your own spawn points – until you have tamed the beast and found it in this zone: then all known spawn points of the zone. Click another beast to switch. In explorer mode, a beast without spawn points on the map gets a hint in the middle of the map instead (see *What to do next* above).
 
 **The counters (below the map).**
-- **Beasts** – *X of Y known*. Only *abilities known* moves the bar; tracking and finding a beast don't. Hover over it to read what the statuses mean.
-- **Teaching beasts** – *X of Y identified*: beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Undiscovered tiles only say *? undiscovered teaching beast*.
-- **Abilities** – *X of Y ranks discovered*: ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
+Each counter is a full sentence next to its short title; a long sentence wraps.
+
+- **Beasts** – explorer mode: *You have found X of Y beasts*. Finding a beast moves the bar (and studying it, of course); tracking it doesn't. Complete mode: *For X of Y beasts it is known what they teach*. Hover over it to read what the statuses mean.
+- **Teaching beasts** – explorer mode: *You have studied X of Y teaching beasts*; complete mode: *X of Y teaching beasts are known*. Beasts of this zone that teach something. Below, one tile per teaching beast: a red question mark until you have identified it, then its family icon. Hover over a tile for its name and what it teaches; click it to show the beast on the map. Hidden tiles only say *teaching beast not studied yet*.
+- **Abilities** – explorer mode: *Doing so, you have discovered X of Y ranks*; complete mode: *X of Y ranks are known*. Ranks taught by beasts of this zone. Ranks from the pet trainer don't count – you don't have to search for them. Below, one tile per rank: a red question mark until you have discovered it, then the ability icon; hover for name and rank, click it to show the easiest beast of this zone that teaches it.
 - Tiles keep their place and flip over when you discover them. Two tiles can look the same (several ranks, several beasts of one family) – the tooltip tells them apart. If there are more than two rows, the last tile shows *+n*.
-- **Spawn points** – at the bottom left: explorer mode your own spots (cells), complete mode all known spawn points of the zone.
+- **Spawn points** – at the bottom left: as many as the map shows over all beasts of the zone – in explorer mode your own spots plus all spawn points of the beasts you have tamed, in complete mode all known spawn points of the zone.
 
 All three counters always read *X of Y*, even when everything is known. In complete mode all tiles are uncovered. In explorer mode, X is what you know; in complete mode, X is what is known at all – so the *Beasts* bar shows how far data collection has come. In complete mode the counters and tiles count what the list shows: with uncertain beasts switched off, uncertain ranks count nowhere; switched on, they count, and the rank tile's tooltip carries a **?** unless another beast of the zone teaches that rank for sure.
 
@@ -124,7 +160,7 @@ All three counters always read *X of Y*, even when everything is known. In compl
 
 Your learning progress as a list for your **active pet**, coloured like the game's own window – and always with a word, never by colour alone: **learnable** (green), **not enough TP** (yellow), **pet level too low** (red), **your pet has it** and **for other families** (grey). Hover for the reason. Training points: only the difference counts – if your pet has *Bite 3*, *Bite 4* costs only the difference. **Show** hides any of these states.
 
-![Training tab for a boar: every rank with its state and cost on the left, the selected rank with requirements, cost and the families that can learn it on the right (German client)](../images/training.jpg)
+![Training tab for a boar: every rank with its state and cost on the left, the selected rank with the pet level it needs, its cost and the families that can learn it on the right (German client)](../images/training.jpg)
 
 The button **Open Beast Training** opens the game's window. Teaching happens there: the game does not let addons teach.
 
@@ -132,16 +168,16 @@ The button **Open Beast Training** opens the game's window. Teaching happens the
 
 When you hover over a beast, the addon adds its lines below **Forever Hunter Pets**:
 
-![Beast tooltip: below the beast's name and level, Forever Hunter Pets lists the rank it teaches and that you have learned it (German client)](../images/tooltip.jpg)
+![Beast tooltip in explorer mode: below the beast's name and level, Forever Hunter Pets shows the status beast studied and the ranks it teaches, each marked you have it (German client)](../images/tooltip.jpg)
 
-1. **Status** (explorer mode only): *tracked*, *beast found* or *abilities known*.
+1. **Status** (explorer mode only): *tracked*, *beast found* or *beast studied*; none while you have never seen it.
 2. **Attack speed** if it differs from normal (for example *Faster Attack III (1.5 s)*) – your pet takes it over.
 3. **Every rank it teaches**, with the ability icon: *– you have it* (grey) if you have the rank, *– you lack it* (green) if not.
-4. *teaches nothing* (grey) when it is known that the beast teaches nothing.
-5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode only) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
-6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode only) when something about the beast is known from fewer than 3 characters and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
+4. *teaches nothing* (grey) when it is known that the beast teaches nothing. In explorer mode, for a beast you have found but not studied yet: *teaches something* or *teaches nothing* (grey) – *what* it teaches you find out by taming it. If nobody knows yet, you see lines 5 and 6 as in complete mode.
+5. *No hunter knows yet what this beast teaches. Tame it and help!* (complete mode, and in explorer mode for a beast you have found) when neither the data nor anybody's taming says what the beast teaches. Tame it, and the addon learns what it teaches – and so does everybody you share with.
+6. *Hunters need more proof of what this beast teaches. Tame it!* (complete mode, and in explorer mode for a beast you have found) when something about the beast is known from fewer than 3 characters and the addon's data doesn't confirm it yet – even if uncertain beasts are switched off. Tame it yourself, and it counts as confirmed.
 
-In explorer mode only what your own taming showed is listed. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
+In explorer mode the ranks are listed once you have studied (tamed) the beast, then from all data, as in complete mode. Uncertain ranks carry a **?** (only if you switched them on). Settings: switch the tooltip off, add an empty line before or after (to separate it from other addons), and hide ranks you already have (*Also show ranks you have* – this also hides *teaches nothing*).
 
 ## How the addon learns
 
@@ -167,7 +203,7 @@ The game only tells the addon where **you** are, not where the beast is. So a sp
 
 ### Taming
 
-When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *abilities known* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: abilities of … known – Duskwood: 4 of 9 beasts* when the beast becomes *abilities known* there. Taming a beast you already knew stays quiet.
+When you tame a beast, the addon notes what it actually brought along: its abilities and ranks, its level and its attack speed, and the spot where you started taming (always – *Tame Beast* only reaches about 30 m). The chat says *Observed: … brought …*. A tamed beast is *beast studied* in its zone. In explorer mode a second line follows when the taming uncovers something in the [Zone](#zone) tab: *Discovered: Bite Rank 3 – Duskwood: 5 of 12 ranks* for new rank tiles, otherwise *Discovered: … studied – Duskwood: 4 of 9 beasts studied* when the beast becomes *beast studied* there. Finding a beast stays quiet in the chat. Taming a beast you already knew stays quiet.
 
 ### Beast Training and the pet trainer
 
@@ -182,7 +218,7 @@ The addon keeps track of which ranks **you, the hunter,** have learned – per c
 
 What your pet knows does not count – you only have the rank once the game says so. Until then the addon shows *your pet has it* / *you lack it*.
 
-Every state names whose it is: *you have it* and *you lack it* are about you, the hunter; *your pet has it* is about your pet; *abilities known* is about a beast (you know what it teaches). To tick or untick ranks by hand, switch on **Manual editing** in the settings.
+Every state names whose it is: *you have it* and *you lack it* are about you, the hunter; *your pet has it* is about your pet; *beast studied* is about a beast (you tamed it and know what it teaches). To tick or untick ranks by hand, switch on **Manual editing** in the settings.
 
 ## Sharing with other players
 
@@ -197,7 +233,7 @@ Switch **Share observations** off and nothing is sent or received.
 ## Trustworthy data
 
 - **What you saw yourself** counts as confirmed – both that a beast teaches a rank and that it doesn't.
-- **What other players report** counts once **3 different characters** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Characters, not people: the game does not show which characters belong to one account, so someone with several characters counts once per character. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other characters found does not show up in *Area* yet.
+- **What other players report** counts once **3 different characters** saw the same – and their reports reached you through more than one player, so a single sender can never confirm something alone. Characters, not people: the game does not show which characters belong to one account, so someone with several characters counts once per character. That goes for everything: which beast teaches which rank, *teaches nothing*, a beast's level, and where it lives – a beast that only one or two other characters found does not show up in the *Zone* tab yet.
 - **Uncertain:** what **2 other characters** have reported is *uncertain* – which beast teaches a rank, a new rank or attack speed, a beast's name, family or level, where it lives, *teaches nothing*. It is hidden by default; switch on *Show uncertain data* and it appears marked **?** right after the value (*Rank 5?*, *Level 12?*), and it counts in *X of Y*. What only one other character reports is kept, but not shown.
 - **New ranks from other players:** when other players tame a beast with a rank the addon does not know yet, your game tells the addon its name and rank. Once 3 characters saw it (2 with *Show uncertain data*, marked **?**), it appears as a new rank of the ability – without pet level and training points until someone opens *Beast Training* with it. Completely new abilities only arrive with an addon update.
 - **A beast tamed without a rank although its level was high enough** is never shown as teaching it.
@@ -211,13 +247,15 @@ The addon adds two small things to the game's pet frame:
 - your pet's **level** in a small circle at the bottom left,
 - a slim **experience bar** below it. Hover over the bar for the exact numbers: level, experience and percent, and how much is left to the next level. At the highest level your pet can reach (your own level), the bar is full and the tooltip says *Max*.
 
+![Pet frame: the pet's level in a circle and the experience bar below it; the tooltip shows level, experience, percent and how much is left to the next level (German client)](../images/petframe.jpg)
+
 Both can be switched off in the settings, one by one or together (*Pet frame additions*). If another addon replaces the game's pet frame, nothing is shown.
 
 ## Settings
 
 Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 
-![Settings page with the logo and the options from explorer mode to Share observations (German client)](../images/settings.jpg)
+![Settings page with the logo and all options, from explorer mode to Share observations (German client)](../images/settings.jpg)
 
 | Setting | Default | What it does |
 | --- | --- | --- |
@@ -244,6 +282,8 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
 | `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session) |
+| `/fhp mode` | switch between explorer mode and complete mode; before complete mode it asks first |
+| `/fhp tour` | show the explorer mode tour again |
 | `/fhp zones` | zones the addon has no map for |
 | `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
 

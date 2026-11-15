@@ -131,6 +131,7 @@ local function registerSettings()
       ns.char.modeChosen = true
       ns.SafeCall("mode", ns.ModeChanged)
     end)
+    ns.modeSetting = mode   -- /fhp modus schaltet hierüber, damit das Häkchen mitzieht (#179)
     local modeInit = Settings.CreateCheckbox(category, mode,
       L["Shows only what you have found yourself: beasts you sighted, found or tamed, and what they teach. Abilities and ranks stay visible, and the addon tells you how much there is still to discover. Switched off (complete mode), it shows the complete data. Applies to this character. Tip: with enemy nameplates switched on, the addon notices beasts as you ride past."])
     -- Funde der anderen Charaktere (#43): Unteroption, eingerückt und nur bedienbar im Entdeckermodus

@@ -50,7 +50,7 @@ Ein Melder ist ein Kürzel aus acht Hexziffern, der djb2-Hash des vollen Charakt
 | `nichtZaehmbar[]` | `{ npc, karten, stufen }` aus `nicht-zaehmbar.json`, ohne Name und Beleg; `null`, wo ein Feld fehlt |
 | `abilities[]` | `{ en, de, icon, kind, source, speed, families, ranks: [{ id, rank, level, tp }], teach: [{ id, rank, conf }] }`; `tp` ist leer (`null`), solange kein Preis belegt ist – eine 0 nur aus einer einzigen Familie reicht nicht (#4) |
 
-- `kind`: `general` (alle Familien), `family` (die in `families`), `trait` (Angriffstempo, `speed` in Sekunden): ein passiver Zauber aus dem Zauberbuch, dessen Tempo die Zähmungen zeigen; ist der Zauber für ein Tempo noch nicht gesehen, eine negative Ersatz-ID (etwa −150 für 1,5 s), für die das Addon den Client nicht fragt; die gibt es nur, wenn eigene Daten das Tempo zeigen oder ab 3 fremden Meldern über 2 Absender (#106).
+- `kind`: `general` (alle Familien), `family` (die in `families`), `trait` (Angriffstempo, `speed` in Sekunden): ein passiver Zauber ohne Rang aus dem Zauberbuch einer Zähmung; `speed` ist der häufigste gemessene Wert der Zähmungen mit ihm, ein Eintrag von Hand in `faehigkeiten.json` mit derselben Zauber-ID geht vor (Tempo aus der Zauberbeschreibung). Lehrtiere nur aus dem Zauberbuch, nie aus einem gemessenen Tempo (#189). Negative Ersatz-IDs für ein Tempo ohne gesehenen Zauber gab es bis #189.
 - `source`: `tame` (von einem Tier abschauen), `trainer` (Tierausbilder), `unknown`.
 - `icon`: Datei-ID aus dem Spiel (Zahl) oder ein Dateiname unter `Interface\Icons\`; das Addon fragt ohnehin zuerst den Client.
 - `teach.conf`: Belegung, 1 belegt, 2 unsicher, 3 unbelegt (geschätzt). Widerlegte Paare stehen nicht drin. Siehe [quellen.md](quellen.md#belegung-der-lehrtiere).

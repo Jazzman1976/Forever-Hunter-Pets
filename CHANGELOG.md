@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0 – 2026-11-14
+
+Explorer mode explains itself. Many of you told us you didn't know what to do in explorer mode, that there were two modes at all, or how to switch – and that finding things didn't feel rewarding enough. This release is all about that.
+
+**Please restart the game** after updating – this version brings a new file, and `/reload` is not enough.
+
+- **Choose how you want to play:** the first start shows both modes side by side, each with an icon and a short description, so you can pick what suits you.
+- **A short tour:** the first time you open the window in explorer mode, speech bubbles show you where the beasts, the checkboxes, the map and your progress are. It comes once per account; `/fhp tour` shows it again.
+- **Switch with `/fhp mode`:** switch between explorer mode and complete mode any time. Before it reveals everything in complete mode, it asks first.
+- **Four steps per beast:** *Never seen* (a hidden beast, only the count is known) → *Tracked* (name, family, level) → *Beast found* (now also whether it *teaches something* or *teaches nothing*) → *Beast studied* once you have tamed it (what it teaches, with ranks, and all known spawn points). The checkbox shows the step: empty, a dot, a tick.
+- **What to do next:** hover over a beast in the *Zone* tab, or select one on the map, to read what to do next – look around, get closer, or tame it.
+- **Your progress, in words:** the *Zone* tab counts in full sentences: "You have found 5 of 22 beasts", "You have studied 2 of 11 teaching beasts".
+- **Where is the hunt worth it?** In explorer mode the zone list shows your progress per zone ("The Barrens 3/12", with a tick once you have found every beast there) and your total across all zones at the top.
+- **Hunter rank:** a title for the beasts you have found across all zones – Tracker, Stalker, Warden, Master of the Wild – in the title bar of the window. Hover over it to see what the next rank needs.
+- **Same data in both modes:** explorer mode now works on all the data, like complete mode. It only waits until you have found and studied a beast before it shows you what it knows. Where nobody knows anything yet, you now see a red **X** with *No data*.
+- **Abilities tab in explorer mode:** zones and filters show the same ranks as in complete mode, with beasts you haven't studied yet as *N not studied yet*. The filter *you lack it, in reach* now works in explorer mode too.
+- **Attack speed from the spellbook:** a pet's attack speed now comes only from the passive ability in its spellbook (*Faster Attack I* …). Buffs on your character can speed up your pet invisibly, and the addon took that for the beast's own speed. Old placeholder entries like *Attack speed 1.6 s* are gone.
+- **Learning is noticed right away:** ranks you learn whose name in the game's message carries the rank (like *Claw (Rank 2)*) now get their tick at once – also from the pet trainer in town – not only after you open Beast Training.
+- **More data from the game:** 219 beasts (1.2.0: 190), 1558 spawn points (1.2.0: 1209), and new teaching beasts for Cower, Charge, Claw, Bite, Scorpid Poison and Faster Attack.
+
 ## 1.2.0 – 2026-11-11
 
 Sharing reaches beyond your guild again. Since WoW Forever went live, the hidden chat channel the addon used to reach other players has been blocked, so sharing only worked within your guild and group. This release opens new ways. Players with 1.1.0 already answer every greeting – the more of you update, the more data flows.

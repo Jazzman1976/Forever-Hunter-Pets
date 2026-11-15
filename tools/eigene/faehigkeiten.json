@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "de": "Schnellerer Angriff II",
+    "kind": "trait",
+    "source": "tame",
+    "speed": 1.6,
+    "families": [],
+    "ranks": [{ "id": 1263100, "rank": 1 }],
+    "beleg": "Zauberbuch des gezähmten Todesschinders (5823) und Zauberbeschreibung im Spiel: passiv, „Erhöht das Angriffstempo um 25%.“ → 2,0 s ÷ 1,25 = 1,6 s; die Zähmung selbst maß unter einem Buff 1,4 s (Maintainer, 13.11.2026, #189)"
+  }
+]

@@ -222,43 +222,34 @@ const manualIds = new Set(manualAbilities.flatMap((a) => (a.ranks || []).map((r)
 // ---- Angriffstempo ----
 // Ein abweichendes Tempo ist eine passive Fähigkeit im Zauberbuch des Pets, mit eigener Zauber-ID und dem
 // Namen im Spiel („Schnellerer Angriff III“, „Langsamerer Angriff II“; im Spiel geprüft am 16.10.2026).
-// Normales Tempo (2,0 s) hat keine. Welcher Zauber welches Tempo bedeutet, zeigen die Zähmungen: Ein
-// passiver Zauber ohne Rang, der immer mit demselben Tempo auftritt, ist dieses Tempo. Für ein beobachtetes
-// Tempo, dessen Zauber noch niemand gesehen hat, bleibt eine negative Ersatz-ID (−150 für 1,5 s).
-// Die Lehrtiere kommen wie bei den Fähigkeiten aus den Beobachtungen (siehe unten).
-const NORMAL_SPEED = 2.0;
+// Normales Tempo (2,0 s) hat keine. Das Tempo kommt nur aus dem Zauberbuch (#189): Ein gemessenes Tempo
+// (UnitAttackSpeed) verfälschen Buffs des Jägers, die unsichtbar aufs Pet wirken (Segen des Kriegshäuptlings:
+// 1,739 s statt 2,0 s). Ein passiver Zauber ohne Rang aus dem Zauberbuch einer Zähmung ist eine Tempo-Fähigkeit;
+// welches Tempo er bedeutet, steht nur zur Anzeige da: der häufigste gemessene Wert der Zähmungen mit ihm.
+// Die Lehrtiere kommen wie bei den Fähigkeiten aus den Zauber-IDs der Zähmungen (siehe unten).
 function traitsFromObservations() {
   const have = new Set(manualAbilities.filter((a) => a.kind === 'trait').map((a) => Math.round(Number(a.speed) * 10)));
   const book = survey.zauberbuch || {};
   const isTempoSpell = (id) => book[id]?.passiv && book[id].rang == null && !survey.raenge[id];
-  const speedsOf = new Map();   // Zauber-ID → Set(Tempo × 10)
-  const observed = new Map();   // Tempo × 10 → { own, reps }: eigene Fundstelle, fremde Melder (#106)
-  const see = (k, rep) => {
-    const e = observed.get(k) ?? observed.set(k, { own: false, reps: new Set() }).get(k);
-    if (ownReps.has(rep)) e.own = true; else e.reps.add(rep);
-  };
+  const speedsOf = new Map();   // Zauber-ID → Map(Tempo × 10 → Anzahl Zähmungen)
   for (const o of observations) {
     if (o.tempo == null) continue;
     const k = Math.round(o.tempo * 10);
-    if (Math.abs(o.tempo - NORMAL_SPEED) >= 0.05) see(k, o.melder);
     for (const id of o.zauber || []) {
       if (!isTempoSpell(id)) continue;
-      if (!speedsOf.has(id)) speedsOf.set(id, new Set());
-      speedsOf.get(id).add(k);
+      const m = speedsOf.get(id) ?? speedsOf.set(id, new Map()).get(id);
+      m.set(k, (m.get(k) || 0) + 1);
     }
-  }
-  // auch das Tempo gesichteter wilder Tiere: es ist das, das sie gezähmt haben
-  for (const s of sightings) {
-    if (s.tempo != null && Math.abs(s.tempo - NORMAL_SPEED) >= 0.05) see(Math.round(s.tempo * 10), s.melder);
   }
   const out = [];
   const bySpeed = new Map();
   for (const [id, ks] of speedsOf) {
-    if (ks.size !== 1) {
-      warnings.push(`Tempo-Zauber ${id} trat mit verschiedenen Tempi auf: ${[...ks].map((k) => k / 10).join(', ')} s`);
-      continue;
+    if (manualIds.has(Number(id))) continue;   // von Hand gepflegt (Tempo aus der Zauberbeschreibung) geht vor
+    const sorted = [...ks].sort((x, y) => y[1] - x[1] || x[0] - y[0]);
+    const k = sorted[0][0];
+    if (sorted.length > 1) {
+      warnings.push(`Tempo-Zauber ${id} trat mit verschiedenen Tempi auf (Buff?): ${sorted.map(([t, n]) => `${t / 10} s ×${n}`).join(', ')}; genommen ${k / 10} s`);
     }
-    const k = [...ks][0];
     if (have.has(k) || bySpeed.has(k)) continue;
     const z = book[id];
     bySpeed.set(k, true);
@@ -268,23 +259,13 @@ function traitsFromObservations() {
       beleg: `passiver Zauber im Zauberbuch, Tempo aus den Zähmungen, seit ${z.datum}`,
     });
   }
-  // Ein Tempo ohne gesehenen Zauber wird nur zur Fähigkeit, wenn eigene Daten es zeigen oder die Melder-Regel
-  // greift (ab 3 fremden Meldern über 2 Absender, #106); unsichere Fähigkeiten gibt es nicht.
-  for (const [k, e] of observed) {
-    if (have.has(k) || bySpeed.has(k)) continue;
-    if (!e.own && !enough(e.reps)) continue;
-    out.push({
-      de: 'Angriffstempo', en: 'Attack speed', icon: 'INV_Misc_PocketWatch_01',
-      kind: 'trait', source: 'tame', speed: k / 10, families: [],
-      ranks: [{ id: -k * 10, rank: 1 }],
-      beleg: 'beim Zähmen beobachtetes Angriffstempo, Zauber noch nicht gesehen (tools/eigene/beobachtungen.json)',
-    });
-  }
-  return out.sort((a, b) => a.speed - b.speed);
+  // Tempo-Fähigkeiten von Hand stehen mit denen aus den Zähmungen zusammen, nach dem Tempo (die Liste im Spiel
+  // übernimmt im deutschen Client die Reihenfolge der Daten)
+  return [...manualAbilities.filter((a) => a.kind === 'trait'), ...out].sort((a, b) => a.speed - b.speed);
 }
 
 const abilitiesIn = [
-  ...manualAbilities,
+  ...manualAbilities.filter((a) => a.kind !== 'trait'),
   ...abilitiesFromSurvey().filter((a) => !a.ranks.some((r) => manualIds.has(r.id))),
   ...traitsFromObservations(),
 ];
@@ -390,18 +371,6 @@ for (const o of observations) {
     if (hit.a.source === 'trainer') continue; // vom Tierausbilder, sagt nichts über das Tier
     note(hit.a, o.npc, hit.rank, o.melder);
   }
-  // Angriffstempo: die Tempo-Fähigkeit mit passendem Wert
-  if (o.tempo != null) {
-    const t = abilitiesIn.find((a) => a.kind === 'trait' && Math.abs(Number(a.speed) - o.tempo) < 0.05);
-    if (t) note(t, o.npc, t.ranks[0].rank, o.melder);
-  }
-}
-// Angriffstempo aus den Sichtungen: Das wilde Tier hat das Tempo, das es gezähmt hat (Probe 16.10.2026).
-// Belegt wie beim Zähmen: eigene sofort, fremde ab FOREIGN_SURE Meldern.
-for (const s of sightings) {
-  if (s.tempo == null || Math.abs(s.tempo - NORMAL_SPEED) < 0.05) continue;
-  const t = abilitiesIn.find((a) => a.kind === 'trait' && Math.abs(Number(a.speed) - s.tempo) < 0.05);
-  if (t) note(t, s.npc, t.ranks[0].rank, s.melder);
 }
 
 const level = new Map(); // NPC-ID → [min, max]

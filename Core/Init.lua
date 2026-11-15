@@ -164,10 +164,14 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
   elseif cmd == "start" then
     -- Startdialog zum Testen (Entwicklerwerkzeug, #42): Schließen ändert einen schon gewählten Modus nicht
     ns.SafeCall("mode", ns.ShowModeDialog)
+  elseif cmd == "modus" or cmd == "mode" then
+    ns.SafeCall("mode", ns.ModeCommand)   -- Modus wechseln (#179), nur in der Hilfe
+  elseif cmd == "tour" then
+    ns.SafeCall("tour", ns.TourCommand)   -- Tour des Entdeckermodus noch einmal (#178), nur in der Hilfe
   elseif cmd == "zonen" or cmd == "zones" then
     ns.SafeCall("zones", ns.ZoneReport)
   else
-    ns.Print(L["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp search (greet other hunters), /fhp survey (survey status), /fhp area (progress in this zone)"])
+    ns.Print(L["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp search (greet other hunters), /fhp survey (survey status), /fhp area (progress in this zone), /fhp mode (switch mode), /fhp tour (show the tour again)"])
   end
 end
 
