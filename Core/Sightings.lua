@@ -291,7 +291,7 @@ local TICK, MAX_TRACKED = 1, 20
 local tracked, count, ticking = {}, 0, false   -- tracked[guid] = { unit, npc, fam, untilT?, noted, sighted, cell }
 
 local function quiet()
-  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
+  if ns.InCombat() then return true end
   if IsInInstance then
     local ok, inside = pcall(IsInInstance)
     if ok and ns.clean(inside) then return true end

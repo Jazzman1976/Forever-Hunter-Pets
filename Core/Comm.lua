@@ -246,7 +246,7 @@ end
 
 -- In Kampf und Instanz bleibt alles liegen: geheime Werte, und Addon-Nachrichten sind dort gesperrt
 local function quiet()
-  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
+  if ns.InCombat() then return true end
   if IsInInstance then
     local ok, inside = pcall(IsInInstance)
     if ok and ns.clean(inside) then return true end

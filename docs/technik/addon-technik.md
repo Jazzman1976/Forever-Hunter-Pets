@@ -82,7 +82,7 @@ gesperrt. `SelectTrainerService` ändert nur die Auswahl der API, die das Fenste
 
 **Geheime Werte.** In Kampf und Instanzen gibt der Client „secret values“ zurück, die schon beim
 Vergleichen einen Fehler werfen. Alles, was aus der API kommt, läuft deshalb durch `ns.clean()`,
-und gelesen wird der Lernstand nur außerhalb des Kampfs.
+und gelesen wird der Lernstand nur außerhalb des Kampfs. Ob man im Kampf ist, fragt jede Stelle über `ns.InCombat()` (`Core/Init.lua`, #71): Er liefert immer true oder false, und ein geheimer Wert gilt als Kampf. Nur die API-Probe (`Core/Probe.lua`) ruft `InCombatLockdown` roh auf, weil sie zeigen soll, was der Client liefert.
 
 **Zustände in „Ausbildung“.** Je Rang, den der Jäger kennt, für das aktive Pet: `ok` (grün, jetzt lernbar),
 `tp` (gelb, zu wenig freie Trainingspunkte), `later` (rot, Pet-Stufe zu niedrig), `has` (grau, hat das Pet

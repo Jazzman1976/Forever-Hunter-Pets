@@ -27,6 +27,15 @@ function ns.clean(v)
   return v
 end
 
+-- Im Kampf? (#71) Jede Kampfprüfung läuft hierüber. Ist der Wert geheim, gilt das als Kampf: Dann bleibt liegen,
+-- was im Kampf nicht gelesen oder angefasst werden darf. Nur die API-Probe (Core/Probe.lua) fragt roh.
+function ns.InCombat()
+  if not InCombatLockdown then return false end
+  local v = InCombatLockdown()
+  if issecret and issecret(v) then return true end
+  return v and true or false
+end
+
 function ns.Print(msg)
   if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff9fd45fForever Hunter Pets|r: " .. tostring(msg)) end
 end

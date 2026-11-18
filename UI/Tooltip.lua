@@ -26,7 +26,7 @@ end
 -- bei einem Tier steht, das im selben Moment gefunden wird. Kein Fundort in Kampf, Instanz und während
 -- „Augen des Wildtiers“ oder „Adlerauge“ – wie bei der Sichtung (Core/Sightings.lua).
 local function quiet()
-  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
+  if ns.InCombat() then return true end
   if IsInInstance then
     local ok, inside = pcall(IsInInstance)
     if ok and ns.clean(inside) then return true end

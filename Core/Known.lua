@@ -310,7 +310,7 @@ local busy, toggledAt = false, nil
 local TOGGLE_WAIT, TOGGLE_QUIET = 0.3, 1.0
 local function readTrainerAll()
   if busy or not trainerOpen() then return end
-  if InCombatLockdown and InCombatLockdown() then return end
+  if ns.InCombat() then return end
   -- Tierausbilder: nur für die Erhebung, so gelesen, wie seine Filter stehen
   if atNpc() then
     readTrainer()
@@ -406,7 +406,7 @@ local function logLearn(how, text, result)
   if not ns.db then return end
   local log = ns.db.learnLog or {}
   ns.db.learnLog = log
-  local combat = InCombatLockdown and InCombatLockdown() and " Kampf" or ""
+  local combat = ns.InCombat() and " Kampf" or ""
   log[#log + 1] = ("%s %s%s | %s | %s"):format(date and date("%d.%m. %H:%M:%S") or "?", how, combat,
     tostring(text):gsub("|", "/"), result)
   while #log > 20 do table.remove(log, 1) end
