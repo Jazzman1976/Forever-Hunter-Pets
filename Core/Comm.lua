@@ -243,16 +243,7 @@ end
 local function enabled()
   return ns.db and ns.db.ui and ns.db.ui.share and true or false
 end
-
--- In Kampf und Instanz bleibt alles liegen: geheime Werte, und Addon-Nachrichten sind dort gesperrt
-local function quiet()
-  if ns.InCombat() then return true end
-  if IsInInstance then
-    local ok, inside = pcall(IsInInstance)
-    if ok and ns.clean(inside) then return true end
-  end
-  return false
-end
+-- In Kampf und Instanz bleibt alles liegen (ns.Quiet): geheime Werte, und Addon-Nachrichten sind dort gesperrt
 
 -- ---- Senden mit Drosselung ----
 local function oldChannelIndex()
@@ -287,7 +278,7 @@ local pump
 pump = function()
   if #queue == 0 then busy = false; return end
   busy = true
-  if enabled() and not quiet() then
+  if enabled() and not ns.Quiet() then
     local item = queue[1]
     local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
@@ -629,7 +620,7 @@ ns.On("CHAT_MSG_CHANNEL_NOTICE_USER", function(...) channelNotice(" (Spieler)", 
 
 function ns.ShareTest()
   if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
-  if quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
+  if ns.Quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
   local name = me()
   if not name then ns.Print("Selbsttest: eigener Name nicht lesbar."); return end
   local id = ("%04x"):format(math.random(0, 65535))
@@ -888,7 +879,7 @@ local function knownReps()
 end
 
 local function greetWhoList()
-  if not enabled() or quiet() then return end
+  if not enabled() or ns.Quiet() then return end
   if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
   stats.whoLists = stats.whoLists + 1
   local okN, n = pcall(C_FriendList.GetNumWhoResults)
@@ -934,7 +925,7 @@ ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
 function ns.ShareSearch()
   local L = ns.L
   if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
-  if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
+  if ns.Quiet() then ns.Print(L["Not in combat or in an instance."]); return end
   if not (C_FriendList and C_FriendList.SendWho) then return end
   local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
   pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
@@ -977,7 +968,7 @@ local function grouped()
 end
 
 local function greetGroup()
-  if not enabled() or quiet() then return end
+  if not enabled() or ns.Quiet() then return end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(greeting(), "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(greeting(), "PARTY")
   else return end
@@ -987,7 +978,7 @@ end
 ns.On("GROUP_ROSTER_UPDATE", function()
   if inGroup == nil then return end
   local now = grouped()
-  if now and not inGroup and enabled() and not quiet() then
+  if now and not inGroup and enabled() and not ns.Quiet() then
     ns.After(JOIN_DELAY, function() ns.SafeCall("share", greetGroup) end)
   end
   inGroup = now

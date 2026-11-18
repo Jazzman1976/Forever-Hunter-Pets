@@ -36,6 +36,18 @@ function ns.InCombat()
   return v and true or false
 end
 
+-- In Kampf oder Instanz? Dann ruhen Teilen, Sichtung und Fundorte am Tooltip (#67, vorher je eine Kopie): geheime
+-- Werte, und Addon-Nachrichten sind dort gesperrt. Ein geheimer Wert gilt wie beim Kampf als „drin“. Der Tooltip
+-- prüft zusätzlich ns.Possessing (Core/Places.lua).
+function ns.Quiet()
+  if ns.InCombat() then return true end
+  if IsInInstance then
+    local ok, inside = pcall(IsInInstance)
+    if ok and ((issecret and issecret(inside)) or inside) then return true end
+  end
+  return false
+end
+
 function ns.Print(msg)
   if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff9fd45fForever Hunter Pets|r: " .. tostring(msg)) end
 end

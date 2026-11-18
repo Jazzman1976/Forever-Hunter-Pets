@@ -10,7 +10,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 
 | Datei | Aufgabe |
 | --- | --- |
-| `Core/Init.lua` | Sprache (`L[]`, Schlüssel ist der englische Text), Ereignisse, gespeicherte Daten, `/fhp` |
+| `Core/Init.lua` | Sprache (`L[]`, Schlüssel ist der englische Text), Ereignisse, gespeicherte Daten, `/fhp`; Helfer für alle Dateien: `ns.clean`, `ns.SafeCall`, `ns.After` (#69), `ns.InCombat` (#71), `ns.Quiet` (Kampf oder Instanz, #67) |
 | `Core/Index.lua` | Namen in Client-Sprache, Aufwand (`ns.Effort`), Lehrtiere je Rang, Fundorte und Zonen eines Tiers (Daten und gesammelte Zellen), Belegung |
 | `Core/Maps.lua` | Zone → uiMapID, Kartenkacheln, erkundete Gebiete, `/fhp zonen` |
 | `Core/Known.lua` | Lernstand: Ausbildungsfenster, Lernmeldung, Häkchen; was das aktive Pet kann (nur Anzeige); reicht beide Trainer-Listen an die Erhebung weiter |
@@ -22,7 +22,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`, `/fhp besitzer`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
 | `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
 | `Core/ForeignRanks.lua` | Fremde Ränge (#103): unbekannte Zauber aus fremden Zähmungen über den eigenen Client in Name und Rang auflösen |
-| `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool, Markierung der gewählten Zeile (`W.Selection`) |
+| `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool, Markierung der gewählten Zeile (`W.Selection`), Rand von Hauptfenster und Startansicht (`W.Border`, #67) |
 | `UI/Abilities.lua` | Rang-Liste, Detailspalte, die beiden Filter |
 | `UI/MapCanvas.lua` | Karte mit Fundorten und Hinweisfläche (`SetHint`, #175), 3D-Modell und die Kartenseite eines Tiers |
 | `UI/Training.lua` | Ansicht „Ausbildung“: Zustände je Rang, Mehrfachauswahl „Anzeigen“, Knopf „Wildtierausbildung öffnen“ |

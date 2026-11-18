@@ -98,7 +98,8 @@ local function subtextRank(id)
   return ok and rankOf(ns.clean(sub)) or nil
 end
 
--- Familie des aktiven Pets: ID und Name, sonst nil
+-- Familie des aktiven Pets: ID und Name, wie der Client sie nennt, sonst nil. Bewusst nicht ns.PetFamily (Core/Index.lua, #67):
+-- Das liefert den Namen aus den Daten und sucht notfalls über den Namen; die Erhebung soll erfassen, was der Client sagt.
 local function petFamily()
   if not (UnitExists and UnitCreatureFamily) then return nil end
   local ok, exists = pcall(UnitExists, "pet")

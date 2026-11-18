@@ -12,27 +12,11 @@ local function iconTag(a)
   return "|T" .. ns.AbilityIcon(a) .. ":16:16|t"
 end
 
--- NPC-ID aus einer GUID wie „Creature-0-5250-0-12-525-0000ABCDEF“; nil für Spieler, Pets und Geheimes
-local function npcIdFromGuid(guid)
-  guid = ns.clean(guid)
-  if type(guid) ~= "string" then return nil end
-  local kind, _, _, _, _, id = strsplit("-", guid)
-  if kind ~= "Creature" then return nil end
-  return tonumber(id)
-end
-
 -- Status des Tiers in dieser Zone (E7), mit denselben Wörtern wie im Reiter „Gebiet“. Der Tooltip kann vor
 -- der Sichtung kommen; deshalb nimmt er Fährte und Fundort notfalls selbst auf, damit „Fährte aufgenommen“ nie
 -- bei einem Tier steht, das im selben Moment gefunden wird. Kein Fundort in Kampf, Instanz und während
 -- „Augen des Wildtiers“ oder „Adlerauge“ – wie bei der Sichtung (Core/Sightings.lua).
-local function quiet()
-  if ns.InCombat() then return true end
-  if IsInInstance then
-    local ok, inside = pcall(IsInInstance)
-    if ok and ns.clean(inside) then return true end
-  end
-  return ns.Possessing()
-end
+local function quiet() return ns.Quiet() or ns.Possessing() end
 
 -- Nur ein wildes Tier unter der Maus, wie bei der Sichtung (ns.WildBeast): mit Familie, Wildtier, keinem Spieler
 -- gehörend. Sonst bekämen Wachen, Händler und Dämonen (#80) Fährten und Fundorte.
@@ -69,7 +53,7 @@ end
 local function addLines(tooltip, guid)
   if not (ns.db and ns.db.ui.tooltip) then return end
   if not ns.ModeChosen() then return end   -- vor der Wahl des Modus nichts verraten
-  local id = npcIdFromGuid(guid)
+  local id = ns.NpcFromGuid(guid)
   if id and excluded(id, guid) then return end
   local status, st
   if id then status, st = statusLine(id, guid) end

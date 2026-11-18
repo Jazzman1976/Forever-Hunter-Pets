@@ -97,7 +97,8 @@ end
 -- ---- Quelle 1: das Fenster „Wildtierausbildung“ ----
 -- Forever zeigt es als Trainer-Fenster ohne NPC. Jede Zeile nennt Name, Status, Icon, Pet-Stufe und
 -- Rang („Beißen | used | 132278 | 16 | Rang 3“), aber keine Zauber-ID – zugeordnet wird über den Namen.
--- Rang zu einer Zauber-ID (nur, was man lernen kann)
+-- Rang zu einer Zauber-ID (nur, was man lernen kann): { a = Fähigkeit, r = Rang } oder nil. Auch für die
+-- geteilten Lesungen (ns.RankById, Core/Readings.lua, #67)
 local byId, byName
 ns.OnAbilitiesChanged(function() byId, byName = nil, nil end)
 local function rankById(id)
@@ -111,6 +112,7 @@ local function rankById(id)
   end
   return byId[id]
 end
+ns.RankById = rankById
 
 local function abilityByName(name)
   if not byName then

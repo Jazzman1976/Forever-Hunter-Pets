@@ -344,7 +344,8 @@ function ns.MapHint(st, npc)
 end
 
 -- ---- Was ein Tier lehrt ----
--- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo
+-- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo. Bewusst getrennt vom Index
+-- in Core/Observe.lua (#67): Der nimmt nur Lernbares und führt das Tempo eigens (traitIndex, #189).
 local bySpell
 ns.OnAbilitiesChanged(function() bySpell = nil end)
 local function spellIndex()

@@ -290,15 +290,6 @@ end
 local TICK, MAX_TRACKED = 1, 20
 local tracked, count, ticking = {}, 0, false   -- tracked[guid] = { unit, npc, fam, untilT?, noted, sighted, cell }
 
-local function quiet()
-  if ns.InCombat() then return true end
-  if IsInInstance then
-    local ok, inside = pcall(IsInInstance)
-    if ok and ns.clean(inside) then return true end
-  end
-  return false
-end
-
 -- true/false, oder nil, wenn der Client es nicht sagt
 local function near(unit, index)
   if not CheckInteractDistance then return nil end
@@ -402,7 +393,7 @@ end
 tick = function()
   ticking = false
   if count == 0 then return end
-  if not quiet() then
+  if not ns.Quiet() then
     local here = {}
     if ns.CellHere then
       here.map, here.cell = ns.CellHere()
@@ -425,7 +416,7 @@ end
 
 -- Ein Tier in die Beobachtung nehmen. untilT: Ziel und Maus nur WATCH Sekunden, Plaketten bis sie gehen.
 local function track(unit, timed)
-  if quiet() then return end
+  if ns.Quiet() then return end
   local guid, npc, fam, famName = beast(unit)
   if not guid then return end
   local t = tracked[guid]
