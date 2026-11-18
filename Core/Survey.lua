@@ -5,10 +5,8 @@
 --                       der Stadt (npc) Jägerstufe (hunterLevel) und Preis in Kupfer (gold)
 --   lists[Familien-ID]  die zuletzt bestätigte vollständige Wildtierausbildung eines Pets dieser Familie:
 --                       rows[Zauber-ID] = „Status/angezeigte TP“. Sie ersetzt die vorige, statt sie zu ergänzen:
---                       Der Client zeigt beim ersten Öffnen mitunter eine falsche Liste (16.10.2026), das
---                       zweite Öffnen berichtigt sie. Seit #111 gilt eine Liste erst, wenn zwei Öffnungen
---                       nacheinander dasselbe zeigen (siehe „Bestätigte Lesungen“); erst dann setzt sie auch bw
---                       und Pet-Stufe in ranks. Die TP sind die angezeigten, also abzüglich des aktuellen
+--                       Seit #111 gilt eine Liste erst, wenn zwei Öffnungen nacheinander dasselbe zeigen (siehe
+--                       „Bestätigte Lesungen“); erst dann setzt sie auch bw und Pet-Stufe in ranks. Die TP sind die angezeigten, also abzüglich des aktuellen
 --                       Rangs (siehe UI/Training.lua); den Preis rechnet der Import aus den Status aus.
 --   spells[Zauber-ID]   ein Zauber aus dem Zauberbuch eines Pets: Name, Rang, passiv, Familien
 --   families[ID]        Familienname in Client-Sprache
@@ -255,10 +253,11 @@ function ns.SurveyPetSpells(tame)
 end
 
 -- ---- Bestätigte Lesungen der Wildtierausbildung (#111) ----
--- Das Fenster zeigt beim ersten Öffnen mitunter eine falsche Liste: mehr Fähigkeiten, als das Pet lernen kann, auch
--- fremder Familien, teils mit 0 TP. Sie bleibt falsch, solange das Fenster offen ist (TRAINER_UPDATE liest dieselbe);
--- erst ein erneutes Öffnen berichtigt sie. Deshalb gilt eine Lesung erst, wenn zwei aufeinanderfolgende Öffnungen
--- derselben Familie genau dieselbe Liste zeigen (Zeilen, Status, TP, Pet-Stufe). Je Familie, nur für die Sitzung:
+-- Eine Lesung gilt erst, wenn zwei aufeinanderfolgende Öffnungen derselben Familie genau dieselbe Liste zeigen
+-- (Zeilen, Status, TP, Pet-Stufe), gelesen mit allen Filtern eingeblendet (Core/Known.lua). Das schützt vor einer
+-- Lesung, während sich das Fenster noch aufbaut oder die Filter umgeschaltet werden. Anlass war eine vermeintlich
+-- falsche Liste beim ersten Öffnen (16.10.2026); nach dem Test vom 18.11.2026 kam sie vom Addon selbst, das den
+-- Filter „Bereits bekannt“ schon 0,4 s nach dem Öffnen umschaltete. Je Familie, nur für die Sitzung:
 --   prev  die letzte Lesung einer früheren Öffnung, cur  die jüngste der laufenden (ns.trainerOpening, Core/Known.lua)
 -- Erst eine bestätigte Lesung kommt nach survey.lists und setzt bw und Pet-Stufe in survey.ranks; danach geht sie an
 -- das Teilen (ns.ReadingConfirmed). Eine Öffnung einer anderen Familie dazwischen stört nicht.

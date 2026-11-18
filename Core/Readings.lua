@@ -7,8 +7,8 @@
 -- Ein Stück wird gesendet und angenommen nur, wenn (ns.CheckReading, für Sender und Empfänger dieselbe Prüfung):
 --   - jeder Rang darin ein lernbarer Rang der Daten ist (auch fremde Ränge aus Zähmungen; keine Jägerzauber, kein Tempo),
 --   - alle Ränge zu einer Fähigkeit gehören, die die Daten dieser Familie zuordnen oder die jede Familie lernt
---     (das erste Symptom des fehlerhaften Fensters: Fähigkeiten fremder Familien),
---   - nichts den bekannten TP und Pet-Stufen widerspricht (das zweite: 0 TP bei einem Rang, der etwas kostet).
+--     (eine neue Familie kommt nur über den Maintainer),
+--   - nichts den bekannten TP und Pet-Stufen widerspricht (etwa 0 TP bei einem Rang, der etwas kostet).
 -- Gesendet wird ein eigenes Stück nur, wenn es eine Lücke füllt (ein Rang ohne TP oder Pet-Stufe in den Daten).
 -- Die Werte gelten erst in den Stammdaten, nach der Melder-Regel (tools/build-data.mjs); im Spiel ändert ein fremdes
 -- Stück nichts.

@@ -1,6 +1,6 @@
 -- #111 Schritt A: Die Wildtierausbildung zählt erst, wenn zwei aufeinanderfolgende Öffnungen derselben Familie genau
--- dieselbe Liste zeigen. Das Fenster zeigt beim ersten Öffnen mitunter eine falsche Liste (Fähigkeiten fremder
--- Familien, 0 TP), die bis zum erneuten Öffnen stehen bleibt. Gelesen wird frühestens 1,5 s nach dem Öffnen, die
+-- dieselbe Liste zeigen; das schützt vor einer Lesung, während sich das Fenster aufbaut (nachgestellt als falsche
+-- erste Liste mit Fähigkeiten fremder Familien und 0 TP). Gelesen wird frühestens 1,5 s nach dem Öffnen, die
 -- Auswahl des Knopfs kommt danach (2,1 s). Die drei Filter des Fensters („Verfügbar“, „Nicht verfügbar“, „Bereits
 -- bekannt“) dürfen in jeder Kombination aus sein: Das Addon blendet zum Lesen kurz alle ein, stellt jeden zurück, und
 -- nur eine Lesung mit allen Filtern zählt. Der Tierausbilder in der Stadt bleibt, wie er ist.
@@ -48,7 +48,7 @@ local function wolf()
   return { row("Beißen", 1, 17253, "used", 0, 1), row("Beißen", 2, 17255, "available", 3, 8),
     row("Knurren", 1, 2649, "used", 0, 1), row("Knurren", 2, 14916, "unavailable", 0, 10) }
 end
--- dieselbe Liste mit dem Fehler des Fensters: Klaue (Wölfe lernen sie nicht) für 0 TP
+-- eine falsche Lesung: Klaue (Wölfe lernen sie nicht) für 0 TP
 local function wolfBuggy()
   local l = wolf()
   l[#l + 1] = row("Klaue", 1, 16827, "available", 0, 1)
