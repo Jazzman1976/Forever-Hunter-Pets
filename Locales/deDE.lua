@@ -118,7 +118,7 @@ ns.Locales.deDE = {
   ["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp search (greet other hunters), /fhp survey (survey status), /fhp area (progress in this zone), /fhp mode (switch mode), /fhp tour (show the tour again)"] = "Befehle: /fhp (öffnen oder schließen), /fhp zonen (Gebiete ohne Karte), /fhp api (API-Probe), /fhp karte (Karten-Probe), /fhp zaehmen (Zähm-Probe), /fhp besitzer (Besitzer-Probe), /fhp teilen (Stand beim Teilen), /fhp suchen (andere Jäger grüßen), /fhp erhebung (Stand der Erhebung), /fhp gebiet (Fortschritt in diesem Gebiet), /fhp modus (Modus wechseln), /fhp tour (Tour noch einmal ansehen)",
   ["Sharing is switched off (settings: Share observations)."] = "Teilen ist ausgeschaltet (Einstellungen: Beobachtungen teilen).",
   ["Not in combat or in an instance."] = "Nicht im Kampf und nicht in einer Instanz.",
-  ["Already greeted %d hunters this session."] = "Diese Sitzung schon %d Jäger gegrüßt.",
+  ["Already greeted %d hunters this session; only known addon users are greeted now."] = "Diese Sitzung schon %d Jäger gegrüßt; jetzt werden nur noch bekannte Addon-Nutzer gegrüßt.",
   ["Searching for hunters online. Those who have the addon get a greeting and share with you."] = "Suche Jäger, die online sind. Wer das Addon hat, wird gegrüßt und teilt mit dir.",
   -- Einstellungen und Knopf an der Minikarte
   ["Minimap button"] = "Minikartenbutton",
