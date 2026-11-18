@@ -304,7 +304,8 @@ end
 -- Filter des Fensters (#111): Spieler blenden „Verfügbar“, „Nicht verfügbar“ und „Bereits bekannt“ in jeder
 -- Kombination aus; dann fehlen diese Zeilen in der Liste. Für einen Augenblick alle einblenden, lesen, und jeden
 -- Filter genau so zurückstellen, wie er war. Ein TRAINER_SHOW, das dabei oder kurz danach kommt, ist keine neue
--- Öffnung (TOGGLE_QUIET).
+-- Öffnung (TOGGLE_QUIET). Das Einblenden lässt die Zeilen kurz springen; deshalb nur, solange die Lesung der Familie
+-- in dieser Sitzung noch nicht bestätigt ist (meist zwei Öffnungen), danach nie mehr (Variante C).
 local busy, toggledAt = false, nil
 local TOGGLE_WAIT, TOGGLE_QUIET = 0.3, 1.0
 local function readTrainerAll()
@@ -319,7 +320,11 @@ local function readTrainerAll()
   for _, kind in ipairs(FILTERS) do
     if not filterShown(kind) then hidden[#hidden + 1] = kind end
   end
-  if #hidden == 0 or not SetTrainerServiceTypeFilter then
+  -- Variante C: Ist die Lesung dieser Familie in dieser Sitzung schon bestätigt, nicht mehr umschalten; gelesen wird
+  -- die Liste, wie sie steht (für den Lernstand), die Erhebung zählt sie dann nicht
+  local fam = ns.PetFamily and ns.PetFamily()
+  local done = ns.SurveyReadingDone and ns.SurveyReadingDone(fam)
+  if #hidden == 0 or done or not SetTrainerServiceTypeFilter then
     readTrainer()
     return
   end

@@ -310,6 +310,14 @@ local function noteReading(s, fam, reading)
   end
 end
 
+-- Ist für diese Familie in dieser Sitzung schon eine Lesung bestätigt? Dann schaltet Core/Known.lua die Filter des
+-- Fensters nicht mehr um (Variante C, Entscheidung des Maintainers vom 18.11.2026): Das kurze Einblenden lässt die
+-- Zeilen springen, und es braucht es nur, solange die Lesung noch fehlt.
+function ns.SurveyReadingDone(fam)
+  local o = fam and openings[fam]
+  return o and o.done ~= nil or false
+end
+
 -- Wartet die Familie noch auf ein zweites gleiches Öffnen? (für /fhp erhebung)
 local function readingPending(fam)
   local o = openings[fam]

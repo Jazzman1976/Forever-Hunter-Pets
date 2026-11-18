@@ -9,6 +9,7 @@
 local rows = {}
 local filters = { available = true, unavailable = true, used = true }
 local showOnToggle = false
+local toggles = 0   -- wie oft das Addon einen Filter umgeschaltet hat
 local function visible()
   local out = {}
   for _, r in ipairs(rows) do
@@ -19,6 +20,7 @@ end
 function GetTrainerServiceTypeFilter(kind) return filters[kind] end
 function SetTrainerServiceTypeFilter(kind, on)
   filters[kind] = on and true or false
+  toggles = toggles + 1
   if showOnToggle then FireEvent("TRAINER_SHOW") end   -- falls der Client beim Umschalten neu „öffnet“
 end
 function GetNumTrainerServices() return #visible() end
@@ -149,7 +151,9 @@ ok(survey().lists[2] and survey().lists[2].rows[16828] == "available/3", "Katze 
 -- „Bereits bekannt“ ausgeblendet (der Fall des Maintainers): kurz eingeblendet gelesen, danach wieder aus; das Lesen
 -- bei TRAINER_UPDATE mit ausgeblendetem Filter zählt nicht. Beim zweiten Öffnen bestätigt, mit den gelernten Zeilen.
 filters.used = false
+toggles = 0
 open(wolf(), 3, "Spinne")
+ok(toggles == 2, "noch nicht bestätigt: „Bereits bekannt“ kurz ein- und wieder ausgeschaltet")
 ok(filters.used == false and filters.available and filters.unavailable, "Filter nach dem Lesen wie vorher")
 update()
 update()
@@ -157,6 +161,16 @@ open(wolf(), 3, "Spinne")
 local sp = survey().lists[3]
 ok(sp and sp.rows[17253] == "used/0" and sp.rows[2649] == "used/0", "„Bereits bekannt“ aus: bestätigt, mit den gelernten Zeilen")
 ok(filters.used == false, "„Bereits bekannt“ bleibt aus")
+-- Variante C: in dieser Sitzung bestätigt, dann kein Umschalten mehr; das Fenster bleibt ruhig
+toggles = 0
+open(wolf(), 3, "Spinne")
+ok(toggles == 0, "Spinne schon bestätigt: kein Umschalten mehr")
+ok(survey().lists[3].rows[17253] == "used/0", "die bestätigte Liste bleibt, die gefilterte zählt nicht")
+-- eine andere, noch nicht bestätigte Familie schaltet weiter um
+toggles = 0
+open(wolf(), 5, "Eber")
+ok(toggles == 2, "noch nicht bestätigte Familie: weiter umschalten")
+filters.used = true
 
 -- jede Kombination: was der Spieler ausblendet, bleibt danach ausgeblendet, und die Lesung ist vollständig
 local combos = {
