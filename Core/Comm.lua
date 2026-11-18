@@ -57,6 +57,7 @@ local function newStats()
     sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, lastIn = nil, replied = 0, skipped = 0,
     groupGreets = 0, backSent = 0, backRecv = 0, whisperGreets = 0,      -- Gruß (#156): Beitritt, Rückgruß, geflüstert ohne R
     searches = 0, whoLists = 0, searchGreeted = 0, hits = 0,           -- Suche (#154) und Treffer
+    knownGreeted = 0,                                                    -- davon Bekannte, ohne Obergrenze (#166)
     versions = {}, senders = {}, errors = {}, queueMax = 0, throttled = 0,
   }
 end
@@ -840,30 +841,65 @@ end)
 -- SEARCH_PER_LIST je Liste und SEARCH_MAX je Sitzung. Gesucht wird nur auf Befehl, nie im Hintergrund: Die Suche ist
 -- für den Client eine Spieleraktion und wird gebremst („1 Sek. warten“), und ständiges Anflüstern Fremder wäre zu
 -- viel Verkehr. Die Ergebnisse kommen erst mit WHO_LIST_UPDATE, nicht direkt nach SendWho.
+-- Bekannte zuerst (#166): Jäger, deren Kürzel das Addon schon als Addon-Nutzer kennt, werden vor allen anderen
+-- gegrüßt und zählen nicht gegen SEARCH_PER_LIST und SEARCH_MAX – auch nach 100 Grüßen. Mehr als einen Gruß je
+-- Sitzung bekommen auch sie nicht (greetedOut), und eine Liste hat höchstens 50 Einträge.
 local SEARCH_PER_LIST, SEARCH_MAX = 20, 100
 
+-- Kürzel bekannter Addon-Nutzer (#166): Melder (Schlüssel von via und viaLegacy) und Absender (Werte von via, je
+-- 8 Zeichen), ohne die eigenen. Nur Kürzel, keine Namen; einmal je Wer-Liste gebildet.
+local function knownReps()
+  local known, db = {}, ns.db or {}
+  for rep, from in pairs(type(db.via) == "table" and db.via or {}) do
+    known[rep] = true
+    if type(from) == "string" then
+      for i = 1, #from - 7, 8 do known[from:sub(i, i + 7)] = true end
+    end
+  end
+  for rep in pairs(type(db.viaLegacy) == "table" and db.viaLegacy or {}) do known[rep] = true end
+  for rep in pairs(type(db.myReps) == "table" and db.myReps or {}) do known[rep] = nil end
+  return known
+end
+
 local function greetWhoList()
-  if not enabled() or quiet() or stats.searchGreeted >= SEARCH_MAX then return end
+  if not enabled() or quiet() then return end
   if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
   stats.whoLists = stats.whoLists + 1
   local okN, n = pcall(C_FriendList.GetNumWhoResults)
   n = okN and tonumber(ns.clean(n)) or 0
   local okG, guild = pcall(GetGuildInfo, "player")
   guild = okG and ns.clean(guild) or nil
-  local name, per = me(), 0
+  local name = me()
+  -- Jäger der Liste, die man grüßen darf: nicht man selbst, nicht die eigene Gilde, noch nicht gegrüßt
+  local hunters = {}
   for i = 1, math.min(n, 50) do
-    if per >= SEARCH_PER_LIST or stats.searchGreeted >= SEARCH_MAX then break end
     local ok, info = pcall(C_FriendList.GetWhoInfo, i)
     if ok and type(info) == "table" and ns.clean(info.filename) == "HUNTER" then
       local full, theirGuild = ns.clean(info.fullName), ns.clean(info.fullGuildName)
       local sameGuild = type(guild) == "string" and guild ~= "" and theirGuild == guild
-      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) and not greetedOut[plain(full)] then
-        greetedOut[plain(full)] = true
-        searchedAt[plain(full)] = GetTime()
-        enqueue(greeting(), "WHISPER", full)
-        per, stats.searchGreeted = per + 1, stats.searchGreeted + 1
-      end
+      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) then hunters[#hunters + 1] = full end
     end
+  end
+  local function greet(full)
+    if greetedOut[plain(full)] then return false end
+    greetedOut[plain(full)] = true
+    searchedAt[plain(full)] = GetTime()
+    enqueue(greeting(), "WHISPER", full)
+    return true
+  end
+  -- erst die Bekannten, ohne Obergrenze, dann die übrigen wie bisher
+  local known, rest = knownReps(), {}
+  for _, full in ipairs(hunters) do
+    if known[senderRep(full)] then
+      if greet(full) then stats.knownGreeted = (stats.knownGreeted or 0) + 1 end
+    else
+      rest[#rest + 1] = full
+    end
+  end
+  local per = 0
+  for _, full in ipairs(rest) do
+    if per >= SEARCH_PER_LIST or stats.searchGreeted >= SEARCH_MAX then break end
+    if greet(full) then per, stats.searchGreeted = per + 1, stats.searchGreeted + 1 end
   end
 end
 ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
@@ -873,12 +909,16 @@ function ns.ShareSearch()
   local L = ns.L
   if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
   if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
-  if stats.searchGreeted >= SEARCH_MAX then ns.Print((L["Already greeted %d hunters this session."]):format(stats.searchGreeted)); return end
   if not (C_FriendList and C_FriendList.SendWho) then return end
   local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
   pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
   stats.searches = stats.searches + 1
-  ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+  -- auch nach SEARCH_MAX: bekannte Addon-Nutzer werden weiter gegrüßt (#166)
+  if stats.searchGreeted >= SEARCH_MAX then
+    ns.Print((L["Already greeted %d hunters this session; only known addon users are greeted now."]):format(stats.searchGreeted))
+  else
+    ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+  end
 end
 
 -- ---- Alter Kanal und Gruß ----
@@ -1061,8 +1101,8 @@ function ns.ShareStatus()
   for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
   table.sort(why)
   if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
-  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d, davon geantwortet: %d")
-    :format(stats.replied, stats.skipped, stats.searchGreeted, stats.hits))
+  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d Unbekannte, %d Bekannte, davon geantwortet: %d")
+    :format(stats.replied, stats.skipped, stats.searchGreeted, stats.knownGreeted or 0, stats.hits))
   local versions = {}
   for v, n in pairs(stats.versions) do versions[#versions + 1] = v .. " " .. n end
   table.sort(versions)
