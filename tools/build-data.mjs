@@ -586,6 +586,23 @@ if (blockedOut) console.log(`${blockedOut} gesperrte Einträge (Sichtungen, Fund
 
 const data = { generatedAt: new Date().toISOString(), families, beasts, coords, abilities, nichtZaehmbar };
 
+// Feste Regel (#213): Ein höherer Rang derselben Fähigkeit kostet nicht weniger TP und kommt nicht bei einer niedrigeren
+// Pet-Stufe. Ein festes Muster über die Fähigkeiten hinweg gibt es nach den eigenen Daten nicht (gleichmäßige Schritte
+// etwa nicht: Große Ausdauer 5/10/15/25), deshalb nur diese Regel. Ränge ohne Wert zählen nicht mit.
+for (const a of abilities) {
+  const ranks = [...a.ranks].sort((x, y) => x.rank - y.rank);
+  for (const [key, label] of [['tp', 'TP'], ['level', 'Pet-Stufe']]) {
+    let prev = null;
+    for (const r of ranks) {
+      if (r[key] == null) continue;
+      if (prev && r[key] < prev[key]) {
+        warnings.push(`${a.de || a.en} R${r.rank}: ${label} ${r[key]} liegt unter R${prev.rank} (${prev[key]})`);
+      }
+      prev = r;
+    }
+  }
+}
+
 // ---- Vergleich mit dem Stand in Git (#37) ----
 // Neue, weggefallene und umgezogene Fähigkeiten (Herkunft tame ↔ trainer) brechen ab, bis man sie geprüft hat und
 // mit --neue-faehigkeiten bestätigt: So wären die Jägerzauber aus #34 nicht unbemerkt in die Stammdaten gekommen.
@@ -626,6 +643,26 @@ if (old) {
     change('Fundorte', countPoints(old), countPoints(data)),
   ].join(', '));
   if (newRanks.length) console.log(`Neue Ränge (${newRanks.length}):\n  ` + newRanks.join('\n  '));
+  // Geänderte Werte vorhandener Ränge (#213): TP und Pet-Stufe gegenüber HEAD, auch ein weggefallener Wert. Ersetzt den
+  // Vergleich von Hand nach jedem Import (1.3.0: Beißen R2 4 → 5 TP, #210). Ein Wert, der neu dazukommt, wird nur
+  // gezählt. Kein Abbruch: Echte neue Daten sollen durchgehen.
+  const oldRank = new Map(old.abilities.flatMap((a) => a.ranks.map((r) => [r.id, r])));
+  const valueChanges = [];
+  let valuesAdded = 0;
+  for (const a of abilities) {
+    for (const r of a.ranks) {
+      const o = oldRank.get(r.id);
+      if (!o) continue;
+      for (const [key, label] of [['tp', 'TP'], ['level', 'Pet-Stufe']]) {
+        const before = o[key] ?? null, after = r[key] ?? null;
+        if (before === after) continue;
+        if (before === null) { valuesAdded++; continue; }
+        valueChanges.push(`${nameOfAbility(a)} R${r.rank} (${r.id}): ${label} ${before} → ${after ?? '–'}`);
+      }
+    }
+  }
+  if (valueChanges.length) console.log(`Geänderte Werte vorhandener Ränge (${valueChanges.length}):\n  ` + valueChanges.join('\n  '));
+  if (valuesAdded) console.log(`Neu belegte Werte vorhandener Ränge (TP oder Pet-Stufe): ${valuesAdded}`);
   const stop = [
     ...added.map((a) => `neu: ${describe(a)}`),
     ...gone.map((a) => `weggefallen: ${describe(a)}`),
