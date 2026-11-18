@@ -54,7 +54,19 @@ Die gespeicherten Daten des Addons liegen nach `/reload` oder Logout hier:
 
 Bis 0.5.0 hieß der Ordner `ForeverHunterPets`. Wer von dort kommt, benennt die Dateien `ForeverHunterPets.lua` (im Konto und je Charakter) einmal in `Forever-Hunter-Pets.lua` um. Die Variablen darin heißen weiter `ForeverHunterPetsDB`.
 
-`/fhp start` zeigt den Startdialog noch einmal, auch wenn der Charakter schon gewählt hat (Entwicklerwerkzeug, nicht in der Befehlsübersicht); Schließen ändert dann nichts, eine Wahl setzt den Modus. Ganz zurück auf „noch nicht gewählt“: `/run ForeverHunterPetsCharDB.modeChosen = nil`, danach `/fhp`.
+`/fhp start` zeigt den Startdialog noch einmal, auch wenn der Charakter schon gewählt hat (seit #63 ein Befehl für Spieler, in Hilfe und Anleitung); Schließen ändert dann nichts, eine Wahl setzt den Modus. Ganz zurück auf „noch nicht gewählt“: `/run ForeverHunterPetsCharDB.modeChosen = nil`, danach `/fhp`.
+
+**Entwicklerbefehle** (#63): Sie stehen weder in der Hilfe noch in der Anleitung, die nur die Befehle für Spieler nennen (`/fhp`, `gebiet`, `suchen`, `teilen`, `modus`, `start`, `tour`). Ihre Ausgaben bleiben deutsch.
+
+| Befehl | Wirkung |
+| --- | --- |
+| `/fhp erhebung` · `survey` | Stand der Erhebung: Wildtierausbildung, Tierausbilder, Zauberbuch der Pets; Familien, die auf ein zweites gleiches Öffnen warten |
+| `/fhp zonen` · `zones` | Gebiete, für die das Addon keine Karte hat |
+| `/fhp teilen test` · `share test` | Selbsttest des Teilens, Protokoll nach `ForeverHunterPetsDB.probe` |
+| `/fhp api` | API-Probe, Protokoll nach `ForeverHunterPetsDB.probe` |
+| `/fhp karte` · `map` | Karten-Probe |
+| `/fhp zaehmen` · `zähmen` · `tame` | Zähm-Probe |
+| `/fhp besitzer` · `owner` | Besitzer-Probe |
 
 `/fhp api` schreibt ein API-Protokoll dorthin (`ForeverHunterPetsDB.probe`). So kommt Spielausgabe in eine Datei, ohne dass jemand Chatzeilen abtippt. Das Protokoll (auch das des Selbsttests `/fhp teilen test`) trägt einen Zeitpunkt (`probeAt`) und wird beim Laden gelöscht, wenn es älter als ein Tag ist (#68); es enthält keine Spielernamen, nur Kürzel. Den Verlauf des Teilens über die letzten 30 Sitzungen (#160) liest man in derselben Datei unter `ForeverHunterPetsDB.shareLog`, Felder in [addon-technik.md](addon-technik.md) unter „Sichtbar“. Er zeigt nach einem Release, ob neue Wege ankommen: empfangene Rückgrüße (`backRecv`), geflüsterte Grüße (`whisperGreets`), Treffer der Suche (`hits`) und welche Versionen die anderen haben (`versions`).
 

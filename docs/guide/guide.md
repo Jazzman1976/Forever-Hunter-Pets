@@ -49,7 +49,7 @@ Type `/fhp` or click the button at the minimap. The first time a character opens
 
 The data is still being collected and grows more complete over time, so don't be surprised if something is still missing.
 
-If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`.
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`, or open the start view again with `/fhp start`.
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
 
@@ -279,13 +279,13 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | --- | --- |
 | `/fhp` | open or close the window |
 | `/fhp area` | progress of the zone you are in, in the chat |
-| `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
 | `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session; addon users you already have data from are greeted first and don't count towards these limits) |
 | `/fhp mode` | switch between explorer mode and complete mode; before complete mode it asks first |
+| `/fhp start` | show the start view again and choose the mode there; closing it keeps the mode you have |
 | `/fhp tour` | show the explorer mode tour again |
-| `/fhp zones` | zones the addon has no map for |
-| `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
+
+Any other word after `/fhp` lists these commands in the chat.
 
 ## Questions and answers
 
