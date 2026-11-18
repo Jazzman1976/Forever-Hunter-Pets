@@ -506,3 +506,54 @@ if (Object.keys(foreignRanks).length) {
 }
 console.log(`Fremde Ränge aus ${foreignRankFiles} Datei(en): ${Object.keys(foreignRanks).length} Zauber, davon neu ${foreignRankNew} `
   + '→ tools/eigene/fremde-raenge.json');
+
+// ---- Fremde Lesungen der Wildtierausbildung (Core/Readings.lua, #111) → tools/eigene/erhebung-fremd.json ----
+// [{ familie, zeit, datum, melder, zeilen: { Zauber-ID: "Status/angezeigte TP" }, stufen: { Zauber-ID: Pet-Stufe } }],
+// je Stück eine Zeile: alle Ränge einer Fähigkeit aus einer bestätigten Lesung eines anderen Spielers (zwei
+// Öffnungen nacheinander mit derselben Liste). Eigene Stücke bleiben draußen, die eigene Erhebung kommt über
+// erhebung.json. Melder gesalzen wie bei den anderen fremden Daten; dasselbe Stück kommt nicht doppelt. Was daraus
+// gilt (ab 3 Meldern, nur Lücken), entscheidet tools/build-data.mjs.
+const FOREIGN_READINGS_OUT = path.join(HERE, 'eigene', 'erhebung-fremd.json');
+const STATUS_OF = { u: 'used', a: 'available', n: 'unavailable' };
+const foreignReadings = fs.existsSync(FOREIGN_READINGS_OUT) ? JSON.parse(fs.readFileSync(FOREIGN_READINGS_OUT, 'utf8')) : [];
+const readingKey = (e) => `${e.melder}|${e.familie}|${e.zeit}|${JSON.stringify(e.zeilen)}`;
+const readingKeys = new Set(foreignReadings.map(readingKey));
+let readingFiles = 0, readingNew = 0, readingBad = 0;
+for (const f of files) {
+  let list;
+  try {
+    list = parseSavedVariables(fs.readFileSync(f, 'utf8')).ForeverHunterPetsDB?.readings;
+  } catch {
+    continue; // schon oben gemeldet
+  }
+  if (!list || typeof list !== 'object') continue;
+  readingFiles++;
+  for (const s of Object.values(list)) {
+    const m = typeof s === 'string' && s.match(/^(\d+);([\d:a-z,]+);(\d+);([0-9a-f]{8})(;.*)?$/);
+    if (!m) { readingBad++; continue; }
+    const [, fam, rows, t, raw] = m;
+    if (own.has(raw)) continue;
+    const familie = Number(fam), zeit = Number(t);
+    if (familie < 1 || familie > 1000 || DEMON_FAMILY.has(familie) || zeit < MIN_TIME) { readingBad++; continue; }
+    const zeilen = {}, stufen = {};
+    let ok = true;
+    for (const item of rows.split(',')) {
+      const r = item.match(/^(\d+):([uan]):(\d+):(\d+)$/);
+      if (!r || Number(r[3]) > 100 || Number(r[4]) < 1 || Number(r[4]) > 63) { ok = false; break; }
+      zeilen[r[1]] = `${STATUS_OF[r[2]]}/${Number(r[3])}`;
+      stufen[r[1]] = Number(r[4]);
+    }
+    if (!ok || !Object.keys(zeilen).length || Object.keys(zeilen).length > 12) { readingBad++; continue; }
+    const e = { familie, zeit, datum: day(zeit), melder: pseudo(raw), zeilen, stufen };
+    if (readingKeys.has(readingKey(e))) continue;
+    readingKeys.add(readingKey(e));
+    foreignReadings.push(e);
+    readingNew++;
+  }
+}
+if (foreignReadings.length) {
+  foreignReadings.sort((a, b) => a.zeit - b.zeit || a.familie - b.familie || a.melder.localeCompare(b.melder));
+  fs.writeFileSync(FOREIGN_READINGS_OUT, '[\n' + foreignReadings.map((e) => `  ${JSON.stringify(e)}`).join(',\n') + '\n]\n');
+}
+console.log(`Fremde Lesungen aus ${readingFiles} Datei(en): ${readingNew} neu, ${foreignReadings.length} insgesamt`
+  + (readingBad ? `, ${readingBad} unlesbar` : '') + ' → tools/eigene/erhebung-fremd.json');
