@@ -138,11 +138,14 @@ function abilitiesFromSurvey() {
     groups.get(name).push({ id: +id, name: z.name, rang: z.rang, datum: z.datum });
     fromBook.set(+id, z.familien || []);
   }
-  // TP: aus jeder Liste Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
+  // TP: aus jeder Lesung Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
   const rankOfId = new Map([...groups.values()].flat().map((r) => [r.id, r]));
   const inBook = (id, fam) => (survey.zauberbuch?.[id]?.familien || []).map(Number).includes(Number(fam));
   const equations = [];
-  for (const [fam, l] of Object.entries(survey.listen)) {
+  // je Lesung (#210): Der aktuelle Rang und die angezeigten TP gehören zu derselben Lesung; eine Gleichung verbindet
+  // nie Zeilen aus zwei Lesungen
+  const readings = Object.entries(survey.listen).flatMap(([fam, ls]) => ls.map((l) => [fam, l]));
+  for (const [fam, l] of readings) {
     const current = new Map(); // Name → aktueller Rang (gelernt oder mitgebracht) mit höchstem Rang
     const rows = Object.entries(l.zeilen).map(([id, v]) => {
       const [status, shown] = v.split('/');
@@ -200,7 +203,7 @@ function abilitiesFromSurvey() {
     const trainer = ranks.some((r) => r.tierausbilder);
     const families = [...new Set([
       ...Object.entries(survey.listen)
-        .filter(([, l]) => Object.keys(l.zeilen).some((id) => ids.has(+id)))
+        .filter(([, ls]) => ls.some((l) => Object.keys(l.zeilen).some((id) => ids.has(+id))))
         .map(([fam]) => +fam),
       ...[...ids].flatMap((id) => fromBook.get(id) || []),
     ])].sort((a, b) => a - b);
