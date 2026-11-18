@@ -17,26 +17,10 @@
 -- s = u (gelernt), a (verfügbar), n (nicht verfügbar). Je Melder, Familie und Fähigkeit nur das neueste Stück,
 -- höchstens MAX_STORED; ist es voll, fallen die ältesten fremden weg. Nachricht: „L1;“ davor (Core/Comm.lua).
 local _, ns = ...
-local D = ns.Data
 
 local MAX_RANKS, MAX_STORED, MAX_TP, MAX_LEVEL = 12, 500, 100, 63
 local MIN_TIME = 1788220800   -- 01.09.2026, wie in Core/Comm.lua
 local CODE = { used = "u", available = "a", unavailable = "n" }
-
--- Rang einer Zauber-ID in den Daten (nur Lernbares, also ohne Angriffstempo), wie in Core/Known.lua
-local byId
-ns.OnAbilitiesChanged(function() byId = nil end)
-local function rankOf(id)
-  if not byId then
-    byId = {}
-    for _, a in ipairs(D.abilities) do
-      if ns.Learnable(a) then
-        for _, r in ipairs(a.ranks) do byId[r.id] = { a = a, r = r } end
-      end
-    end
-  end
-  return byId[id]
-end
 
 local function familyMay(a, fam)
   if ns.AppliesToAll(a) then return true end
@@ -54,7 +38,7 @@ function ns.CheckReading(fam, rows)
   if #rows == 0 or #rows > MAX_RANKS then return nil, "Größe" end
   local a
   for _, x in ipairs(rows) do
-    local hit = rankOf(x.id)
+    local hit = ns.RankById(x.id)
     if not hit then return nil, "unbekannter Rang" end
     if a and hit.a ~= a then return nil, "mehrere Fähigkeiten" end
     a = hit.a
@@ -62,11 +46,11 @@ function ns.CheckReading(fam, rows)
   if not familyMay(a, fam) then return nil, "fremde Familie" end
   local cur
   for _, x in ipairs(rows) do
-    local r = rankOf(x.id).r
+    local r = ns.RankById(x.id).r
     if x.s == "u" and (not cur or r.rank > cur.rank) then cur = r end
   end
   for _, x in ipairs(rows) do
-    local r = rankOf(x.id).r
+    local r = ns.RankById(x.id).r
     if r.level ~= nil and x.lvl ~= r.level then return nil, "widerspricht den Daten" end
     if r.tp ~= nil then
       local full
@@ -81,7 +65,7 @@ end
 -- Füllt das Stück eine Lücke der Daten?
 local function fillsGap(rows)
   for _, x in ipairs(rows) do
-    local r = rankOf(x.id).r
+    local r = ns.RankById(x.id).r
     if r.tp == nil or r.level == nil then return true end
   end
   return false
@@ -138,7 +122,7 @@ local function keep(o, a, s)
   local key = abilityKey(a)
   for i = #list, 1, -1 do
     local old = ns.ParseReading(list[i])
-    local hit = old and old.rep == o.rep and old.fam == o.fam and old.rows[1] and rankOf(old.rows[1].id)
+    local hit = old and old.rep == o.rep and old.fam == o.fam and old.rows[1] and ns.RankById(old.rows[1].id)
     if hit and abilityKey(hit.a) == key then
       if list[i] == s or old.time >= o.time then return false end
       table.remove(list, i)
@@ -175,7 +159,7 @@ function ns.ReadingConfirmed(fam, reading)
   if not (rep and type(reading) == "table" and type(reading.rows) == "table") then return end
   local groups = {}
   for id, r in pairs(reading.rows) do
-    local hit = rankOf(id)
+    local hit = ns.RankById(id)
     local code = CODE[r.status]
     if hit and code and type(r.cost) == "number" and type(r.level) == "number" then
       local key = abilityKey(hit.a)

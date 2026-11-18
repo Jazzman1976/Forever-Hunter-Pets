@@ -243,16 +243,7 @@ end
 local function enabled()
   return ns.db and ns.db.ui and ns.db.ui.share and true or false
 end
-
--- In Kampf und Instanz bleibt alles liegen: geheime Werte, und Addon-Nachrichten sind dort gesperrt
-local function quiet()
-  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
-  if IsInInstance then
-    local ok, inside = pcall(IsInInstance)
-    if ok and ns.clean(inside) then return true end
-  end
-  return false
-end
+-- In Kampf und Instanz bleibt alles liegen (ns.Quiet): geheime Werte, und Addon-Nachrichten sind dort gesperrt
 
 -- ---- Senden mit Drosselung ----
 local function oldChannelIndex()
@@ -287,7 +278,7 @@ local pump
 pump = function()
   if #queue == 0 then busy = false; return end
   busy = true
-  if enabled() and not quiet() then
+  if enabled() and not ns.Quiet() then
     local item = queue[1]
     local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
@@ -629,7 +620,7 @@ ns.On("CHAT_MSG_CHANNEL_NOTICE_USER", function(...) channelNotice(" (Spieler)", 
 
 function ns.ShareTest()
   if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
-  if quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
+  if ns.Quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
   local name = me()
   if not name then ns.Print("Selbsttest: eigener Name nicht lesbar."); return end
   local id = ("%04x"):format(math.random(0, 65535))
@@ -888,7 +879,7 @@ local function knownReps()
 end
 
 local function greetWhoList()
-  if not enabled() or quiet() then return end
+  if not enabled() or ns.Quiet() then return end
   if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
   stats.whoLists = stats.whoLists + 1
   local okN, n = pcall(C_FriendList.GetNumWhoResults)
@@ -934,7 +925,7 @@ ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
 function ns.ShareSearch()
   local L = ns.L
   if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
-  if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
+  if ns.Quiet() then ns.Print(L["Not in combat or in an instance."]); return end
   if not (C_FriendList and C_FriendList.SendWho) then return end
   local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
   pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
@@ -977,7 +968,7 @@ local function grouped()
 end
 
 local function greetGroup()
-  if not enabled() or quiet() then return end
+  if not enabled() or ns.Quiet() then return end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(greeting(), "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(greeting(), "PARTY")
   else return end
@@ -987,7 +978,7 @@ end
 ns.On("GROUP_ROSTER_UPDATE", function()
   if inGroup == nil then return end
   local now = grouped()
-  if now and not inGroup and enabled() and not quiet() then
+  if now and not inGroup and enabled() and not ns.Quiet() then
     ns.After(JOIN_DELAY, function() ns.SafeCall("share", greetGroup) end)
   end
   inGroup = now
@@ -1071,7 +1062,10 @@ local function foreignStock()
   return tames, sights, cells, n, unknown
 end
 
-local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", L1 = "Lesungen", H1 = "Grüße" }
+-- Ausgabe von /fhp teilen in der Sprache des Clients (#63). Gezählt und im Verlauf (shareLog) gespeichert wird weiter
+-- nach Kürzel (O1 …) und Weg (GUILD …), die Gründe unter „Verworfen“ deutsch wie bisher; übersetzt wird nur beim Zeigen.
+local L = ns.L
+local NAMES = { O1 = L["Tames"], S1 = L["Sightings"], F1 = L["Cell bundles"], L1 = L["Readings"], H1 = L["Greetings"] }
 local function perKind(t)
   local parts = {}
   for _, k in ipairs(KINDS) do parts[#parts + 1] = NAMES[k] .. " " .. (t[k] or 0) end
@@ -1080,7 +1074,8 @@ end
 
 -- Je Weg (#153): die üblichen immer, alles andere (etwa CHANNEL oder YELL) nur, wenn es vorkam
 local WAYS = { "GUILD", "PARTY", "RAID", "WHISPER" }
-local WAY_NAMES = { GUILD = "Gilde", PARTY = "Gruppe", RAID = "Schlachtzug", YELL = "Rufen", WHISPER = "Flüstern", CHANNEL = "Kanal" }
+local WAY_NAMES = { GUILD = L["Guild"], PARTY = L["Party"], RAID = L["Raid"], YELL = L["Yell"], WHISPER = L["Whisper"],
+  CHANNEL = L["Channel"] }
 local function perWay(t)
   local parts, known = {}, {}
   for _, w in ipairs(WAYS) do
@@ -1096,7 +1091,34 @@ local function perWay(t)
   return table.concat(parts, " · ")
 end
 
--- /fhp teilen: kurzer Stand im Chat (Entwicklerwerkzeug, nur deutsch)
+-- gespeicherter Grund (deutsch, siehe receive… und Core/Readings.lua) → englischer Schlüssel für L[]
+local REASONS = {
+  ["eigene"] = "own", ["schon bekannt"] = "already known", ["Obergrenze je Absender"] = "limit per sender",
+  ["Speicher voll"] = "storage full", ["unlesbar"] = "unreadable", ["Melder"] = "short code",
+  ["Stufe oder NPC"] = "level or NPC", ["Zauber unplausibel"] = "implausible spells", ["Tempo"] = "attack speed",
+  ["Zeit unplausibel"] = "implausible time", ["Karte oder Größe"] = "map or size", ["Zellen"] = "cells",
+  ["nicht zähmbar"] = "not tameable", ["Stufe oder Werte"] = "level or values", ["Sprache oder Name"] = "language or name",
+  ["keine Jäger-Familie"] = "not a hunter family", ["Größe"] = "size", ["unbekannter Rang"] = "unknown rank",
+  ["mehrere Fähigkeiten"] = "several abilities", ["fremde Familie"] = "wrong family",
+  ["widerspricht den Daten"] = "contradicts the data", ["Familie"] = "family", ["Werte"] = "values",
+  ["Warteschlange voll"] = "queue full", ["Flüstern an Offline-Spieler"] = "whispers to offline players",
+}
+local function reasonText(why) return L[REASONS[why] or why] end
+-- was der Client beim Senden sagte („Ergebnis 4“)
+local function clientText(what)
+  local res = tostring(what):match("^Ergebnis (.+)$")
+  return res and (L["result %s"]):format(res) or tostring(what)
+end
+-- Schlüssel unter „Verworfen“: „O1 schon bekannt“, „WHISPER vom Client abgelehnt (Ergebnis 4)“ oder ein Grund allein
+local function droppedText(k)
+  local kind, why = k:match("^(%u%d) (.+)$")
+  if kind and NAMES[kind] then return NAMES[kind] .. " – " .. reasonText(why) end
+  local way, what = k:match("^(%u+) vom Client abgelehnt %((.*)%)$")
+  if way then return (L["%s rejected by the client (%s)"]):format(WAY_NAMES[way] or way, clientText(what)) end
+  return reasonText(k)
+end
+
+-- /fhp teilen: kurzer Stand im Chat
 function ns.ShareStatus()
   local own = 0
   for _, s in ipairs((ns.db and ns.db.obs) or {}) do
@@ -1104,49 +1126,52 @@ function ns.ShareStatus()
     if o and o.own then own = own + 1 end
   end
   local _, rep = me()
-  local rufen = yell == true and "an" or yell == false and ("aus (" .. tostring(yellWhy) .. ")") or "ungeprüft"
-  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s · Rufen: %s")
-    :format(enabled() and "an" or "aus", own, #queue, rep or "?", rufen))
+  local yellText = yell == true and L["on"] or yell == false and (L["off (%s)"]):format(clientText(yellWhy))
+    or L["unchecked"]
+  ns.Print((L["Sharing %s · own observations %d · queue %d · your short code %s · yell: %s"])
+    :format(enabled() and L["on"] or L["off"], own, #queue, rep or "?", yellText))
   local tames, sights, cells, nReps, unknown = foreignStock()
   local readings = ns.ForeignReadings and ns.ForeignReadings() or 0
-  ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · Lesungen %d · von %d Meldern")
+  ns.Print((L["Stored from others: tames %d (with unknown spells %d) · sightings %d · spawn cells %d · readings %d · from %d characters"])
     :format(tames, unknown, sights, cells, readings, nReps))
   if ns.ForeignRankStatus then
     local total, resolved, below = ns.ForeignRankStatus()
-    ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d")
+    ns.Print((L["Unknown spells from other players' tames: %d, resolved %d, below the threshold %d"])
       :format(total, resolved, below))
   end
   local via = 0
   for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
-  ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))
-  ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
-  ns.Print("Empfangen: " .. perKind(stats.recv))
-  ns.Print("Davon neu gespeichert: " .. perKind(stats.new))
-  ns.Print("Gesendet je Weg: " .. perWay(stats.sentWay))
-  ns.Print("Empfangen je Weg: " .. perWay(stats.recvWay))
+  ns.Print((L["Known origin for %d other characters"]):format(via))
+  ns.Print(L["Sent this session:"] .. " " .. perKind(stats.sent))
+  ns.Print(L["Received:"] .. " " .. perKind(stats.recv))
+  ns.Print(L["Newly stored:"] .. " " .. perKind(stats.new))
+  ns.Print(L["Sent per way:"] .. " " .. perWay(stats.sentWay))
+  ns.Print(L["Received per way:"] .. " " .. perWay(stats.recvWay))
   local why = {}
-  for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
+  for k, n in pairs(stats.dropped) do why[#why + 1] = droppedText(k) .. " " .. n end
   table.sort(why)
-  if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
-  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d Unbekannte, %d Bekannte, davon geantwortet: %d")
+  if #why > 0 then ns.Print(L["Discarded:"] .. " " .. table.concat(why, " · ")) end
+  ns.Print((L["Replies to greetings this session: %d, skipped: %d · greeted via search: %d unknown, %d known, of whom replied: %d"])
     :format(stats.replied, stats.skipped, stats.searchGreeted, stats.knownGreeted or 0, stats.hits))
   local versions = {}
   for v, n in pairs(stats.versions) do versions[#versions + 1] = v .. " " .. n end
   table.sort(versions)
-  ns.Print(("Versionen gehört: %s · Verlauf: %d Sitzungen (ForeverHunterPetsDB.shareLog)")
-    :format(#versions > 0 and table.concat(versions, " · ") or "keine", #((ns.db and ns.db.shareLog) or {})))
+  ns.Print((L["Versions heard: %s · history: %d sessions (ForeverHunterPetsDB.shareLog)"])
+    :format(#versions > 0 and table.concat(versions, " · ") or L["none"], #((ns.db and ns.db.shareLog) or {})))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
     local total = 0
     for _, e in ipairs(rejects) do total = total + (type(e) == "table" and tonumber(e.n) or 1) end
-    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d verschiedene, %d Empfänge (ForeverHunterPetsDB.shareRejects)")
+    ns.Print((L["Discarded messages kept raw: %d different, %d received (ForeverHunterPetsDB.shareRejects)"])
       :format(#rejects, total))
   end
   if stats.lastIn then
     local ago = (time and time() or 0) - stats.lastIn.at
-    ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.lastIn.t] or stats.lastIn.t, stats.lastIn.way, ago))
+    local way = stats.lastIn.way
+    ns.Print((L["Last received: %s via %s, %d s ago"]):format(NAMES[stats.lastIn.t] or stats.lastIn.t,
+      WAY_NAMES[way] or way, ago))
   else
-    ns.Print("Noch nichts von anderen Spielern empfangen.")
+    ns.Print(L["Nothing received from other players yet."])
   end
 end
 

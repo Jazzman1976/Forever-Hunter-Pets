@@ -344,7 +344,8 @@ function ns.MapHint(st, npc)
 end
 
 -- ---- Was ein Tier lehrt ----
--- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo
+-- Rang zu einer Zauber-ID für alles, was man von Tieren lernt, auch Angriffstempo. Bewusst getrennt vom Index
+-- in Core/Observe.lua (#67): Der nimmt nur Lernbares und führt das Tempo eigens (traitIndex, #189).
 local bySpell
 ns.OnAbilitiesChanged(function() bySpell = nil end)
 local function spellIndex()
@@ -627,20 +628,22 @@ function ns.HunterRank(found)
   return HUNTER_RANKS[i], HUNTER_RANKS[i + 1]
 end
 
--- /fhp gebiet: Fortschritt der aktuellen Zone im Chat (Entwicklerwerkzeug, nur deutsch)
+-- /fhp gebiet: Fortschritt der aktuellen Zone im Chat, für Spieler (übersetzt seit #63)
 function ns.DiscoverStatus()
+  local L = ns.L
   local map = ns.CellHere and ns.CellHere()
-  if not map then ns.Print("Keine Karte für den Standort."); return end
+  if not map then ns.Print(L["No map for this location."]); return end
   local p = ns.ZoneProgress(map)
-  ns.Print(("%s (%s): Tiere %d von %d %s (%d Fährten, %d gefunden, %d studiert) · Lehrtiere %d von %d · "
-    .. "Ränge %d von %d · %d eigene Zellen"):format(ns.ZoneName(map), ns.Discovering() and "Entdecker" or "Komplett",
-    p.beastsKnown, p.beasts, ns.Discovering() and "gefunden" or "bekannt", p.track, p.found, p.known,
-    p.teachersKnown, p.teachers, p.ranksFound, p.ranks, p.cells))
+  local discovering = ns.Discovering()
+  ns.Print((L["%s (%s): beasts %d of %d %s (%d trails, %d found, %d studied) · teaching beasts %d of %d · ranks %d of %d · %d own cells"])
+    :format(ns.ZoneName(map), discovering and L["explorer"] or L["complete"], p.beastsKnown, p.beasts,
+      discovering and L["found"] or L["known"], p.track, p.found, p.known, p.teachersKnown, p.teachers, p.ranksFound,
+      p.ranks, p.cells))
   local owner = ns.db and ns.db.discoverOwner
-  ns.Print(("Funde: %s · dieser Charakter %s · bisherige Funde %s"):format(
-    ns.Finds() == ns.db and "Konto" or "Charakter", ns.MyRep() or "?",
-    owner == nil and "noch nicht übernommen" or owner == "" and "gab es keine"
-      or ("übernommen von %s%s"):format(owner, owner == ns.MyRep() and " (dieser Charakter)" or "")))
+  ns.Print((L["Finds: %s · this character %s · earlier finds %s"]):format(
+    ns.Finds() == ns.db and L["account"] or L["character"], ns.MyRep() or "?",
+    owner == nil and L["not taken over yet"] or owner == "" and L["there were none"]
+      or (L["taken over by %s%s"]):format(owner, owner == ns.MyRep() and L[" (this character)"] or "")))
 end
 
 -- ---- Bisherige Funde übernehmen (#43) ----

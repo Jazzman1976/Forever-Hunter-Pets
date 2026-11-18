@@ -88,8 +88,6 @@ local function store()
 end
 ns.SurveyStore = store
 
-local function inCombat() return InCombatLockdown and InCombatLockdown() end
-
 local function rankOf(text)
   return type(text) == "string" and tonumber(text:match("%d+")) or nil
 end
@@ -100,7 +98,8 @@ local function subtextRank(id)
   return ok and rankOf(ns.clean(sub)) or nil
 end
 
--- Familie des aktiven Pets: ID und Name, sonst nil
+-- Familie des aktiven Pets: ID und Name, wie der Client sie nennt, sonst nil. Bewusst nicht ns.PetFamily (Core/Index.lua, #67):
+-- Das liefert den Namen aus den Daten und sucht notfalls über den Namen; die Erhebung soll erfassen, was der Client sagt.
 local function petFamily()
   if not (UnitExists and UnitCreatureFamily) then return nil end
   local ok, exists = pcall(UnitExists, "pet")
@@ -209,7 +208,7 @@ ns.On("SPELL_TEXT_UPDATE", onLoaded)
 -- ---- Zauberbuch des aktiven Pets ----
 -- tame: gleich nach dem Zähmen; dann bleibt das Lesen roh in survey.petRead (Messpunkt zu #17)
 function ns.SurveyPetSpells(tame)
-  if inCombat() then return end
+  if ns.InCombat() then return end
   local s = store()
   local SB = C_SpellBook
   if not (s and SB and SB.HasPetSpells and SB.GetSpellBookItemInfo) then return end
@@ -351,7 +350,7 @@ end
 -- full (Core/Known.lua): alle drei Filter des Fensters waren eingeblendet; nur dann zählt eine Lesung der
 -- Wildtierausbildung (#111), sonst fehlen Zeilen
 function ns.SurveyTrainer(atNpc, full)
-  if inCombat() or not (GetNumTrainerServices and GetTrainerServiceInfo) then return end
+  if ns.InCombat() or not (GetNumTrainerServices and GetTrainerServiceInfo) then return end
   local s = store()
   if not s then return end
   local fam

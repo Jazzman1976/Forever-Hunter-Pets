@@ -97,7 +97,8 @@ end
 -- ---- Quelle 1: das Fenster „Wildtierausbildung“ ----
 -- Forever zeigt es als Trainer-Fenster ohne NPC. Jede Zeile nennt Name, Status, Icon, Pet-Stufe und
 -- Rang („Beißen | used | 132278 | 16 | Rang 3“), aber keine Zauber-ID – zugeordnet wird über den Namen.
--- Rang zu einer Zauber-ID (nur, was man lernen kann)
+-- Rang zu einer Zauber-ID (nur, was man lernen kann): { a = Fähigkeit, r = Rang } oder nil. Auch für die
+-- geteilten Lesungen (ns.RankById, Core/Readings.lua, #67)
 local byId, byName
 ns.OnAbilitiesChanged(function() byId, byName = nil, nil end)
 local function rankById(id)
@@ -111,6 +112,7 @@ local function rankById(id)
   end
   return byId[id]
 end
+ns.RankById = rankById
 
 local function abilityByName(name)
   if not byName then
@@ -310,7 +312,7 @@ local busy, toggledAt = false, nil
 local TOGGLE_WAIT, TOGGLE_QUIET = 0.3, 1.0
 local function readTrainerAll()
   if busy or not trainerOpen() then return end
-  if InCombatLockdown and InCombatLockdown() then return end
+  if ns.InCombat() then return end
   -- Tierausbilder: nur für die Erhebung, so gelesen, wie seine Filter stehen
   if atNpc() then
     readTrainer()
@@ -337,11 +339,6 @@ local function readTrainerAll()
   end)
 end
 
-function ns.After(delay, fn)
-  if C_Timer and C_Timer.After then C_Timer.After(delay, fn) else fn() end
-end
-
--- Direkt bei TRAINER_SHOW ist die Liste noch unvollständig, deshalb mit etwas Abstand lesen
 -- ---- Gewählten Rang nach dem Öffnen der Wildtierausbildung anmelden ----
 -- Lehren darf nur das Blizzard-Fenster selbst: BuyTrainerService ist für Addons gesperrt
 -- (ADDON_ACTION_FORBIDDEN, im Spiel geprüft am 12.10.2026). Der Knopf „Wildtierausbildung öffnen“
@@ -373,6 +370,7 @@ ns.On("TRAINER_SHOW", function()
   list.sig = nil   -- ein anderer Trainer, neu prüfen
   -- jede Öffnung zählt (#111): Die Erhebung nimmt eine Lesung erst, wenn zwei Öffnungen nacheinander dasselbe zeigen
   ns.trainerOpening = (ns.trainerOpening or 0) + 1
+  -- mit Abstand lesen: Direkt nach dem Öffnen baut sich das Fenster noch auf
   ns.After(READ_AFTER, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
   ns.After(SELECT_AFTER, function() ns.SafeCall("select", applySelection) end)
@@ -410,7 +408,7 @@ local function logLearn(how, text, result)
   if not ns.db then return end
   local log = ns.db.learnLog or {}
   ns.db.learnLog = log
-  local combat = InCombatLockdown and InCombatLockdown() and " Kampf" or ""
+  local combat = ns.InCombat() and " Kampf" or ""
   log[#log + 1] = ("%s %s%s | %s | %s"):format(date and date("%d.%m. %H:%M:%S") or "?", how, combat,
     tostring(text):gsub("|", "/"), result)
   while #log > 20 do table.remove(log, 1) end

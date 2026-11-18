@@ -17,22 +17,6 @@ local BOOK = "Interface\\Icons\\INV_Misc_Book_09"
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local dialog, after
 
-local function border(f)
-  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
-    local t = f:CreateTexture(nil, "BORDER")
-    t:SetColorTexture(0, 0, 0, 1)
-    if side == "TOP" or side == "BOTTOM" then
-      t:SetHeight(1)
-      t:SetPoint(side .. "LEFT")
-      t:SetPoint(side .. "RIGHT")
-    else
-      t:SetWidth(1)
-      t:SetPoint("TOP" .. side)
-      t:SetPoint("BOTTOM" .. side)
-    end
-  end
-end
-
 local function choose(discover)
   ns.SetMode(discover)
   local fn = after   -- vor dem Ausblenden: OnHide löscht die Folgeaktion
@@ -61,7 +45,7 @@ local function create()
   f:Hide()
   table.insert(UISpecialFrames, "ForeverHunterPetsModeDialog")
   W.Fill(f, 0.06, 0.07, 0.09, 1, "BACKGROUND")
-  border(f)
+  W.Border(f)
 
   local logo = f:CreateTexture(nil, "ARTWORK")
   logo:SetSize(96, 96)

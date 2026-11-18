@@ -9,7 +9,7 @@ local mini
 local function square()
   if not GetMinimapShape then return false end
   local ok, shape = pcall(GetMinimapShape)
-  return ok and shape == "SQUARE"
+  return ok and ns.clean(shape) == "SQUARE"
 end
 
 local function place()

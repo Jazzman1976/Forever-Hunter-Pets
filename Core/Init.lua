@@ -27,6 +27,27 @@ function ns.clean(v)
   return v
 end
 
+-- Im Kampf? (#71) Jede Kampfprüfung läuft hierüber. Ist der Wert geheim, gilt das als Kampf: Dann bleibt liegen,
+-- was im Kampf nicht gelesen oder angefasst werden darf. Nur die API-Probe (Core/Probe.lua) fragt roh.
+function ns.InCombat()
+  if not InCombatLockdown then return false end
+  local v = InCombatLockdown()
+  if issecret and issecret(v) then return true end
+  return v and true or false
+end
+
+-- In Kampf oder Instanz? Dann ruhen Teilen, Sichtung und Fundorte am Tooltip (#67, vorher je eine Kopie): geheime
+-- Werte, und Addon-Nachrichten sind dort gesperrt. Ein geheimer Wert gilt wie beim Kampf als „drin“. Der Tooltip
+-- prüft zusätzlich ns.Possessing (Core/Places.lua).
+function ns.Quiet()
+  if ns.InCombat() then return true end
+  if IsInInstance then
+    local ok, inside = pcall(IsInInstance)
+    if ok and ((issecret and issecret(inside)) or inside) then return true end
+  end
+  return false
+end
+
 function ns.Print(msg)
   if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff9fd45fForever Hunter Pets|r: " .. tostring(msg)) end
 end
@@ -49,6 +70,11 @@ function ns.SafeCall(where, fn, ...)
   local ok, err = pcall(fn, ...)
   if not ok then failed(where, err) end
   return ok
+end
+
+-- Etwas später ausführen; ohne C_Timer sofort (#69: von Core/Known.lua hierher, alle Dateien nutzen es)
+function ns.After(delay, fn)
+  if C_Timer and C_Timer.After then C_Timer.After(delay, fn) else fn() end
 end
 
 -- Bei vollem Speicher (#61): die ersten n fremden Einträge einer Liste entfernen, die nach Eingang geordnet ist
@@ -162,16 +188,16 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
   elseif cmd == "gebiet" or cmd == "area" then
     ns.SafeCall("area", ns.DiscoverStatus)
   elseif cmd == "start" then
-    -- Startdialog zum Testen (Entwicklerwerkzeug, #42): Schließen ändert einen schon gewählten Modus nicht
+    -- Startansicht zur Wahl des Modus (#42, für Spieler seit #63): Schließen ändert einen schon gewählten Modus nicht
     ns.SafeCall("mode", ns.ShowModeDialog)
   elseif cmd == "modus" or cmd == "mode" then
-    ns.SafeCall("mode", ns.ModeCommand)   -- Modus wechseln (#179), nur in der Hilfe
+    ns.SafeCall("mode", ns.ModeCommand)   -- Modus wechseln (#179)
   elseif cmd == "tour" then
-    ns.SafeCall("tour", ns.TourCommand)   -- Tour des Entdeckermodus noch einmal (#178), nur in der Hilfe
+    ns.SafeCall("tour", ns.TourCommand)   -- Tour des Entdeckermodus noch einmal (#178)
   elseif cmd == "zonen" or cmd == "zones" then
     ns.SafeCall("zones", ns.ZoneReport)
   else
-    ns.Print(L["Commands: /fhp (open or close), /fhp zones (zones without a map), /fhp api (API probe), /fhp map (map probe), /fhp tame (taming probe), /fhp owner (owner probe), /fhp share (sharing status), /fhp search (greet other hunters), /fhp survey (survey status), /fhp area (progress in this zone), /fhp mode (switch mode), /fhp tour (show the tour again)"])
+    ns.Print(L["Commands: /fhp (open or close), /fhp area (progress in this zone), /fhp search (greet other hunters), /fhp share (sharing status), /fhp mode (switch mode), /fhp start (choose the mode in the start view), /fhp tour (show the tour again)"])
   end
 end
 
