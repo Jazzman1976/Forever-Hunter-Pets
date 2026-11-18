@@ -383,13 +383,20 @@ if (wegeOld || wege.size) {
 
 // ---- Erhebung (Core/Survey.lua) → tools/eigene/erhebung.json ----
 // Je Rang wird zusammengeführt, was die Dateien wissen (eine fehlende Angabe überschreibt keine vorhandene),
-// je Familie werden die Listen der Wildtierausbildung zusammengeführt, vorhandene Zeilen gehen vor (#139).
-// Namen stehen je Client-Sprache.
+// je Familie werden die Lesungen der Wildtierausbildung einzeln abgelegt (#210). Namen stehen je Client-Sprache.
 const survey = fs.existsSync(SURVEY_OUT)
   ? JSON.parse(fs.readFileSync(SURVEY_OUT, 'utf8'))
   : { raenge: {}, listen: {}, familien: {}, zauberbuch: {} };
+// Umstellung (#210): Bis dahin hielt `listen[Familie]` eine aus mehreren Lesungen zusammengeführte Liste
+// { zeit, datum, zeilen }. Sie wird die erste Lesung der Familie, gekennzeichnet als zusammengeführt (kann Zeilen
+// verschiedener Lesungen enthalten, nach 1.3.0 von Hand geprüft).
+for (const [fam, l] of Object.entries(survey.listen)) {
+  if (!Array.isArray(l)) survey.listen[fam] = [{ zeit: l.zeit, datum: l.datum, zusammengefuehrt: true, zeilen: l.zeilen }];
+}
 let surveyFiles = 0;
-let listRowsAdded = 0, listRowsKept = 0; // Zeilen der Wildtierausbildung: ergänzt bzw. abweichend (alte behalten)
+let readingsNew = 0, readingsKnown = 0; // Lesungen der Wildtierausbildung: neu bzw. schon vorhanden (#210)
+const sameRows = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const pricesKept = new Set(); // Ränge, deren niedrigerer Goldpreis den vorhandenen nicht überschrieben hat (#209)
 for (const f of files) {
   let s;
   try {
@@ -408,22 +415,29 @@ for (const f of files) {
     const fields = [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel']];
     if (!NO_TRAINER) fields.push(['jaegerStufe', 'hunterLevel'], ['preis', 'gold']);
     for (const [to, from] of fields) {
-      if (e[from] != null) r[to] = e[from];
+      if (e[from] == null) continue;
+      // Goldpreis (#209): Der Tierausbilder zeigt den Preis nach Ruf-Rabatt, ein Rabatt senkt ihn nur. Der höchste
+      // gesehene Preis ist deshalb der Grundpreis; ein niedrigerer überschreibt ihn nicht.
+      if (to === 'preis' && r.preis != null && e[from] < r.preis) { pricesKept.add(id); continue; }
+      r[to] = e[from];
     }
     if (e.bw) r.wildtierausbildung = true;
     if (e.npc && !NO_TRAINER) r.tierausbilder = true;
     if (e.t) r.datum = r.datum && r.datum < day(e.t) ? r.datum : day(e.t);
   }
-  // Listen je Familie zusammenführen (#139): Eine vorhandene Zeile bleibt, eine neue Liste ergänzt nur Zauber-IDs,
-  // die noch fehlen. Eine spätere Liste kann kürzer sein (frischer Jäger) oder nur den Aufpreis gegenüber einem Rang
-  // zeigen, der in ihr fehlt; sie darf belegte TP nicht überstimmen (#124).
+  // Lesungen je Familie (#210): Die Wildtierausbildung zeigt TP relativ zum aktuellen Rang des Pets; build-data.mjs
+  // rechnet die Preise deshalb je Lesung zurück. Bis #210 wurden die Listen zeilenweise gemischt (#139), und eine
+  // Gleichung konnte Zeilen zweier Lesungen verbinden (1.3.0: Beißen R2 4 + 1 = 5). Jetzt kommt jede Liste
+  // unverändert als eigene Lesung dazu; vorhandene bleiben stehen (#124). Nicht doppelt: dieselbe Zeit oder genau
+  // dieselben Zeilen (die Lesung aus einem früheren Lauf oder aus der zusammengeführten Liste).
   for (const [fam, l] of Object.entries(s.lists || {})) {
-    const e = (survey.listen[fam] ??= { zeit: l.at, datum: day(l.at), zeilen: {} });
-    for (const [id, row] of Object.entries(l.rows || {})) {
-      if (!(id in e.zeilen)) { e.zeilen[id] = row; listRowsAdded++; } else if (e.zeilen[id] !== row) listRowsKept++;
-    }
-    if (l.at > e.zeit) { e.zeit = l.at; e.datum = day(l.at); }
-    e.zeilen = Object.fromEntries(Object.entries(e.zeilen).sort());
+    const readings = (survey.listen[fam] ??= []);
+    const zeilen = Object.fromEntries(Object.entries(l.rows || {}).sort());
+    if (!Object.keys(zeilen).length) continue;
+    if (readings.some((x) => x.zeit === l.at || sameRows(x.zeilen, zeilen))) { readingsKnown++; continue; }
+    readings.push({ zeit: l.at, datum: day(l.at), zeilen });
+    readings.sort((a, b) => a.zeit - b.zeit);
+    readingsNew++;
   }
   for (const [fam, name] of Object.entries(s.families || {})) {
     const e = (survey.familien[fam] ??= { name: {} });
@@ -444,15 +458,19 @@ for (const f of files) {
 for (const fam of DEMON_FAMILY) delete survey.familien[fam];
 const sortKeys = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => a - b));
 for (const k of ['raenge', 'listen', 'familien', 'zauberbuch']) survey[k] = sortKeys(survey[k]);
-// je Rang eine Zeile, wie bei den Beobachtungen
+// je Rang eine Zeile, wie bei den Beobachtungen; bei den Listen je Lesung eine Zeile
 const block = (o, indent) => '{\n' + Object.entries(o).map(([k, v]) => `${indent}  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n') + `\n${indent}}`;
+const readingsBlock = (o) => '{\n' + Object.entries(o).map(([k, ls]) => `    ${JSON.stringify(k)}: [\n`
+  + ls.map((l) => `      ${JSON.stringify(l)}`).join(',\n') + '\n    ]').join(',\n') + '\n  }';
 fs.writeFileSync(SURVEY_OUT, '{\n' + ['raenge', 'listen', 'familien', 'zauberbuch']
-  .map((k) => `  ${JSON.stringify(k)}: ${Object.keys(survey[k]).length ? block(survey[k], '  ') : '{}'}`).join(',\n') + '\n}\n');
+  .map((k) => `  ${JSON.stringify(k)}: ${!Object.keys(survey[k]).length ? '{}' : k === 'listen' ? readingsBlock(survey[k]) : block(survey[k], '  ')}`)
+  .join(',\n') + '\n}\n');
 console.log(`Erhebung aus ${surveyFiles} Datei(en): ${Object.keys(survey.raenge).length} Ränge, `
   + `${Object.keys(survey.listen).length} Familien mit Liste, ${Object.keys(survey.zauberbuch).length} Zauber aus Zauberbüchern `
   + '→ tools/eigene/erhebung.json');
-console.log(`Listen der Wildtierausbildung: ${listRowsAdded} Zeilen ergänzt, `
-  + `${listRowsKept} abweichende Zeilen ignoriert (vorhandene gehen vor)`);
+console.log(`Lesungen der Wildtierausbildung: ${readingsNew} neu, ${readingsKnown} schon vorhanden `
+  + `(${Object.values(survey.listen).reduce((n, ls) => n + ls.length, 0)} in ${Object.keys(survey.listen).length} Familien)`);
+console.log(`Goldpreise des Tierausbilders: bei ${pricesKept.size} Rängen niedrigere ignoriert (Ruf-Rabatt; der höchste gesehene gilt)`);
 
 // ---- Fremde Ränge (Core/ForeignRanks.lua, #103) → tools/eigene/fremde-raenge.json ----
 // { Zauber-ID: { name: { Sprache: Name }, rang, quelle, datum } }: Name und Rang, die der eigene Client zu einem

@@ -1,6 +1,7 @@
 name: Bug report
 description: Something in the addon does not work as expected, or its data is wrong (a beast teaches something else, lives somewhere else, a cost or level is wrong).
 labels: [bug]
+type: Bug
 body:
   - type: markdown
     attributes:

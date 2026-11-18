@@ -1,6 +1,8 @@
 // Liest eine SavedVariables-Datei des Clients: Zuweisungen „Name = Wert“ mit Tabellen, Texten, Zahlen,
 // true/false/nil. Mehr Lua braucht es dafür nicht. Gibt { Name: Wert } zurück; Tabellen werden zu Objekten
 // mit Text-Schlüsseln („[5] = …“ wird zu "5"), Listenelemente ohne Schlüssel bekommen 1, 2, 3 …
+// Objekte ohne Prototyp (#74): Ein Schlüssel „__proto__“ in der Datei ist dann ein gewöhnlicher Schlüssel und
+// verändert keinen Prototyp.
 export function parseSavedVariables(text) {
   let i = 0;
   const fail = (msg) => { throw new Error(`${msg} bei Zeichen ${i}: ${JSON.stringify(text.slice(i, i + 30))}`); };
@@ -48,7 +50,7 @@ export function parseSavedVariables(text) {
   };
   const table = () => {
     i++; // {
-    const out = {};
+    const out = Object.create(null);
     let n = 0;
     for (;;) {
       skip();
@@ -73,7 +75,7 @@ export function parseSavedVariables(text) {
       if (text[i] === ',' || text[i] === ';') i++;
     }
   };
-  const vars = {};
+  const vars = Object.create(null);
   for (;;) {
     skip();
     if (i >= text.length) return vars;
