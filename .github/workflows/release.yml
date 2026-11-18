@@ -4,6 +4,8 @@
 # Changelog ist CHANGELOG.md (.pkgmeta). Von Hand gestartet nur ein Probelauf ohne Upload; das ZIP hängt dann
 # als Artefakt am Lauf. Das ZIP heißt wie das Tag, etwa v1.1.0-beta.1.zip (-n, Regel des Nutzers, 18.10.2026);
 # Beta und Spielversion (Forever) hängen nicht am Namen, sondern an Tag und TOC.
+# Die Actions sind auf Commit-SHAs gepinnt (#70), die Version steht dahinter: Ein verschobenes Tag einer fremden
+# Action kann so nichts in den Lauf bringen, der den CurseForge-Schlüssel hat. Erneuern: docs/technik/entwicklung.md.
 name: Release
 
 on:
@@ -18,13 +20,13 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Paket bauen und hochladen
         if: github.ref_type == 'tag'
-        uses: BigWigsMods/packager@v2.6.1
+        uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0 # v2.6.1
         with:
           args: -n "{project-version}"
         env:
@@ -33,13 +35,13 @@ jobs:
 
       - name: Probelauf ohne Upload
         if: github.ref_type != 'tag'
-        uses: BigWigsMods/packager@v2.6.1
+        uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0 # v2.6.1
         with:
           args: -d -n "{project-version}"
 
       - name: ZIP des Probelaufs
         if: github.ref_type != 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: package
           path: .release/*.zip
