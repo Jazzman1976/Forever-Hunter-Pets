@@ -337,11 +337,6 @@ local function readTrainerAll()
   end)
 end
 
-function ns.After(delay, fn)
-  if C_Timer and C_Timer.After then C_Timer.After(delay, fn) else fn() end
-end
-
--- Direkt bei TRAINER_SHOW ist die Liste noch unvollständig, deshalb mit etwas Abstand lesen
 -- ---- Gewählten Rang nach dem Öffnen der Wildtierausbildung anmelden ----
 -- Lehren darf nur das Blizzard-Fenster selbst: BuyTrainerService ist für Addons gesperrt
 -- (ADDON_ACTION_FORBIDDEN, im Spiel geprüft am 12.10.2026). Der Knopf „Wildtierausbildung öffnen“
@@ -373,6 +368,7 @@ ns.On("TRAINER_SHOW", function()
   list.sig = nil   -- ein anderer Trainer, neu prüfen
   -- jede Öffnung zählt (#111): Die Erhebung nimmt eine Lesung erst, wenn zwei Öffnungen nacheinander dasselbe zeigen
   ns.trainerOpening = (ns.trainerOpening or 0) + 1
+  -- mit Abstand lesen: Direkt nach dem Öffnen baut sich das Fenster noch auf
   ns.After(READ_AFTER, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
   ns.After(SELECT_AFTER, function() ns.SafeCall("select", applySelection) end)

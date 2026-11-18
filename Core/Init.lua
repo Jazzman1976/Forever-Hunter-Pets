@@ -51,6 +51,11 @@ function ns.SafeCall(where, fn, ...)
   return ok
 end
 
+-- Etwas später ausführen; ohne C_Timer sofort (#69: von Core/Known.lua hierher, alle Dateien nutzen es)
+function ns.After(delay, fn)
+  if C_Timer and C_Timer.After then C_Timer.After(delay, fn) else fn() end
+end
+
 -- Bei vollem Speicher (#61): die ersten n fremden Einträge einer Liste entfernen, die nach Eingang geordnet ist
 -- (ForeverHunterPetsDB.obs, .sights). Eigene und unlesbare bleiben. Liefert die Zahl der entfernten.
 function ns.DropOldestForeign(list, parse, n)
