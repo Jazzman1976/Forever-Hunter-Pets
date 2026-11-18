@@ -316,9 +316,34 @@ local function readingPending(fam)
   return o and o.cur and o.done ~= o.opening and true or false
 end
 
+-- Zur Fehlersuche: worin sich die Lesung der laufenden von der der vorigen Öffnung unterscheidet (höchstens zwei
+-- Beispiele), oder nil, wenn es noch keine vorige gibt
+local function readingDiff(fam)
+  local o = openings[fam]
+  if not (o and o.cur and o.prev) then return nil end
+  local a, b, n, ex = o.prev.rows, o.cur.rows, 0, {}
+  local seen = {}
+  for id in pairs(a) do seen[id] = true end
+  for id in pairs(b) do seen[id] = true end
+  local function show(r) return r and (tostring(r.status) .. "/" .. tostring(r.cost) .. " Stufe " .. tostring(r.level)) or "fehlt" end
+  for id in pairs(seen) do
+    local x, y = a[id], b[id]
+    if show(x) ~= show(y) then
+      n = n + 1
+      if #ex < 2 then
+        local r = x or y
+        ex[#ex + 1] = ("%s %s: %s → %s"):format(tostring(r.name), tostring(r.rank), show(x), show(y))
+      end
+    end
+  end
+  return n, ex
+end
+
 -- ---- Trainer-Liste: Wildtierausbildung oder Tierausbilder in der Stadt ----
 -- Aufgerufen aus Core/Known.lua, wenn die Liste vollständig zu sehen ist (auch „Bereits bekannt“).
-function ns.SurveyTrainer(atNpc)
+-- full (Core/Known.lua): alle drei Filter des Fensters waren eingeblendet; nur dann zählt eine Lesung der
+-- Wildtierausbildung (#111), sonst fehlen Zeilen
+function ns.SurveyTrainer(atNpc, full)
   if inCombat() or not (GetNumTrainerServices and GetTrainerServiceInfo) then return end
   local s = store()
   if not s then return end
@@ -374,7 +399,7 @@ function ns.SurveyTrainer(atNpc)
     end
   end
   if not atNpc then
-    if fam and complete then noteReading(s, fam, { at = now(), fam = fam, rows = rows }) end
+    if fam and complete and full then noteReading(s, fam, { at = now(), fam = fam, rows = rows }) end
     ns.SurveyPetSpells()
   elseif ns.MergeSurveyAbilities then
     ns.MergeSurveyAbilities()   -- ein neuer Rang gilt sofort (Core/Index.lua)
@@ -422,6 +447,14 @@ function ns.SurveyStatus()
   ns.Print(("Erhebung: %d Fähigkeiten, %d Ränge (%d aus der Wildtierausbildung, %d vom Tierausbilder, %d ohne "
     .. "Zauber-ID) · %d Zauber aus Pet-Zauberbüchern · %d Familien: %s"):format(
     nAbilities, ranks, bw, npc, noId, spells, fams, fams > 0 and table.concat(famNames, ", ") or "–"))
+  -- wartende Familien (#111): worin sich die letzten beiden Öffnungen unterscheiden
+  for id, name in pairs(s.families) do
+    local n, ex = readingDiff(id)
+    if readingPending(id) and n then
+      ns.Print(("%s: letzte zwei Öffnungen unterscheiden sich in %d Zeilen%s"):format(tostring(name), n,
+        #ex > 0 and (", etwa " .. table.concat(ex, "; ")) or ""))
+    end
+  end
   if ns.SeenBeast then
     local npcs, beasts, own = {}, 0, 0
     for _, s2 in ipairs(ns.db.sights or {}) do
