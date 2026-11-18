@@ -15,6 +15,8 @@
 --                                              nur, was die mitgelieferten Daten nicht kennen
 --   F1;npc;uiMapID;zellen;melder               neue eigene Fundort-Zellen (Core/Places.lua), gebündelt
 --                                              höchstens alle 5 Minuten, bis zu 100 Zellen
+--   L1;familie;zeilen;zeit;melder              ein Stück einer bestätigten Lesung der Wildtierausbildung, je
+--                                              Fähigkeit (Core/Readings.lua, #111); zeilen = id:s:tp:stufe,…
 --   H1;version;anzahl[;R]                      Gruß nach dem Einloggen und beim Beitritt in eine Gruppe;
 --                                              Antwort: einige Beobachtungen per Flüstern an den, der
 --                                              gegrüßt hat. R: Rückgruß (#156), der wird nicht erwidert
@@ -34,6 +36,7 @@ local MAX_QUEUE = 80
 local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
 local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local SIGHT_REPLY = 10        -- eigene Sichtungen als Antwort auf einen Gruß (#157); zusammen höchstens 40 Nachrichten
+local READING_REPLY = 10      -- Stücke von Lesungen der Wildtierausbildung als Antwort auf einen Gruß (#111)
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
@@ -48,7 +51,7 @@ local queue, busy = {}, false
 -- Verlauf (#160): Jede Sitzung ist ein Eintrag in ForeverHunterPetsDB.shareLog, die letzten LOG_MAX über alle
 -- Charaktere (bis dahin lag nur die laufende Sitzung in shareStats). So lässt sich nach einem Release nachsehen, ob
 -- Rückgruß und Suche ankommen. Ohne Namen: nur Kürzel, Zahlen, Versionen, Gründe. Felder in newStats().
-local KINDS = { "O1", "S1", "F1", "H1" }
+local KINDS = { "O1", "S1", "F1", "L1", "H1" }
 local LOG_MAX = 30
 local HIT_WINDOW = 120        -- Sekunden: Antwortet ein per Suche Gegrüßter so bald, ist das ein Treffer (#160)
 local function newStats()
@@ -127,6 +130,10 @@ local function pruneVia(via)
   for _, s in ipairs(ns.db.sights or {}) do
     local o = ns.ParseSighting(s)
     if o then present[o.rep] = true end
+  end
+  if ns.ForeignReadings then
+    local _, reps = ns.ForeignReadings()   -- Melder fremder Lesungen (#111)
+    for rep in pairs(reps) do present[rep] = true end
   end
   for _, maps in pairs(ns.db.locIn or {}) do
     for _, byRep in pairs(maps) do
@@ -435,6 +442,19 @@ local function receiveCells(body, sender)
 end
 
 -- ---- Sichtungen (Core/Sightings.lua) ----
+-- ---- Lesungen der Wildtierausbildung (Core/Readings.lua, #111) ----
+function ns.ShareReading(s)
+  if enabled() and type(s) == "string" then broadcast("L1;" .. s) end
+end
+
+local readingsPerSender = {}
+local function receiveReading(body, sender)
+  readingsPerSender[sender] = (readingsPerSender[sender] or 0) + 1
+  if readingsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
+  if not ns.ReceiveReading then return false, "unlesbar" end
+  return ns.ReceiveReading(body:sub(4))   -- ohne „L1;“
+end
+
 function ns.ShareSighting(s)
   if enabled() and type(s) == "string" then broadcast("S1;" .. s) end
 end
@@ -518,6 +538,10 @@ local function reply(sender, target, open)
       local msg = outgoing(list[i])
       if msg then enqueue(msg, "WHISPER", target, nil, true); n = n + 1 end
     end
+  end
+  -- Stücke von Lesungen der Wildtierausbildung (#111): eigene zuerst, dann fremde, nicht die des Grüßenden
+  for _, s in ipairs(ns.ReadingsToShare and ns.ReadingsToShare(READING_REPLY, theirs) or {}) do
+    enqueue("L1;" .. s, "WHISPER", target, nil, true)
   end
   -- eigene Sichtungen, die die Daten nicht kennen, auch von Twinks (#157)
   for _, s in ipairs(ns.OwnSightingsToShare and ns.OwnSightingsToShare(SIGHT_REPLY) or {}) do
@@ -811,6 +835,8 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveObservation(text, key)
   elseif text:sub(1, 3) == "S1;" then
     ok, why, rep = receiveSighting(text, key)
+  elseif text:sub(1, 3) == "L1;" then
+    ok, why, rep = receiveReading(text, key)
   elseif text:sub(1, 3) == "F1;" then
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
@@ -1045,7 +1071,7 @@ local function foreignStock()
   return tames, sights, cells, n, unknown
 end
 
-local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", H1 = "Grüße" }
+local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", L1 = "Lesungen", H1 = "Grüße" }
 local function perKind(t)
   local parts = {}
   for _, k in ipairs(KINDS) do parts[#parts + 1] = NAMES[k] .. " " .. (t[k] or 0) end
@@ -1082,8 +1108,9 @@ function ns.ShareStatus()
   ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s · Rufen: %s")
     :format(enabled() and "an" or "aus", own, #queue, rep or "?", rufen))
   local tames, sights, cells, nReps, unknown = foreignStock()
-  ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
-    :format(tames, unknown, sights, cells, nReps))
+  local readings = ns.ForeignReadings and ns.ForeignReadings() or 0
+  ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · Lesungen %d · von %d Meldern")
+    :format(tames, unknown, sights, cells, readings, nReps))
   if ns.ForeignRankStatus then
     local total, resolved, below = ns.ForeignRankStatus()
     ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d")

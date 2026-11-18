@@ -333,6 +333,92 @@ const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? rea
   if (added || waiting) console.log(`Fremde Ränge: ${added} übernommen, ${waiting} warten auf weitere Melder (ab ${FOREIGN_SURE})`);
 }
 
+// ---- Werte aus fremden Lesungen der Wildtierausbildung (#111) ----
+// erhebung-fremd.json (tools/import-observations.mjs aus Core/Readings.lua): je Eintrag ein Stück einer bestätigten
+// Lesung eines anderen Spielers, alle Ränge einer Fähigkeit mit „Status/angezeigte TP“ und Pet-Stufe. Daraus ergibt
+// sich je Rang wie bei den eigenen Lesungen (#210) der volle Preis: unter dem aktuellen Rang (höchster gelernter) der
+// angezeigte, darüber angezeigt + Preis des aktuellen. Dieselbe Prüfung wie im Addon (ns.CheckReading): Ränge einer
+// Fähigkeit, die die Daten der Familie zuordnen, kein Widerspruch zu bekannten Werten – sonst zählt das Stück nicht.
+// Ein Wert gilt ab FOREIGN_SURE Meldern über zwei Absender (enough), es gewinnt der Wert mit den meisten Meldern
+// (bei Gleichstand keiner); 0 TP erst, wenn Lesungen aus zwei Familien ihn zeigen (wie bei den eigenen, #4). Nur
+// Lücken: Was Stammdaten und eigene Erhebung kennen, bleibt (#124). Übernommene Werte rechnen in der nächsten Runde
+// mit (ein höherer Rang über einem eben übernommenen).
+const foreignReadingsIn = fs.existsSync(path.join(OWN, 'erhebung-fremd.json')) ? read('erhebung-fremd.json') : [];
+const foreignValues = []; // für die Ausgabe: übernommene Werte
+{
+  for (const e of foreignReadingsIn) {
+    need(e.melder && e.familie && e.zeilen && e.datum, `Fremde Lesung ohne Melder, Familie, Zeilen oder Datum (erhebung-fremd.json)`);
+  }
+  const rankIndex = new Map();
+  for (const a of abilitiesIn) {
+    if (a.kind === 'trait') continue;
+    for (const r of a.ranks || []) rankIndex.set(r.id, { a, r });
+  }
+  const fits = (a, fam) => a.kind !== 'family' || (a.families || []).includes(fam);
+  let rejected = 0, waitingValues = 0;
+  for (let round = 0; round < 10; round++) {
+    const cand = { tp: new Map(), level: new Map() }; // Zauber-ID → Map(Wert → { reps, fams })
+    rejected = 0;
+    for (const e of foreignReadingsIn) {
+      if (ownReps.has(e.melder)) continue;
+      const rows = Object.entries(e.zeilen || {}).map(([id, v]) => {
+        const [status, shown] = String(v).split('/');
+        return { status, shown: Number(shown), lvl: e.stufen?.[id] ?? null, hit: rankIndex.get(+id) };
+      });
+      if (!rows.length || rows.some((x) => !x.hit || !Number.isFinite(x.shown))) { rejected++; continue; }
+      const a = rows[0].hit.a;
+      if (rows.some((x) => x.hit.a !== a) || !fits(a, e.familie)) { rejected++; continue; }
+      let cur = null;
+      for (const x of rows) if (x.status === 'used' && (!cur || x.hit.r.rank > cur.rank)) cur = x.hit.r;
+      const values = [];
+      let bad = false;
+      for (const x of rows) {
+        const r = x.hit.r;
+        if (x.lvl != null) {
+          if (r.level != null) { if (r.level !== x.lvl) bad = true; } else values.push(['level', r.id, x.lvl]);
+        }
+        let full = null;
+        if (!cur || r.rank < cur.rank) full = x.shown;
+        else if (r.rank > cur.rank && cur.tp != null) full = x.shown + cur.tp;
+        if (full == null) continue;
+        if (r.tp != null) { if (r.tp !== full) bad = true; } else values.push(['tp', r.id, full]);
+      }
+      if (bad) { rejected++; continue; }
+      for (const [k, id, v] of values) {
+        const m = cand[k].get(id) ?? cand[k].set(id, new Map()).get(id);
+        const c = m.get(v) ?? m.set(v, { reps: new Set(), fams: new Set() }).get(v);
+        c.reps.add(e.melder);
+        c.fams.add(e.familie);
+      }
+    }
+    let changed = false;
+    waitingValues = 0;
+    for (const k of ['tp', 'level']) {
+      for (const [id, m] of cand[k]) {
+        const sorted = [...m].sort((x, y) => y[1].reps.size - x[1].reps.size);
+        const [v, c] = sorted[0];
+        const tie = sorted[1] && sorted[1][1].reps.size === c.reps.size;
+        if (tie || !enough(c.reps) || (k === 'tp' && v === 0 && c.fams.size < 2)) { waitingValues++; continue; }
+        const { a, r } = rankIndex.get(id);
+        r[k] = v;
+        changed = true;
+        const what = k === 'tp' ? 'TP' : 'Pet-Stufe';
+        foreignValues.push(`${label(a)} R${r.rank} (${id}): ${what} ${v} (${c.reps.size} Melder)`);
+        if (sorted.length > 1) {
+          warnings.push(`Fremde Lesungen widersprechen sich bei ${label(a)} R${r.rank} (${id}), ${what}: `
+            + sorted.map(([val, x]) => `${val} (${x.reps.size} Melder)`).join(', ') + ` – genommen ${v}`);
+        }
+      }
+    }
+    if (!changed) break;
+  }
+  if (foreignValues.length) console.log(`Werte aus fremden Lesungen (${foreignValues.length}):\n  ` + foreignValues.join('\n  '));
+  if (foreignReadingsIn.length) {
+    console.log(`Fremde Lesungen: ${foreignReadingsIn.length}, davon nicht verwertbar ${rejected}; `
+      + `${waitingValues} Werte warten auf weitere Melder (ab ${FOREIGN_SURE})`);
+  }
+}
+
 // ---- Fähigkeiten ----
 const spellRank = new Map(); // Zauber-ID → { a, rank }
 for (const a of abilitiesIn) {
