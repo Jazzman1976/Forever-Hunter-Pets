@@ -390,6 +390,7 @@ const survey = fs.existsSync(SURVEY_OUT)
   : { raenge: {}, listen: {}, familien: {}, zauberbuch: {} };
 let surveyFiles = 0;
 let listRowsAdded = 0, listRowsKept = 0; // Zeilen der Wildtierausbildung: ergänzt bzw. abweichend (alte behalten)
+const pricesKept = new Set(); // Ränge, deren niedrigerer Goldpreis den vorhandenen nicht überschrieben hat (#209)
 for (const f of files) {
   let s;
   try {
@@ -408,7 +409,11 @@ for (const f of files) {
     const fields = [['rang', 'rank'], ['icon', 'icon'], ['petStufe', 'petLevel']];
     if (!NO_TRAINER) fields.push(['jaegerStufe', 'hunterLevel'], ['preis', 'gold']);
     for (const [to, from] of fields) {
-      if (e[from] != null) r[to] = e[from];
+      if (e[from] == null) continue;
+      // Goldpreis (#209): Der Tierausbilder zeigt den Preis nach Ruf-Rabatt, ein Rabatt senkt ihn nur. Der höchste
+      // gesehene Preis ist deshalb der Grundpreis; ein niedrigerer überschreibt ihn nicht.
+      if (to === 'preis' && r.preis != null && e[from] < r.preis) { pricesKept.add(id); continue; }
+      r[to] = e[from];
     }
     if (e.bw) r.wildtierausbildung = true;
     if (e.npc && !NO_TRAINER) r.tierausbilder = true;
@@ -453,6 +458,7 @@ console.log(`Erhebung aus ${surveyFiles} Datei(en): ${Object.keys(survey.raenge)
   + '→ tools/eigene/erhebung.json');
 console.log(`Listen der Wildtierausbildung: ${listRowsAdded} Zeilen ergänzt, `
   + `${listRowsKept} abweichende Zeilen ignoriert (vorhandene gehen vor)`);
+console.log(`Goldpreise des Tierausbilders: bei ${pricesKept.size} Rängen niedrigere ignoriert (Ruf-Rabatt; der höchste gesehene gilt)`);
 
 // ---- Fremde Ränge (Core/ForeignRanks.lua, #103) → tools/eigene/fremde-raenge.json ----
 // { Zauber-ID: { name: { Sprache: Name }, rang, quelle, datum } }: Name und Rang, die der eigene Client zu einem
