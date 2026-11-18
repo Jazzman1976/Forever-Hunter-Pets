@@ -207,7 +207,7 @@ When you tame a beast, the addon notes what it actually brought along: its abili
 
 ### Beast Training and the pet trainer
 
-Whenever you open *Beast Training* or visit the pet trainer, the addon reads the abilities and ranks shown there: spell, rank, pet level, cost. A new ability counts at once – you don't have to wait for an update. Calling a pet also reads its spellbook and its family icon.
+Whenever you open *Beast Training* or visit the pet trainer, the addon reads the abilities and ranks shown there: spell, rank, pet level, cost. A new ability counts at once – you don't have to wait for an update. *Beast Training* sometimes shows a wrong list the first time you open it (abilities your pet cannot learn, costs of 0); it is right once you open it again. So the addon only counts *Beast Training* when two openings in a row show the same list – if something seems missing, just open the window once more. Calling a pet also reads its spellbook and its family icon.
 
 ## Your learning progress
 

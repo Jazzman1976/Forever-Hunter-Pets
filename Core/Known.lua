@@ -147,8 +147,10 @@ end
 --   - jedes Wirken von 5149 stellt danach auf Wildtierausbildung;
 --   - eine Liste mit einem Rang, den der Tierausbilder nie lehrt (Beißen, Klaue …), ist die Wildtierausbildung;
 --   - TRAINER_CLOSED setzt nichts zurück, erst das nächste TRAINER_SHOW entscheidet neu.
--- Gelesen wird frühestens READ_AFTER nach dem Öffnen (readTrainerAll nach 0,4 s, TRAINER_UPDATE ab READ_AFTER).
-local BEAST_TRAINING, CAST_WINDOW, READ_AFTER = 5149, 3, 0.4
+-- Gelesen wird frühestens READ_AFTER nach dem Öffnen (readTrainerAll nach READ_AFTER, TRAINER_UPDATE ab READ_AFTER).
+-- 1,0 s statt 0,4 s (#111): In den ersten Augenblicken nach dem Öffnen verschiebt und ändert sich das Fenster noch
+-- (Beobachtung vom 18.11.2026). Die Auswahl des Knopfs kommt erst nach dem Lesen (SELECT_AFTER).
+local BEAST_TRAINING, CAST_WINDOW, READ_AFTER, SELECT_AFTER = 5149, 3, 1.0, 1.6
 local castAt          -- GetTime() des letzten Wirkens von 5149
 local shownAt         -- GetTime() des letzten TRAINER_SHOW
 local openedAs        -- "npc" oder "beast", entschieden bei TRAINER_SHOW, nachgeführt durch Wirken und Liste
@@ -342,9 +344,11 @@ ns.On("TRAINER_SHOW", function()
   openedAs = nil
   pcall(decide)
   list.sig = nil   -- ein anderer Trainer, neu prüfen
-  ns.After(0.4, function() ns.SafeCall("trainer", readTrainerAll) end)
+  -- jede Öffnung zählt (#111): Die Erhebung nimmt eine Lesung erst, wenn zwei Öffnungen nacheinander dasselbe zeigen
+  ns.trainerOpening = (ns.trainerOpening or 0) + 1
+  ns.After(READ_AFTER, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
-  ns.After(1.0, function() ns.SafeCall("select", applySelection) end)
+  ns.After(SELECT_AFTER, function() ns.SafeCall("select", applySelection) end)
 end)
 
 ns.On("TRAINER_UPDATE", function()

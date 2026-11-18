@@ -3,10 +3,12 @@
 --   ranks[Zauber-ID]    was über einen Rang feststeht, gesammelt aus allen Listen: Name in Client-Sprache, Rang,
 --                       Icon; aus der Wildtierausbildung (bw) die Pet-Stufe (petLevel), vom Tierausbilder in
 --                       der Stadt (npc) Jägerstufe (hunterLevel) und Preis in Kupfer (gold)
---   lists[Familien-ID]  die zuletzt gelesene vollständige Wildtierausbildung eines Pets dieser Familie:
+--   lists[Familien-ID]  die zuletzt bestätigte vollständige Wildtierausbildung eines Pets dieser Familie:
 --                       rows[Zauber-ID] = „Status/angezeigte TP“. Sie ersetzt die vorige, statt sie zu ergänzen:
 --                       Der Client zeigt beim ersten Öffnen mitunter eine falsche Liste (16.10.2026), das
---                       zweite Öffnen berichtigt sie. Die TP sind die angezeigten, also abzüglich des aktuellen
+--                       zweite Öffnen berichtigt sie. Seit #111 gilt eine Liste erst, wenn zwei Öffnungen
+--                       nacheinander dasselbe zeigen (siehe „Bestätigte Lesungen“); erst dann setzt sie auch bw
+--                       und Pet-Stufe in ranks. Die TP sind die angezeigten, also abzüglich des aktuellen
 --                       Rangs (siehe UI/Training.lua); den Preis rechnet der Import aus den Status aus.
 --   spells[Zauber-ID]   ein Zauber aus dem Zauberbuch eines Pets: Name, Rang, passiv, Familien
 --   families[ID]        Familienname in Client-Sprache
@@ -252,6 +254,68 @@ function ns.SurveyPetSpells(tame)
   if ns.MergeSurveyAbilities then ns.MergeSurveyAbilities() end
 end
 
+-- ---- Bestätigte Lesungen der Wildtierausbildung (#111) ----
+-- Das Fenster zeigt beim ersten Öffnen mitunter eine falsche Liste: mehr Fähigkeiten, als das Pet lernen kann, auch
+-- fremder Familien, teils mit 0 TP. Sie bleibt falsch, solange das Fenster offen ist (TRAINER_UPDATE liest dieselbe);
+-- erst ein erneutes Öffnen berichtigt sie. Deshalb gilt eine Lesung erst, wenn zwei aufeinanderfolgende Öffnungen
+-- derselben Familie genau dieselbe Liste zeigen (Zeilen, Status, TP, Pet-Stufe). Je Familie, nur für die Sitzung:
+--   prev  die letzte Lesung einer früheren Öffnung, cur  die jüngste der laufenden (ns.trainerOpening, Core/Known.lua)
+-- Erst eine bestätigte Lesung kommt nach survey.lists und setzt bw und Pet-Stufe in survey.ranks; danach geht sie an
+-- das Teilen (ns.ReadingConfirmed). Eine Öffnung einer anderen Familie dazwischen stört nicht.
+local openings = {}
+
+local function readingSig(rows)
+  local ids = {}
+  for id in pairs(rows) do ids[#ids + 1] = id end
+  table.sort(ids)
+  local parts = {}
+  for _, id in ipairs(ids) do
+    local r = rows[id]
+    parts[#parts + 1] = ("%d:%s:%s:%s"):format(id, tostring(r.status), tostring(r.cost), tostring(r.level))
+  end
+  return table.concat(parts, ",")
+end
+
+local function confirmReading(s, fam, reading)
+  local rows = {}
+  for id, r in pairs(reading.rows) do
+    local e = s.ranks[id] or {}
+    e.name, e.rank, e.icon = r.name, r.rank, r.icon or e.icon
+    e.bw, e.petLevel = true, r.level or e.petLevel
+    e.t = reading.at
+    s.ranks[id] = e
+    rows[id] = tostring(r.status) .. "/" .. tostring(r.cost)
+  end
+  s.lists[fam] = { at = reading.at, rows = rows }
+  if ns.ReadingConfirmed then ns.SafeCall("share", ns.ReadingConfirmed, fam, reading) end
+end
+
+local function noteReading(s, fam, reading)
+  local o = openings[fam]
+  if not o then
+    o = {}
+    openings[fam] = o
+  end
+  local k = ns.trainerOpening or 0
+  if o.opening ~= k then
+    -- neue Öffnung: die letzte Lesung der vorigen dieser Familie wird zum Vergleich (gab es keine, bleibt der alte)
+    if o.cur then o.prev = o.cur end
+    o.cur, o.opening = nil, k
+  end
+  reading.sig = readingSig(reading.rows)
+  o.cur = reading
+  if o.prev and o.prev.sig == reading.sig and o.done ~= k then
+    o.done = k
+    confirmReading(s, fam, reading)
+  end
+end
+
+-- Wartet die Familie noch auf ein zweites gleiches Öffnen? (für /fhp erhebung)
+local function readingPending(fam)
+  local o = openings[fam]
+  return o and o.cur and o.done ~= o.opening and true or false
+end
+
 -- ---- Trainer-Liste: Wildtierausbildung oder Tierausbilder in der Stadt ----
 -- Aufgerufen aus Core/Known.lua, wenn die Liste vollständig zu sehen ist (auch „Bereits bekannt“).
 function ns.SurveyTrainer(atNpc)
@@ -291,32 +355,26 @@ function ns.SurveyTrainer(atNpc)
       ids[i] = id
       local rank = rankOf(ns.clean(rankText)) or (id and subtextRank(id))
       local key = id or (rank and (name .. "|" .. rank))
-      if key then
+      local ok3, cost = pcall(GetTrainerServiceCost, i)
+      cost = ok3 and tonumber(ns.clean(cost)) or nil
+      if key and atNpc then
         local e = s.ranks[key] or {}
         e.name, e.rank, e.icon = name, rank or e.rank, icon or e.icon
-        local ok3, cost = pcall(GetTrainerServiceCost, i)
-        cost = ok3 and tonumber(ns.clean(cost)) or nil
-        if atNpc then
-          -- Stufe des Jägers; 0 heißt „kennt er schon“, dann nennt die Liste keine
-          e.npc, e.gold = true, cost or e.gold
-          if level and level > 0 then e.hunterLevel = level end
-        else
-          e.bw, e.petLevel = true, level or e.petLevel
-          if id and rankOf(ns.clean(rankText)) then
-            rows[id] = tostring(status) .. "/" .. tostring(cost)
-          else
-            complete = false
-          end
-        end
+        -- Stufe des Jägers; 0 heißt „kennt er schon“, dann nennt die Liste keine
+        e.npc, e.gold = true, cost or e.gold
+        if level and level > 0 then e.hunterLevel = level end
         e.t = now()
         s.ranks[key] = e
+      elseif id and rankOf(ns.clean(rankText)) then
+        -- Wildtierausbildung: erst in die Lesung dieser Öffnung, nach survey.ranks erst bestätigt (#111)
+        rows[id] = { name = name, rank = rank, icon = icon, status = status, cost = cost, level = level }
       else
         complete = false
       end
     end
   end
   if not atNpc then
-    if fam and complete then s.lists[fam] = { at = now(), rows = rows } end
+    if fam and complete then noteReading(s, fam, { at = now(), fam = fam, rows = rows }) end
     ns.SurveyPetSpells()
   elseif ns.MergeSurveyAbilities then
     ns.MergeSurveyAbilities()   -- ein neuer Rang gilt sofort (Core/Index.lua)
@@ -357,6 +415,7 @@ function ns.SurveyStatus()
     local list, count = s.lists[id], 0
     for _ in pairs(list and list.rows or {}) do count = count + 1 end
     famNames[#famNames + 1] = tostring(name) .. (list and (" " .. count) or " (keine Liste)")
+      .. (readingPending(id) and " (wartet auf zweites gleiches Öffnen)" or "")
   end
   table.sort(famNames)
   for _ in pairs(s.spells) do spells = spells + 1 end
