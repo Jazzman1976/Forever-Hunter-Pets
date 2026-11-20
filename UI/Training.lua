@@ -188,7 +188,7 @@ function ns.BuildTraining(parent)
   local BEAST_TRAINING = 5149
   local holder, openBtn
   local function syncButton()
-    if InCombatLockdown and InCombatLockdown() then return end
+    if ns.InCombat() then return end
     local show = parent:IsVisible() and v.selected ~= nil and v.buttonY ~= nil and ns.PetFamily() ~= nil
     if not holder then
       if not show then return end
@@ -237,7 +237,7 @@ function ns.BuildTraining(parent)
   ns.OnFrameMoved = syncButton
   ns.OnFrameMoveStart = function()
     -- beim Verschieben des Fensters wandert der Knopf nicht mit; solange ausblenden
-    if openBtn and not (InCombatLockdown and InCombatLockdown()) then openBtn:Hide() end
+    if openBtn and not ns.InCombat() then openBtn:Hide() end
   end
   ns.On("PLAYER_REGEN_ENABLED", syncButton)   -- nach dem Kampf wieder an den aktuellen Stand anpassen
 

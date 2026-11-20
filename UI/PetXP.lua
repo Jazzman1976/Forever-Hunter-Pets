@@ -213,7 +213,7 @@ local function update() ns.SafeCall("petxp", ns.UpdatePetXP) end
 
 -- einmal außerhalb des Kampfs erzeugen; nach einem /reload im Kampf, sobald er vorbei ist
 ns.On("PLAYER_LOGIN", function()
-  if InCombatLockdown and InCombatLockdown() then return end
+  if ns.InCombat() then return end
   ns.SafeCall("petxp", build)
 end)
 ns.On("PLAYER_REGEN_ENABLED", function() if not bar then ns.SafeCall("petxp", build) end end)

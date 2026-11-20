@@ -7,22 +7,6 @@ local PAD, TOP = 12, 44
 ns.CONTENT_W, ns.CONTENT_H = W - 2 * PAD, H - TOP - PAD
 local main
 
-local function border(f)
-  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
-    local t = f:CreateTexture(nil, "BORDER")
-    t:SetColorTexture(0, 0, 0, 1)
-    if side == "TOP" or side == "BOTTOM" then
-      t:SetHeight(1)
-      t:SetPoint(side .. "LEFT")
-      t:SetPoint(side .. "RIGHT")
-    else
-      t:SetWidth(1)
-      t:SetPoint("TOP" .. side)
-      t:SetPoint("BOTTOM" .. side)
-    end
-  end
-end
-
 local function create()
   local f = CreateFrame("Frame", "ForeverHunterPetsFrame", UIParent)
   f:SetSize(W, H)
@@ -50,7 +34,7 @@ local function create()
   f.bg = f:CreateTexture(nil, "BACKGROUND")
   f.bg:SetAllPoints()
   f.bg:SetColorTexture(0.06, 0.07, 0.09, 1)
-  border(f)
+  ns.W.Border(f)
 
   f.icon = f:CreateTexture(nil, "ARTWORK")
   f.icon:SetSize(24, 24)

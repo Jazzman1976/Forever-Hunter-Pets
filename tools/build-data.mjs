@@ -138,11 +138,14 @@ function abilitiesFromSurvey() {
     groups.get(name).push({ id: +id, name: z.name, rang: z.rang, datum: z.datum });
     fromBook.set(+id, z.familien || []);
   }
-  // TP: aus jeder Liste Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
+  // TP: aus jeder Lesung Gleichungen „Preis(id) = angezeigt (+ Preis(aktueller Rang))“, dann auflösen
   const rankOfId = new Map([...groups.values()].flat().map((r) => [r.id, r]));
   const inBook = (id, fam) => (survey.zauberbuch?.[id]?.familien || []).map(Number).includes(Number(fam));
   const equations = [];
-  for (const [fam, l] of Object.entries(survey.listen)) {
+  // je Lesung (#210): Der aktuelle Rang und die angezeigten TP gehören zu derselben Lesung; eine Gleichung verbindet
+  // nie Zeilen aus zwei Lesungen
+  const readings = Object.entries(survey.listen).flatMap(([fam, ls]) => ls.map((l) => [fam, l]));
+  for (const [fam, l] of readings) {
     const current = new Map(); // Name → aktueller Rang (gelernt oder mitgebracht) mit höchstem Rang
     const rows = Object.entries(l.zeilen).map(([id, v]) => {
       const [status, shown] = v.split('/');
@@ -200,7 +203,7 @@ function abilitiesFromSurvey() {
     const trainer = ranks.some((r) => r.tierausbilder);
     const families = [...new Set([
       ...Object.entries(survey.listen)
-        .filter(([, l]) => Object.keys(l.zeilen).some((id) => ids.has(+id)))
+        .filter(([, ls]) => ls.some((l) => Object.keys(l.zeilen).some((id) => ids.has(+id))))
         .map(([fam]) => +fam),
       ...[...ids].flatMap((id) => fromBook.get(id) || []),
     ])].sort((a, b) => a - b);
@@ -318,7 +321,9 @@ const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? rea
         n = { de, en, kind: 'family', source: 'tame', families: [], ranks: [],
           beleg: `Zähmungen anderer Spieler, Name und Rang vom eigenen Client, seit ${f.datum} (tools/eigene/fremde-raenge.json)` };
         fresh.set(key, n);
-        abilitiesIn.push(n);
+        // vor die Tempo-Fähigkeiten: die stehen im Addon am Ende, nach dem Tempo sortiert (#189)
+        const firstTrait = abilitiesIn.findIndex((x) => x.kind === 'trait');
+        abilitiesIn.splice(firstTrait < 0 ? abilitiesIn.length : firstTrait, 0, n);
       }
       if (n.ranks.some((r) => r.rank === f.rang)) continue;
       n.ranks.push(rank);
@@ -328,6 +333,92 @@ const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? rea
     added++;
   }
   if (added || waiting) console.log(`Fremde Ränge: ${added} übernommen, ${waiting} warten auf weitere Melder (ab ${FOREIGN_SURE})`);
+}
+
+// ---- Werte aus fremden Lesungen der Wildtierausbildung (#111) ----
+// erhebung-fremd.json (tools/import-observations.mjs aus Core/Readings.lua): je Eintrag ein Stück einer bestätigten
+// Lesung eines anderen Spielers, alle Ränge einer Fähigkeit mit „Status/angezeigte TP“ und Pet-Stufe. Daraus ergibt
+// sich je Rang wie bei den eigenen Lesungen (#210) der volle Preis: unter dem aktuellen Rang (höchster gelernter) der
+// angezeigte, darüber angezeigt + Preis des aktuellen. Dieselbe Prüfung wie im Addon (ns.CheckReading): Ränge einer
+// Fähigkeit, die die Daten der Familie zuordnen, kein Widerspruch zu bekannten Werten – sonst zählt das Stück nicht.
+// Ein Wert gilt ab FOREIGN_SURE Meldern über zwei Absender (enough), es gewinnt der Wert mit den meisten Meldern
+// (bei Gleichstand keiner); 0 TP erst, wenn Lesungen aus zwei Familien ihn zeigen (wie bei den eigenen, #4). Nur
+// Lücken: Was Stammdaten und eigene Erhebung kennen, bleibt (#124). Übernommene Werte rechnen in der nächsten Runde
+// mit (ein höherer Rang über einem eben übernommenen).
+const foreignReadingsIn = fs.existsSync(path.join(OWN, 'erhebung-fremd.json')) ? read('erhebung-fremd.json') : [];
+const foreignValues = []; // für die Ausgabe: übernommene Werte
+{
+  for (const e of foreignReadingsIn) {
+    need(e.melder && e.familie && e.zeilen && e.datum, `Fremde Lesung ohne Melder, Familie, Zeilen oder Datum (erhebung-fremd.json)`);
+  }
+  const rankIndex = new Map();
+  for (const a of abilitiesIn) {
+    if (a.kind === 'trait') continue;
+    for (const r of a.ranks || []) rankIndex.set(r.id, { a, r });
+  }
+  const fits = (a, fam) => a.kind !== 'family' || (a.families || []).includes(fam);
+  let rejected = 0, waitingValues = 0;
+  for (let round = 0; round < 10; round++) {
+    const cand = { tp: new Map(), level: new Map() }; // Zauber-ID → Map(Wert → { reps, fams })
+    rejected = 0;
+    for (const e of foreignReadingsIn) {
+      if (ownReps.has(e.melder)) continue;
+      const rows = Object.entries(e.zeilen || {}).map(([id, v]) => {
+        const [status, shown] = String(v).split('/');
+        return { status, shown: Number(shown), lvl: e.stufen?.[id] ?? null, hit: rankIndex.get(+id) };
+      });
+      if (!rows.length || rows.some((x) => !x.hit || !Number.isFinite(x.shown))) { rejected++; continue; }
+      const a = rows[0].hit.a;
+      if (rows.some((x) => x.hit.a !== a) || !fits(a, e.familie)) { rejected++; continue; }
+      let cur = null;
+      for (const x of rows) if (x.status === 'used' && (!cur || x.hit.r.rank > cur.rank)) cur = x.hit.r;
+      const values = [];
+      let bad = false;
+      for (const x of rows) {
+        const r = x.hit.r;
+        if (x.lvl != null) {
+          if (r.level != null) { if (r.level !== x.lvl) bad = true; } else values.push(['level', r.id, x.lvl]);
+        }
+        let full = null;
+        if (!cur || r.rank < cur.rank) full = x.shown;
+        else if (r.rank > cur.rank && cur.tp != null) full = x.shown + cur.tp;
+        if (full == null) continue;
+        if (r.tp != null) { if (r.tp !== full) bad = true; } else values.push(['tp', r.id, full]);
+      }
+      if (bad) { rejected++; continue; }
+      for (const [k, id, v] of values) {
+        const m = cand[k].get(id) ?? cand[k].set(id, new Map()).get(id);
+        const c = m.get(v) ?? m.set(v, { reps: new Set(), fams: new Set() }).get(v);
+        c.reps.add(e.melder);
+        c.fams.add(e.familie);
+      }
+    }
+    let changed = false;
+    waitingValues = 0;
+    for (const k of ['tp', 'level']) {
+      for (const [id, m] of cand[k]) {
+        const sorted = [...m].sort((x, y) => y[1].reps.size - x[1].reps.size);
+        const [v, c] = sorted[0];
+        const tie = sorted[1] && sorted[1][1].reps.size === c.reps.size;
+        if (tie || !enough(c.reps) || (k === 'tp' && v === 0 && c.fams.size < 2)) { waitingValues++; continue; }
+        const { a, r } = rankIndex.get(id);
+        r[k] = v;
+        changed = true;
+        const what = k === 'tp' ? 'TP' : 'Pet-Stufe';
+        foreignValues.push(`${label(a)} R${r.rank} (${id}): ${what} ${v} (${c.reps.size} Melder)`);
+        if (sorted.length > 1) {
+          warnings.push(`Fremde Lesungen widersprechen sich bei ${label(a)} R${r.rank} (${id}), ${what}: `
+            + sorted.map(([val, x]) => `${val} (${x.reps.size} Melder)`).join(', ') + ` – genommen ${v}`);
+        }
+      }
+    }
+    if (!changed) break;
+  }
+  if (foreignValues.length) console.log(`Werte aus fremden Lesungen (${foreignValues.length}):\n  ` + foreignValues.join('\n  '));
+  if (foreignReadingsIn.length) {
+    console.log(`Fremde Lesungen: ${foreignReadingsIn.length}, davon nicht verwertbar ${rejected}; `
+      + `${waitingValues} Werte warten auf weitere Melder (ab ${FOREIGN_SURE})`);
+  }
 }
 
 // ---- Fähigkeiten ----
@@ -586,6 +677,23 @@ if (blockedOut) console.log(`${blockedOut} gesperrte Einträge (Sichtungen, Fund
 
 const data = { generatedAt: new Date().toISOString(), families, beasts, coords, abilities, nichtZaehmbar };
 
+// Feste Regel (#213): Ein höherer Rang derselben Fähigkeit kostet nicht weniger TP und kommt nicht bei einer niedrigeren
+// Pet-Stufe. Ein festes Muster über die Fähigkeiten hinweg gibt es nach den eigenen Daten nicht (gleichmäßige Schritte
+// etwa nicht: Große Ausdauer 5/10/15/25), deshalb nur diese Regel. Ränge ohne Wert zählen nicht mit.
+for (const a of abilities) {
+  const ranks = [...a.ranks].sort((x, y) => x.rank - y.rank);
+  for (const [key, label] of [['tp', 'TP'], ['level', 'Pet-Stufe']]) {
+    let prev = null;
+    for (const r of ranks) {
+      if (r[key] == null) continue;
+      if (prev && r[key] < prev[key]) {
+        warnings.push(`${a.de || a.en} R${r.rank}: ${label} ${r[key]} liegt unter R${prev.rank} (${prev[key]})`);
+      }
+      prev = r;
+    }
+  }
+}
+
 // ---- Vergleich mit dem Stand in Git (#37) ----
 // Neue, weggefallene und umgezogene Fähigkeiten (Herkunft tame ↔ trainer) brechen ab, bis man sie geprüft hat und
 // mit --neue-faehigkeiten bestätigt: So wären die Jägerzauber aus #34 nicht unbemerkt in die Stammdaten gekommen.
@@ -626,6 +734,26 @@ if (old) {
     change('Fundorte', countPoints(old), countPoints(data)),
   ].join(', '));
   if (newRanks.length) console.log(`Neue Ränge (${newRanks.length}):\n  ` + newRanks.join('\n  '));
+  // Geänderte Werte vorhandener Ränge (#213): TP und Pet-Stufe gegenüber HEAD, auch ein weggefallener Wert. Ersetzt den
+  // Vergleich von Hand nach jedem Import (1.3.0: Beißen R2 4 → 5 TP, #210). Ein Wert, der neu dazukommt, wird nur
+  // gezählt. Kein Abbruch: Echte neue Daten sollen durchgehen.
+  const oldRank = new Map(old.abilities.flatMap((a) => a.ranks.map((r) => [r.id, r])));
+  const valueChanges = [];
+  let valuesAdded = 0;
+  for (const a of abilities) {
+    for (const r of a.ranks) {
+      const o = oldRank.get(r.id);
+      if (!o) continue;
+      for (const [key, label] of [['tp', 'TP'], ['level', 'Pet-Stufe']]) {
+        const before = o[key] ?? null, after = r[key] ?? null;
+        if (before === after) continue;
+        if (before === null) { valuesAdded++; continue; }
+        valueChanges.push(`${nameOfAbility(a)} R${r.rank} (${r.id}): ${label} ${before} → ${after ?? '–'}`);
+      }
+    }
+  }
+  if (valueChanges.length) console.log(`Geänderte Werte vorhandener Ränge (${valueChanges.length}):\n  ` + valueChanges.join('\n  '));
+  if (valuesAdded) console.log(`Neu belegte Werte vorhandener Ränge (TP oder Pet-Stufe): ${valuesAdded}`);
   const stop = [
     ...added.map((a) => `neu: ${describe(a)}`),
     ...gone.map((a) => `weggefallen: ${describe(a)}`),

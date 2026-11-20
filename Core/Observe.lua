@@ -275,6 +275,8 @@ end
 -- ---- Zähmen mitverfolgen ----
 local pending   -- { npc, level, started }
 
+-- NPC-ID aus einer GUID wie „Creature-0-5250-0-12-525-0000ABCDEF“; nil für Spieler, Pets und Geheimes.
+-- Auch Sichtung und Tooltip nehmen sie (#67).
 local function npcFromGuid(guid)
   guid = ns.clean(guid)
   if type(guid) ~= "string" then return nil end

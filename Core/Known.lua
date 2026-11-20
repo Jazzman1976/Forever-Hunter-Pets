@@ -97,7 +97,8 @@ end
 -- ---- Quelle 1: das Fenster „Wildtierausbildung“ ----
 -- Forever zeigt es als Trainer-Fenster ohne NPC. Jede Zeile nennt Name, Status, Icon, Pet-Stufe und
 -- Rang („Beißen | used | 132278 | 16 | Rang 3“), aber keine Zauber-ID – zugeordnet wird über den Namen.
--- Rang zu einer Zauber-ID (nur, was man lernen kann)
+-- Rang zu einer Zauber-ID (nur, was man lernen kann): { a = Fähigkeit, r = Rang } oder nil. Auch für die
+-- geteilten Lesungen (ns.RankById, Core/Readings.lua, #67)
 local byId, byName
 ns.OnAbilitiesChanged(function() byId, byName = nil, nil end)
 local function rankById(id)
@@ -111,6 +112,7 @@ local function rankById(id)
   end
   return byId[id]
 end
+ns.RankById = rankById
 
 local function abilityByName(name)
   if not byName then
@@ -147,8 +149,11 @@ end
 --   - jedes Wirken von 5149 stellt danach auf Wildtierausbildung;
 --   - eine Liste mit einem Rang, den der Tierausbilder nie lehrt (Beißen, Klaue …), ist die Wildtierausbildung;
 --   - TRAINER_CLOSED setzt nichts zurück, erst das nächste TRAINER_SHOW entscheidet neu.
--- Gelesen wird frühestens READ_AFTER nach dem Öffnen (readTrainerAll nach 0,4 s, TRAINER_UPDATE ab READ_AFTER).
-local BEAST_TRAINING, CAST_WINDOW, READ_AFTER = 5149, 3, 0.4
+-- Gelesen wird frühestens READ_AFTER nach dem Öffnen (readTrainerAll nach READ_AFTER, TRAINER_UPDATE ab READ_AFTER).
+-- 1,5 s statt 0,4 s (#111): In den ersten Augenblicken nach dem Öffnen verschiebt und ändert sich das Fenster noch
+-- (Beobachtung vom 18.11.2026, erst 1,0 s, nach dem Test 1,5 s). Die Auswahl des Knopfs kommt erst nach dem Lesen und
+-- dem Zurückstellen der Filter (SELECT_AFTER).
+local BEAST_TRAINING, CAST_WINDOW, READ_AFTER, SELECT_AFTER = 5149, 3, 1.5, 2.1
 local castAt          -- GetTime() des letzten Wirkens von 5149
 local shownAt         -- GetTime() des letzten TRAINER_SHOW
 local openedAs        -- "npc" oder "beast", entschieden bei TRAINER_SHOW, nachgeführt durch Wirken und Liste
@@ -233,6 +238,22 @@ end
 -- Wildtierausbildung: jede Zeile ist ein Rang, den der Jäger kennt, gleich mit welchem Status.
 -- Die Liste des Tierausbilders in der Stadt ist dagegen sein Angebot und bleibt außen vor; was man
 -- dort lernt, meldet die Systemnachricht (siehe unten).
+-- Die drei Filter des Fensters (#111): Was ausgeblendet ist, liefert GetTrainerServiceInfo nicht. Die Erhebung zählt
+-- eine Lesung deshalb nur, wenn alle drei eingeblendet sind; sonst fehlen Zeilen, und ohne „Bereits bekannt“ fehlt der
+-- aktuelle Rang, Aufpreise sähen wie volle Preise aus (Bär, 08.11.2026: Große Ausdauer R2 mit 5 statt 10).
+local FILTERS = { "available", "unavailable", "used" }
+local function filterShown(kind)
+  if not GetTrainerServiceTypeFilter then return true end
+  local ok, v = pcall(GetTrainerServiceTypeFilter, kind)
+  return not ok or ns.clean(v) ~= false
+end
+local function allFiltersShown()
+  for _, kind in ipairs(FILTERS) do
+    if not filterShown(kind) then return false end
+  end
+  return true
+end
+
 local function readTrainer()
   if not trainerOpen() then return end
   -- Erhebung (Core/Survey.lua) liest beide Listen, der Lernstand nur die Wildtierausbildung
@@ -243,7 +264,8 @@ local function readTrainer()
   local l = scanList()
   if not (l.trainer or l.beast) then return end
   if npc and not isPetTrainer() then return end   -- Jägerlehrer: nichts erheben
-  if ns.SurveyTrainer then ns.SafeCall("survey", ns.SurveyTrainer, npc) end
+  -- full: alle Filter eingeblendet, die Liste ist vollständig; nur dann zählt die Lesung für die Erhebung (#111)
+  if ns.SurveyTrainer then ns.SafeCall("survey", ns.SurveyTrainer, npc, allFiltersShown()) end
   if npc then return end
   local ids = ns.trainerIds
   local ok, n = pcall(GetNumTrainerServices)
@@ -281,40 +303,42 @@ function ns.TrainerIndex(a, r)
   return nil
 end
 
--- Der Filter „Bereits bekannt“ ist im Spiel standardmäßig aus, dann fehlen diese Zeilen in der Liste.
--- Für einen Augenblick einschalten, lesen, wieder zurückstellen.
-local busy = false
+-- Filter des Fensters (#111): Spieler blenden „Verfügbar“, „Nicht verfügbar“ und „Bereits bekannt“ in jeder
+-- Kombination aus; dann fehlen diese Zeilen in der Liste. Für einen Augenblick alle einblenden, lesen, und jeden
+-- Filter genau so zurückstellen, wie er war. Ein TRAINER_SHOW, das dabei oder kurz danach kommt, ist keine neue
+-- Öffnung (TOGGLE_QUIET). Das Einblenden lässt die Zeilen kurz springen; deshalb nur, solange die Lesung der Familie
+-- in dieser Sitzung noch nicht bestätigt ist (meist zwei Öffnungen), danach nie mehr (Variante C).
+local busy, toggledAt = false, nil
+local TOGGLE_WAIT, TOGGLE_QUIET = 0.3, 1.0
 local function readTrainerAll()
   if busy or not trainerOpen() then return end
-  if InCombatLockdown and InCombatLockdown() then return end
+  if ns.InCombat() then return end
   -- Tierausbilder: nur für die Erhebung, so gelesen, wie seine Filter stehen
   if atNpc() then
     readTrainer()
     return
   end
-  local usedShown = true
-  if GetTrainerServiceTypeFilter then
-    local ok, v = pcall(GetTrainerServiceTypeFilter, "used")
-    usedShown = not ok or ns.clean(v) ~= false
+  local hidden = {}
+  for _, kind in ipairs(FILTERS) do
+    if not filterShown(kind) then hidden[#hidden + 1] = kind end
   end
-  if usedShown or not SetTrainerServiceTypeFilter then
+  -- Variante C: Ist die Lesung dieser Familie in dieser Sitzung schon bestätigt, nicht mehr umschalten; gelesen wird
+  -- die Liste, wie sie steht (für den Lernstand), die Erhebung zählt sie dann nicht
+  local fam = ns.PetFamily and ns.PetFamily()
+  local done = ns.SurveyReadingDone and ns.SurveyReadingDone(fam)
+  if #hidden == 0 or done or not SetTrainerServiceTypeFilter then
     readTrainer()
     return
   end
   busy = true
-  pcall(SetTrainerServiceTypeFilter, "used", true)
-  ns.After(0.3, function()
+  for _, kind in ipairs(hidden) do pcall(SetTrainerServiceTypeFilter, kind, true) end
+  ns.After(TOGGLE_WAIT, function()
     ns.SafeCall("trainer", readTrainer)
-    pcall(SetTrainerServiceTypeFilter, "used", false)
-    busy = false
+    for _, kind in ipairs(hidden) do pcall(SetTrainerServiceTypeFilter, kind, false) end
+    busy, toggledAt = false, GetTime and GetTime() or nil
   end)
 end
 
-function ns.After(delay, fn)
-  if C_Timer and C_Timer.After then C_Timer.After(delay, fn) else fn() end
-end
-
--- Direkt bei TRAINER_SHOW ist die Liste noch unvollständig, deshalb mit etwas Abstand lesen
 -- ---- Gewählten Rang nach dem Öffnen der Wildtierausbildung anmelden ----
 -- Lehren darf nur das Blizzard-Fenster selbst: BuyTrainerService ist für Addons gesperrt
 -- (ADDON_ACTION_FORBIDDEN, im Spiel geprüft am 12.10.2026). Der Knopf „Wildtierausbildung öffnen“
@@ -339,12 +363,17 @@ local function applySelection()
 end
 
 ns.On("TRAINER_SHOW", function()
+  -- beim eigenen Umschalten der Filter keine neue Öffnung (#111)
+  if busy or (toggledAt and GetTime and GetTime() - toggledAt < TOGGLE_QUIET) then return end
   openedAs = nil
   pcall(decide)
   list.sig = nil   -- ein anderer Trainer, neu prüfen
-  ns.After(0.4, function() ns.SafeCall("trainer", readTrainerAll) end)
+  -- jede Öffnung zählt (#111): Die Erhebung nimmt eine Lesung erst, wenn zwei Öffnungen nacheinander dasselbe zeigen
+  ns.trainerOpening = (ns.trainerOpening or 0) + 1
+  -- mit Abstand lesen: Direkt nach dem Öffnen baut sich das Fenster noch auf
+  ns.After(READ_AFTER, function() ns.SafeCall("trainer", readTrainerAll) end)
   -- erst nach dem Lesen: das schaltet kurz den Filter um und verschiebt dabei die Zeilen
-  ns.After(1.0, function() ns.SafeCall("select", applySelection) end)
+  ns.After(SELECT_AFTER, function() ns.SafeCall("select", applySelection) end)
 end)
 
 ns.On("TRAINER_UPDATE", function()
@@ -379,7 +408,7 @@ local function logLearn(how, text, result)
   if not ns.db then return end
   local log = ns.db.learnLog or {}
   ns.db.learnLog = log
-  local combat = InCombatLockdown and InCombatLockdown() and " Kampf" or ""
+  local combat = ns.InCombat() and " Kampf" or ""
   log[#log + 1] = ("%s %s%s | %s | %s"):format(date and date("%d.%m. %H:%M:%S") or "?", how, combat,
     tostring(text):gsub("|", "/"), result)
   while #log > 20 do table.remove(log, 1) end

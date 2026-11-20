@@ -91,7 +91,8 @@ end
 ok(count(greeted()) == 100, "höchstens 100 je Sitzung: " .. count(greeted()))
 PRINTED = {}
 SlashCmdList.FOREVERHUNTERPETS("suchen")
-ok(#searched == 2 and printed("schon 100 Jäger"), "/fhp suchen nach 100 Grüßen: keine Suche mehr")
+-- seit #166 sucht es trotzdem: bekannte Addon-Nutzer werden auch nach 100 Grüßen gegrüßt
+ok(#searched == 3 and printed("schon 100 Jäger") and printed("nur noch bekannte"), "/fhp suchen nach 100 Grüßen: Suche nur noch für Bekannte")
 PRINTED = {}
 NS.ShareStatus()
 ok(printed("gegrüßt per Suche: 100"), "/fhp teilen zählt die Grüße per Suche")
@@ -107,4 +108,4 @@ InCombatLockdown = function() return false end
 NS.db.ui.share = false
 PRINTED = {}
 NS.ShareSearch()
-ok(#searched == 2 and printed("Teilen ist ausgeschaltet"), "abgeschaltet keine Suche")
+ok(#searched == 3 and printed("Teilen ist ausgeschaltet"), "abgeschaltet keine Suche")

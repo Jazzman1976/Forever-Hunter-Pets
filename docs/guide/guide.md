@@ -13,7 +13,7 @@ Forever Hunter Pets answers that – and turns the search into a game:
 - **Find everything.** The addon catalogues every ability, every rank, every beast that teaches it and every place it was seen.
 - **Collected in the game.** Nothing comes from websites or other addons. What the addon knows was found by players of the addon – by you, and by others who share what they see.
 - **Gaps are tasks.** What nobody has found yet is shown as such (a red ✖ with *No data*, *spawn point unknown*). Finding it is part of the fun.
-- **Your choice how much you want to see.** In *complete mode* you get everything that is known. In *explorer mode* you only see what you found yourself – and how much there is left to discover.
+- **Your choice how you want to play.** In *explorer mode* the search becomes a hunt of your own: the more you discover, the more you unlock. *Complete mode* is a reference book of what is known so far – without the hunt.
 
 The addon follows the language of your client (English and German).
 
@@ -42,14 +42,14 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** – you go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab.
-- **Complete mode** – you find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself.
+- **Explorer mode** – the hunt is yours: the world is full of beasts and their secrets. The more you discover, the more you unlock – from the first glimpse to what a beast teaches. Your hunter rank grows as you go.
+- **Complete mode** – here the addon merely serves as a reference book: what you could find out yourself in explorer mode, you can look up here. In return you may get spoiled, and there is no collecting game, no progress per zone and no hunter rank.
 
 ![Start view: explorer mode and complete mode side by side, each with a short description and a button, below the notes on the data, your characters and sharing (German client)](../images/start.jpg)
 
 The data is still being collected and grows more complete over time, so don't be surprised if something is still missing.
 
-If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`.
+If you close the window without choosing, you play in explorer mode. Until you choose, the addon shows nothing that could spoil the search; it already collects in the background. Every character chooses on its own; you can change it any time in the settings or with `/fhp mode`, or open the start view again with `/fhp start`.
 
 The window also tells you that **sharing** is on: what you see and tame is shared with other players of the addon, and once enough of them have confirmed it, it becomes part of the addon's data under the MIT license. You can switch sharing off in the settings; then the note is left out.
 
@@ -207,7 +207,7 @@ When you tame a beast, the addon notes what it actually brought along: its abili
 
 ### Beast Training and the pet trainer
 
-Whenever you open *Beast Training* or visit the pet trainer, the addon reads the abilities and ranks shown there: spell, rank, pet level, cost. A new ability counts at once – you don't have to wait for an update. Calling a pet also reads its spellbook and its family icon.
+Whenever you open *Beast Training* or visit the pet trainer, the addon reads the abilities and ranks shown there: spell, rank, pet level, cost. A new ability counts at once – you don't have to wait for an update. To be safe, the addon only counts *Beast Training* when two openings in a row show the same list – if something seems missing, just open the window once more. It reads the window about 1.5 seconds after it opens. If you hide rows with the window's filters, the addon briefly shows all rows to read them and then puts your filters back as they were – you may see the list jump; this happens only until the list of your pet's family has been counted, usually the first two times per session. Calling a pet also reads its spellbook and its family icon.
 
 ## Your learning progress
 
@@ -224,7 +224,7 @@ Every state names whose it is: *you have it* and *you lack it* are about you, th
 
 Addons can't reach the internet, so players share in the game: over your guild and your group, and by whispering back when someone greets. The addon greets when you log in and when you join a group or raid; whoever greets you in a group gets a greeting back, so both sides receive what the other one has. Shared are: beasts you saw (name, level, family, classification, attack speed), what tamed beasts brought along, and spawn points – with the time and a short code instead of your name. No character names are stored. These are addon messages: nobody sees them in the chat. Messages are throttled, so traffic stays low.
 
-Up to version 1.1.0 the addon also used a hidden chat channel (`FHPetsNet`) to reach players outside your guild, but WoW Forever doesn't allow addon messages in such channels. The addon now leaves that channel when you log in. To share with hunters outside your guild and group, type **`/fhp search`**: the addon looks for hunters who are online (the *Who* window opens) and sends each of them a greeting once per session – an invisible addon message. Those who have the addon share with you, and you with them. A `/who` of your own works the same way. The addon never searches by itself. Once per session the addon checks whether it may yell to players nearby (an invisible addon message, as in the beta) and uses that way as soon as WoW Forever allows it again. If it had taken the first place in your channel list, *General* stays where it moved to: drag it back to the top in the *Channels* settings of the chat window.
+Up to version 1.1.0 the addon also used a hidden chat channel (`FHPetsNet`) to reach players outside your guild, but WoW Forever doesn't allow addon messages in such channels. The addon now leaves that channel when you log in. To share with hunters outside your guild and group, type **`/fhp search`**: the addon looks for hunters who are online (the *Who* window opens) and sends each of them a greeting once per session – an invisible addon message. Those who have the addon share with you, and you with them. A `/who` of your own works the same way. Hunters who already sent you data (directly or passed on by others) are recognised and greeted first in every list, and they don't count towards the limit of 20 per search and 100 per session – so you won't miss them once you have met them. The addon never searches by itself. Once per session the addon checks whether it may yell to players nearby (an invisible addon message, as in the beta) and uses that way as soon as WoW Forever allows it again. If it had taken the first place in your channel list, *General* stays where it moved to: drag it back to the top in the *Channels* settings of the chat window.
 
 What other players share shows up in your addon right away. It becomes part of the shipped data under the MIT license only once enough different characters have confirmed it (see [Trustworthy data](#trustworthy-data)); by playing with sharing on, you agree to this. The short code is derived from the character name: it keeps names out of the data, but it is a pseudonym, not full anonymity. Shared data that reaches the project is stored in its public repository even before it is confirmed – with the short code replaced by a new, secret one and the time cut to the day.
 
@@ -279,13 +279,13 @@ Game options → **AddOns → Forever Hunter Pets**, or the gear in the window.
 | --- | --- |
 | `/fhp` | open or close the window |
 | `/fhp area` | progress of the zone you are in, in the chat |
-| `/fhp survey` | what was collected from Beast Training, the pet trainer and pets |
 | `/fhp share` | sharing status: what was sent and received this session (tamings, sightings, spawn points, greetings), also per route (guild, group, raid, whisper), whether yelling works this session, what was stored or dropped and why, and the last message from another player |
-| `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session) |
+| `/fhp search` | look for hunters who are online and greet those not greeted yet this session, so that players of the addon share with you (at most 20 per search and 100 per session; addon users you already have data from are greeted first and don't count towards these limits) |
 | `/fhp mode` | switch between explorer mode and complete mode; before complete mode it asks first |
+| `/fhp start` | show the start view again and choose the mode there; closing it keeps the mode you have |
 | `/fhp tour` | show the explorer mode tour again |
-| `/fhp zones` | zones the addon has no map for |
-| `/fhp api`, `/fhp map`, `/fhp tame`, `/fhp owner` | developer tools: probes that write a log to the saved variables |
+
+Any other word after `/fhp` lists these commands in the chat.
 
 ## Questions and answers
 

@@ -15,6 +15,8 @@
 --                                              nur, was die mitgelieferten Daten nicht kennen
 --   F1;npc;uiMapID;zellen;melder               neue eigene Fundort-Zellen (Core/Places.lua), gebündelt
 --                                              höchstens alle 5 Minuten, bis zu 100 Zellen
+--   L1;familie;zeilen;zeit;melder              ein Stück einer bestätigten Lesung der Wildtierausbildung, je
+--                                              Fähigkeit (Core/Readings.lua, #111); zeilen = id:s:tp:stufe,…
 --   H1;version;anzahl[;R]                      Gruß nach dem Einloggen und beim Beitritt in eine Gruppe;
 --                                              Antwort: einige Beobachtungen per Flüstern an den, der
 --                                              gegrüßt hat. R: Rückgruß (#156), der wird nicht erwidert
@@ -34,6 +36,7 @@ local MAX_QUEUE = 80
 local REPLY_MAX = 20          -- Beobachtungen als Antwort auf einen Gruß
 local CELL_REPLY = 10         -- Fundort-Bündel als Antwort auf einen Gruß
 local SIGHT_REPLY = 10        -- eigene Sichtungen als Antwort auf einen Gruß (#157); zusammen höchstens 40 Nachrichten
+local READING_REPLY = 10      -- Stücke von Lesungen der Wildtierausbildung als Antwort auf einen Gruß (#111)
 local PER_SENDER = 200        -- angenommene Beobachtungen je Absender und Sitzung
 local MAX_STORED = 5000
 local MIN_TIME = 1788220800   -- 01.09.2026: ältere Zeitstempel sind unplausibel
@@ -48,7 +51,7 @@ local queue, busy = {}, false
 -- Verlauf (#160): Jede Sitzung ist ein Eintrag in ForeverHunterPetsDB.shareLog, die letzten LOG_MAX über alle
 -- Charaktere (bis dahin lag nur die laufende Sitzung in shareStats). So lässt sich nach einem Release nachsehen, ob
 -- Rückgruß und Suche ankommen. Ohne Namen: nur Kürzel, Zahlen, Versionen, Gründe. Felder in newStats().
-local KINDS = { "O1", "S1", "F1", "H1" }
+local KINDS = { "O1", "S1", "F1", "L1", "H1" }
 local LOG_MAX = 30
 local HIT_WINDOW = 120        -- Sekunden: Antwortet ein per Suche Gegrüßter so bald, ist das ein Treffer (#160)
 local function newStats()
@@ -57,6 +60,7 @@ local function newStats()
     sent = {}, recv = {}, new = {}, dropped = {}, sentWay = {}, recvWay = {}, lastIn = nil, replied = 0, skipped = 0,
     groupGreets = 0, backSent = 0, backRecv = 0, whisperGreets = 0,      -- Gruß (#156): Beitritt, Rückgruß, geflüstert ohne R
     searches = 0, whoLists = 0, searchGreeted = 0, hits = 0,           -- Suche (#154) und Treffer
+    knownGreeted = 0,                                                    -- davon Bekannte, ohne Obergrenze (#166)
     versions = {}, senders = {}, errors = {}, queueMax = 0, throttled = 0,
   }
 end
@@ -126,6 +130,10 @@ local function pruneVia(via)
   for _, s in ipairs(ns.db.sights or {}) do
     local o = ns.ParseSighting(s)
     if o then present[o.rep] = true end
+  end
+  if ns.ForeignReadings then
+    local _, reps = ns.ForeignReadings()   -- Melder fremder Lesungen (#111)
+    for rep in pairs(reps) do present[rep] = true end
   end
   for _, maps in pairs(ns.db.locIn or {}) do
     for _, byRep in pairs(maps) do
@@ -235,16 +243,7 @@ end
 local function enabled()
   return ns.db and ns.db.ui and ns.db.ui.share and true or false
 end
-
--- In Kampf und Instanz bleibt alles liegen: geheime Werte, und Addon-Nachrichten sind dort gesperrt
-local function quiet()
-  if InCombatLockdown and ns.clean(InCombatLockdown()) then return true end
-  if IsInInstance then
-    local ok, inside = pcall(IsInInstance)
-    if ok and ns.clean(inside) then return true end
-  end
-  return false
-end
+-- In Kampf und Instanz bleibt alles liegen (ns.Quiet): geheime Werte, und Addon-Nachrichten sind dort gesperrt
 
 -- ---- Senden mit Drosselung ----
 local function oldChannelIndex()
@@ -279,7 +278,7 @@ local pump
 pump = function()
   if #queue == 0 then busy = false; return end
   busy = true
-  if enabled() and not quiet() then
+  if enabled() and not ns.Quiet() then
     local item = queue[1]
     local done, what, accepted = sendNow(item.msg, item.kind, item.target)
     if item.kind == "WHISPER" and item.target then pcall(noteWhisper, item.target) end
@@ -434,6 +433,19 @@ local function receiveCells(body, sender)
 end
 
 -- ---- Sichtungen (Core/Sightings.lua) ----
+-- ---- Lesungen der Wildtierausbildung (Core/Readings.lua, #111) ----
+function ns.ShareReading(s)
+  if enabled() and type(s) == "string" then broadcast("L1;" .. s) end
+end
+
+local readingsPerSender = {}
+local function receiveReading(body, sender)
+  readingsPerSender[sender] = (readingsPerSender[sender] or 0) + 1
+  if readingsPerSender[sender] > PER_SENDER then return false, "Obergrenze je Absender" end
+  if not ns.ReceiveReading then return false, "unlesbar" end
+  return ns.ReceiveReading(body:sub(4))   -- ohne „L1;“
+end
+
 function ns.ShareSighting(s)
   if enabled() and type(s) == "string" then broadcast("S1;" .. s) end
 end
@@ -517,6 +529,10 @@ local function reply(sender, target, open)
       local msg = outgoing(list[i])
       if msg then enqueue(msg, "WHISPER", target, nil, true); n = n + 1 end
     end
+  end
+  -- Stücke von Lesungen der Wildtierausbildung (#111): eigene zuerst, dann fremde, nicht die des Grüßenden
+  for _, s in ipairs(ns.ReadingsToShare and ns.ReadingsToShare(READING_REPLY, theirs) or {}) do
+    enqueue("L1;" .. s, "WHISPER", target, nil, true)
   end
   -- eigene Sichtungen, die die Daten nicht kennen, auch von Twinks (#157)
   for _, s in ipairs(ns.OwnSightingsToShare and ns.OwnSightingsToShare(SIGHT_REPLY) or {}) do
@@ -604,7 +620,7 @@ ns.On("CHAT_MSG_CHANNEL_NOTICE_USER", function(...) channelNotice(" (Spieler)", 
 
 function ns.ShareTest()
   if not enabled() then ns.Print("Selbsttest: Teilen ist ausgeschaltet."); return end
-  if quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
+  if ns.Quiet() then ns.Print("Selbsttest: im Kampf oder in einer Instanz wird nicht gesendet."); return end
   local name = me()
   if not name then ns.Print("Selbsttest: eigener Name nicht lesbar."); return end
   local id = ("%04x"):format(math.random(0, 65535))
@@ -810,6 +826,8 @@ ns.On("CHAT_MSG_ADDON", function(prefix, text, kind, sender)
     ok, why, rep = receiveObservation(text, key)
   elseif text:sub(1, 3) == "S1;" then
     ok, why, rep = receiveSighting(text, key)
+  elseif text:sub(1, 3) == "L1;" then
+    ok, why, rep = receiveReading(text, key)
   elseif text:sub(1, 3) == "F1;" then
     ok, why, rep = receiveCells(text, key)
   elseif text:sub(1, 3) == "H1;" then
@@ -840,30 +858,65 @@ end)
 -- SEARCH_PER_LIST je Liste und SEARCH_MAX je Sitzung. Gesucht wird nur auf Befehl, nie im Hintergrund: Die Suche ist
 -- für den Client eine Spieleraktion und wird gebremst („1 Sek. warten“), und ständiges Anflüstern Fremder wäre zu
 -- viel Verkehr. Die Ergebnisse kommen erst mit WHO_LIST_UPDATE, nicht direkt nach SendWho.
+-- Bekannte zuerst (#166): Jäger, deren Kürzel das Addon schon als Addon-Nutzer kennt, werden vor allen anderen
+-- gegrüßt und zählen nicht gegen SEARCH_PER_LIST und SEARCH_MAX – auch nach 100 Grüßen. Mehr als einen Gruß je
+-- Sitzung bekommen auch sie nicht (greetedOut), und eine Liste hat höchstens 50 Einträge.
 local SEARCH_PER_LIST, SEARCH_MAX = 20, 100
 
+-- Kürzel bekannter Addon-Nutzer (#166): Melder (Schlüssel von via und viaLegacy) und Absender (Werte von via, je
+-- 8 Zeichen), ohne die eigenen. Nur Kürzel, keine Namen; einmal je Wer-Liste gebildet.
+local function knownReps()
+  local known, db = {}, ns.db or {}
+  for rep, from in pairs(type(db.via) == "table" and db.via or {}) do
+    known[rep] = true
+    if type(from) == "string" then
+      for i = 1, #from - 7, 8 do known[from:sub(i, i + 7)] = true end
+    end
+  end
+  for rep in pairs(type(db.viaLegacy) == "table" and db.viaLegacy or {}) do known[rep] = true end
+  for rep in pairs(type(db.myReps) == "table" and db.myReps or {}) do known[rep] = nil end
+  return known
+end
+
 local function greetWhoList()
-  if not enabled() or quiet() or stats.searchGreeted >= SEARCH_MAX then return end
+  if not enabled() or ns.Quiet() then return end
   if not (C_FriendList and C_FriendList.GetNumWhoResults and C_FriendList.GetWhoInfo) then return end
   stats.whoLists = stats.whoLists + 1
   local okN, n = pcall(C_FriendList.GetNumWhoResults)
   n = okN and tonumber(ns.clean(n)) or 0
   local okG, guild = pcall(GetGuildInfo, "player")
   guild = okG and ns.clean(guild) or nil
-  local name, per = me(), 0
+  local name = me()
+  -- Jäger der Liste, die man grüßen darf: nicht man selbst, nicht die eigene Gilde, noch nicht gegrüßt
+  local hunters = {}
   for i = 1, math.min(n, 50) do
-    if per >= SEARCH_PER_LIST or stats.searchGreeted >= SEARCH_MAX then break end
     local ok, info = pcall(C_FriendList.GetWhoInfo, i)
     if ok and type(info) == "table" and ns.clean(info.filename) == "HUNTER" then
       local full, theirGuild = ns.clean(info.fullName), ns.clean(info.fullGuildName)
       local sameGuild = type(guild) == "string" and guild ~= "" and theirGuild == guild
-      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) and not greetedOut[plain(full)] then
-        greetedOut[plain(full)] = true
-        searchedAt[plain(full)] = GetTime()
-        enqueue(greeting(), "WHISPER", full)
-        per, stats.searchGreeted = per + 1, stats.searchGreeted + 1
-      end
+      if type(full) == "string" and full ~= "" and not sameGuild and not isSelf(full, name) then hunters[#hunters + 1] = full end
     end
+  end
+  local function greet(full)
+    if greetedOut[plain(full)] then return false end
+    greetedOut[plain(full)] = true
+    searchedAt[plain(full)] = GetTime()
+    enqueue(greeting(), "WHISPER", full)
+    return true
+  end
+  -- erst die Bekannten, ohne Obergrenze, dann die übrigen wie bisher
+  local known, rest = knownReps(), {}
+  for _, full in ipairs(hunters) do
+    if known[senderRep(full)] then
+      if greet(full) then stats.knownGreeted = (stats.knownGreeted or 0) + 1 end
+    else
+      rest[#rest + 1] = full
+    end
+  end
+  local per = 0
+  for _, full in ipairs(rest) do
+    if per >= SEARCH_PER_LIST or stats.searchGreeted >= SEARCH_MAX then break end
+    if greet(full) then per, stats.searchGreeted = per + 1, stats.searchGreeted + 1 end
   end
 end
 ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
@@ -872,13 +925,17 @@ ns.On("WHO_LIST_UPDATE", function() ns.SafeCall("share", greetWhoList) end)
 function ns.ShareSearch()
   local L = ns.L
   if not enabled() then ns.Print(L["Sharing is switched off (settings: Share observations)."]); return end
-  if quiet() then ns.Print(L["Not in combat or in an instance."]); return end
-  if stats.searchGreeted >= SEARCH_MAX then ns.Print((L["Already greeted %d hunters this session."]):format(stats.searchGreeted)); return end
+  if ns.Quiet() then ns.Print(L["Not in combat or in an instance."]); return end
   if not (C_FriendList and C_FriendList.SendWho) then return end
   local class = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE.HUNTER or "Hunter"
   pcall(C_FriendList.SendWho, ('c-"%s"'):format(class))
   stats.searches = stats.searches + 1
-  ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+  -- auch nach SEARCH_MAX: bekannte Addon-Nutzer werden weiter gegrüßt (#166)
+  if stats.searchGreeted >= SEARCH_MAX then
+    ns.Print((L["Already greeted %d hunters this session; only known addon users are greeted now."]):format(stats.searchGreeted))
+  else
+    ns.Print(L["Searching for hunters online. Those who have the addon get a greeting and share with you."])
+  end
 end
 
 -- ---- Alter Kanal und Gruß ----
@@ -911,7 +968,7 @@ local function grouped()
 end
 
 local function greetGroup()
-  if not enabled() or quiet() then return end
+  if not enabled() or ns.Quiet() then return end
   if IsInRaid and ns.clean(IsInRaid()) then enqueue(greeting(), "RAID")
   elseif IsInGroup and ns.clean(IsInGroup()) then enqueue(greeting(), "PARTY")
   else return end
@@ -921,7 +978,7 @@ end
 ns.On("GROUP_ROSTER_UPDATE", function()
   if inGroup == nil then return end
   local now = grouped()
-  if now and not inGroup and enabled() and not quiet() then
+  if now and not inGroup and enabled() and not ns.Quiet() then
     ns.After(JOIN_DELAY, function() ns.SafeCall("share", greetGroup) end)
   end
   inGroup = now
@@ -1005,7 +1062,10 @@ local function foreignStock()
   return tames, sights, cells, n, unknown
 end
 
-local NAMES = { O1 = "Zähmungen", S1 = "Sichtungen", F1 = "Zellen-Bündel", H1 = "Grüße" }
+-- Ausgabe von /fhp teilen in der Sprache des Clients (#63). Gezählt und im Verlauf (shareLog) gespeichert wird weiter
+-- nach Kürzel (O1 …) und Weg (GUILD …), die Gründe unter „Verworfen“ deutsch wie bisher; übersetzt wird nur beim Zeigen.
+local L = ns.L
+local NAMES = { O1 = L["Tames"], S1 = L["Sightings"], F1 = L["Cell bundles"], L1 = L["Readings"], H1 = L["Greetings"] }
 local function perKind(t)
   local parts = {}
   for _, k in ipairs(KINDS) do parts[#parts + 1] = NAMES[k] .. " " .. (t[k] or 0) end
@@ -1014,7 +1074,8 @@ end
 
 -- Je Weg (#153): die üblichen immer, alles andere (etwa CHANNEL oder YELL) nur, wenn es vorkam
 local WAYS = { "GUILD", "PARTY", "RAID", "WHISPER" }
-local WAY_NAMES = { GUILD = "Gilde", PARTY = "Gruppe", RAID = "Schlachtzug", YELL = "Rufen", WHISPER = "Flüstern", CHANNEL = "Kanal" }
+local WAY_NAMES = { GUILD = L["Guild"], PARTY = L["Party"], RAID = L["Raid"], YELL = L["Yell"], WHISPER = L["Whisper"],
+  CHANNEL = L["Channel"] }
 local function perWay(t)
   local parts, known = {}, {}
   for _, w in ipairs(WAYS) do
@@ -1030,7 +1091,34 @@ local function perWay(t)
   return table.concat(parts, " · ")
 end
 
--- /fhp teilen: kurzer Stand im Chat (Entwicklerwerkzeug, nur deutsch)
+-- gespeicherter Grund (deutsch, siehe receive… und Core/Readings.lua) → englischer Schlüssel für L[]
+local REASONS = {
+  ["eigene"] = "own", ["schon bekannt"] = "already known", ["Obergrenze je Absender"] = "limit per sender",
+  ["Speicher voll"] = "storage full", ["unlesbar"] = "unreadable", ["Melder"] = "short code",
+  ["Stufe oder NPC"] = "level or NPC", ["Zauber unplausibel"] = "implausible spells", ["Tempo"] = "attack speed",
+  ["Zeit unplausibel"] = "implausible time", ["Karte oder Größe"] = "map or size", ["Zellen"] = "cells",
+  ["nicht zähmbar"] = "not tameable", ["Stufe oder Werte"] = "level or values", ["Sprache oder Name"] = "language or name",
+  ["keine Jäger-Familie"] = "not a hunter family", ["Größe"] = "size", ["unbekannter Rang"] = "unknown rank",
+  ["mehrere Fähigkeiten"] = "several abilities", ["fremde Familie"] = "wrong family",
+  ["widerspricht den Daten"] = "contradicts the data", ["Familie"] = "family", ["Werte"] = "values",
+  ["Warteschlange voll"] = "queue full", ["Flüstern an Offline-Spieler"] = "whispers to offline players",
+}
+local function reasonText(why) return L[REASONS[why] or why] end
+-- was der Client beim Senden sagte („Ergebnis 4“)
+local function clientText(what)
+  local res = tostring(what):match("^Ergebnis (.+)$")
+  return res and (L["result %s"]):format(res) or tostring(what)
+end
+-- Schlüssel unter „Verworfen“: „O1 schon bekannt“, „WHISPER vom Client abgelehnt (Ergebnis 4)“ oder ein Grund allein
+local function droppedText(k)
+  local kind, why = k:match("^(%u%d) (.+)$")
+  if kind and NAMES[kind] then return NAMES[kind] .. " – " .. reasonText(why) end
+  local way, what = k:match("^(%u+) vom Client abgelehnt %((.*)%)$")
+  if way then return (L["%s rejected by the client (%s)"]):format(WAY_NAMES[way] or way, clientText(what)) end
+  return reasonText(k)
+end
+
+-- /fhp teilen: kurzer Stand im Chat
 function ns.ShareStatus()
   local own = 0
   for _, s in ipairs((ns.db and ns.db.obs) or {}) do
@@ -1038,48 +1126,52 @@ function ns.ShareStatus()
     if o and o.own then own = own + 1 end
   end
   local _, rep = me()
-  local rufen = yell == true and "an" or yell == false and ("aus (" .. tostring(yellWhy) .. ")") or "ungeprüft"
-  ns.Print(("Teilen %s · eigene Beobachtungen %d · Warteschlange %d · dein Kürzel %s · Rufen: %s")
-    :format(enabled() and "an" or "aus", own, #queue, rep or "?", rufen))
+  local yellText = yell == true and L["on"] or yell == false and (L["off (%s)"]):format(clientText(yellWhy))
+    or L["unchecked"]
+  ns.Print((L["Sharing %s · own observations %d · queue %d · your short code %s · yell: %s"])
+    :format(enabled() and L["on"] or L["off"], own, #queue, rep or "?", yellText))
   local tames, sights, cells, nReps, unknown = foreignStock()
-  ns.Print(("Fremd gespeichert: Zähmungen %d (davon mit unbekannten Zaubern %d) · Sichtungen %d · Fundort-Zellen %d · von %d Meldern")
-    :format(tames, unknown, sights, cells, nReps))
+  local readings = ns.ForeignReadings and ns.ForeignReadings() or 0
+  ns.Print((L["Stored from others: tames %d (with unknown spells %d) · sightings %d · spawn cells %d · readings %d · from %d characters"])
+    :format(tames, unknown, sights, cells, readings, nReps))
   if ns.ForeignRankStatus then
     local total, resolved, below = ns.ForeignRankStatus()
-    ns.Print(("Unbekannte Zauber aus fremden Zähmungen: %d, davon aufgelöst %d, davon unter der Schwelle %d")
+    ns.Print((L["Unknown spells from other players' tames: %d, resolved %d, below the threshold %d"])
       :format(total, resolved, below))
   end
   local via = 0
   for _ in pairs(type(ns.db and ns.db.via) == "table" and ns.db.via or {}) do via = via + 1 end
-  ns.Print(("Herkunft bekannt für %d fremde Melder"):format(via))
-  ns.Print("Diese Sitzung gesendet: " .. perKind(stats.sent))
-  ns.Print("Empfangen: " .. perKind(stats.recv))
-  ns.Print("Davon neu gespeichert: " .. perKind(stats.new))
-  ns.Print("Gesendet je Weg: " .. perWay(stats.sentWay))
-  ns.Print("Empfangen je Weg: " .. perWay(stats.recvWay))
+  ns.Print((L["Known origin for %d other characters"]):format(via))
+  ns.Print(L["Sent this session:"] .. " " .. perKind(stats.sent))
+  ns.Print(L["Received:"] .. " " .. perKind(stats.recv))
+  ns.Print(L["Newly stored:"] .. " " .. perKind(stats.new))
+  ns.Print(L["Sent per way:"] .. " " .. perWay(stats.sentWay))
+  ns.Print(L["Received per way:"] .. " " .. perWay(stats.recvWay))
   local why = {}
-  for k, n in pairs(stats.dropped) do why[#why + 1] = k .. " " .. n end
+  for k, n in pairs(stats.dropped) do why[#why + 1] = droppedText(k) .. " " .. n end
   table.sort(why)
-  if #why > 0 then ns.Print("Verworfen: " .. table.concat(why, " · ")) end
-  ns.Print(("Antworten auf Grüße diese Sitzung: %d, ausgelassen: %d · gegrüßt per Suche: %d, davon geantwortet: %d")
-    :format(stats.replied, stats.skipped, stats.searchGreeted, stats.hits))
+  if #why > 0 then ns.Print(L["Discarded:"] .. " " .. table.concat(why, " · ")) end
+  ns.Print((L["Replies to greetings this session: %d, skipped: %d · greeted via search: %d unknown, %d known, of whom replied: %d"])
+    :format(stats.replied, stats.skipped, stats.searchGreeted, stats.knownGreeted or 0, stats.hits))
   local versions = {}
   for v, n in pairs(stats.versions) do versions[#versions + 1] = v .. " " .. n end
   table.sort(versions)
-  ns.Print(("Versionen gehört: %s · Verlauf: %d Sitzungen (ForeverHunterPetsDB.shareLog)")
-    :format(#versions > 0 and table.concat(versions, " · ") or "keine", #((ns.db and ns.db.shareLog) or {})))
+  ns.Print((L["Versions heard: %s · history: %d sessions (ForeverHunterPetsDB.shareLog)"])
+    :format(#versions > 0 and table.concat(versions, " · ") or L["none"], #((ns.db and ns.db.shareLog) or {})))
   local rejects = ns.db and ns.db.shareRejects
   if rejects and #rejects > 0 then
     local total = 0
     for _, e in ipairs(rejects) do total = total + (type(e) == "table" and tonumber(e.n) or 1) end
-    ns.Print(("Verworfene Nachrichten roh aufgehoben: %d verschiedene, %d Empfänge (ForeverHunterPetsDB.shareRejects)")
+    ns.Print((L["Discarded messages kept raw: %d different, %d received (ForeverHunterPetsDB.shareRejects)"])
       :format(#rejects, total))
   end
   if stats.lastIn then
     local ago = (time and time() or 0) - stats.lastIn.at
-    ns.Print(("Zuletzt empfangen: %s über %s, vor %d s"):format(NAMES[stats.lastIn.t] or stats.lastIn.t, stats.lastIn.way, ago))
+    local way = stats.lastIn.way
+    ns.Print((L["Last received: %s via %s, %d s ago"]):format(NAMES[stats.lastIn.t] or stats.lastIn.t,
+      WAY_NAMES[way] or way, ago))
   else
-    ns.Print("Noch nichts von anderen Spielern empfangen.")
+    ns.Print(L["Nothing received from other players yet."])
   end
 end
 

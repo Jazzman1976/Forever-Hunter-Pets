@@ -17,22 +17,6 @@ local BOOK = "Interface\\Icons\\INV_Misc_Book_09"
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local dialog, after
 
-local function border(f)
-  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
-    local t = f:CreateTexture(nil, "BORDER")
-    t:SetColorTexture(0, 0, 0, 1)
-    if side == "TOP" or side == "BOTTOM" then
-      t:SetHeight(1)
-      t:SetPoint(side .. "LEFT")
-      t:SetPoint(side .. "RIGHT")
-    else
-      t:SetWidth(1)
-      t:SetPoint("TOP" .. side)
-      t:SetPoint("BOTTOM" .. side)
-    end
-  end
-end
-
 local function choose(discover)
   ns.SetMode(discover)
   local fn = after   -- vor dem Ausblenden: OnHide löscht die Folgeaktion
@@ -61,7 +45,7 @@ local function create()
   f:Hide()
   table.insert(UISpecialFrames, "ForeverHunterPetsModeDialog")
   W.Fill(f, 0.06, 0.07, 0.09, 1, "BACKGROUND")
-  border(f)
+  W.Border(f)
 
   local logo = f:CreateTexture(nil, "ARTWORK")
   logo:SetSize(96, 96)
@@ -74,7 +58,7 @@ local function create()
   local intro = W.Text(f, "GameFontHighlight", true)
   intro:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
   intro:SetWidth(DW - 96 - 16 * 3)
-  intro:SetText(L["Forever Hunter Pets turns finding pets into a hunt of your own – or simply shows you everything that is known."])
+  intro:SetText(L["Forever Hunter Pets turns finding pets into a hunt of your own – or serves as a reference book."])
 
   -- Die Höhe folgt den Texten (je nach Sprache verschieden lang): y läuft von oben nach unten mit
   local y = -16 - math.max(96, 4 + title:GetStringHeight() + 10 + intro:GetStringHeight()) - 14
@@ -82,8 +66,8 @@ local function create()
   -- zwei Spalten nebeneinander: Icon, Name, Beschreibung, Knopf. Die Knöpfe stehen auf einer Höhe, deshalb
   -- richten sich beide Spalten nach der längeren Beschreibung.
   local cols = {
-    { true, SPYGLASS, L["Explorer mode"], L["You go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab."] },
-    { false, BOOK, L["Complete mode"], L["You find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself."] },
+    { true, SPYGLASS, L["Explorer mode"], L["The hunt is yours: the world is full of beasts and their secrets. The more you discover, the more you unlock – from the first glimpse to what a beast teaches. Your hunter rank grows as you go. Can you uncover all their secrets?"] },
+    { false, BOOK, L["Complete mode"], L["Here the addon merely serves as a reference book: what you could find out yourself in explorer mode, you can look up here. In return you may get spoiled, and there is no collecting game, no progress per zone and no hunter rank."] },
   }
   local top, bottom = y, y
   for i, c in ipairs(cols) do

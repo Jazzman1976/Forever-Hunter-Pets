@@ -14,6 +14,24 @@ function W.Fill(frame, r, g, b, a, layer)
   return t
 end
 
+-- schwarzer Rand von 1 Pixel innen am Rahmen: Hauptfenster und Startansicht (#67). Die Leiste am Pet-Rahmen
+-- (UI/PetXP.lua) hat einen eigenen mit Abstand und Farbe.
+function W.Border(frame)
+  for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+    local t = frame:CreateTexture(nil, "BORDER")
+    t:SetColorTexture(0, 0, 0, 1)
+    if side == "TOP" or side == "BOTTOM" then
+      t:SetHeight(1)
+      t:SetPoint(side .. "LEFT")
+      t:SetPoint(side .. "RIGHT")
+    else
+      t:SetWidth(1)
+      t:SetPoint("TOP" .. side)
+      t:SetPoint("BOTTOM" .. side)
+    end
+  end
+end
+
 -- Markierung der gewählten Zeile, in allen Reitern gleich: Füllung und links ein Strich, damit die Wahl
 -- nicht nur an der Farbe hängt (#59). Das Ergebnis schaltet mit SetShown beides zusammen.
 function W.Selection(frame)
