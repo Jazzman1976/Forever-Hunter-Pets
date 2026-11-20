@@ -66,8 +66,8 @@ local function create()
   -- zwei Spalten nebeneinander: Icon, Name, Beschreibung, Knopf. Die Knöpfe stehen auf einer Höhe, deshalb
   -- richten sich beide Spalten nach der längeren Beschreibung.
   local cols = {
-    { true, SPYGLASS, L["Explorer mode"], L["You go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab."] },
-    { false, BOOK, L["Complete mode"], L["You find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself."] },
+    { true, SPYGLASS, L["Explorer mode"], L["The hunt is yours: the world is full of beasts and their secrets, and the addon gives you what you need for your exploring. The more you discover, the more you unlock: first a beast, then its name, then whether it teaches something, and once you have tamed it, what it teaches. The Zone tab shows your progress, and your hunter rank grows with it. Can you uncover all their secrets?"] },
+    { false, BOOK, L["Complete mode"], L["A reference book: the addon simply shows you everything that is known – every beast, what it teaches and where it lives. There is nothing to discover or unlock here."] },
   }
   local top, bottom = y, y
   for i, c in ipairs(cols) do

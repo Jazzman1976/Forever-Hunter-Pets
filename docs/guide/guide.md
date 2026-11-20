@@ -42,8 +42,8 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** – you go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab.
-- **Complete mode** – you find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself.
+- **Explorer mode** – the hunt is yours: the world is full of beasts and their secrets, and the addon gives you what you need for your exploring. The more you discover, the more you unlock: first a beast, then its name, then whether it teaches something, and once you have tamed it, what it teaches. The Zone tab shows your progress, and your hunter rank grows with it.
+- **Complete mode** – a reference book: the addon simply shows you everything that is known – every beast, what it teaches and where it lives. There is nothing to discover or unlock here.
 
 ![Start view: explorer mode and complete mode side by side, each with a short description and a button, below the notes on the data, your characters and sharing (German client)](../images/start.jpg)
 
