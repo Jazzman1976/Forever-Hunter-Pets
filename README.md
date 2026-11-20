@@ -10,8 +10,8 @@ Nothing is copied from websites or databases: everything the addon knows was fou
 
 The first time a character opens the addon, it asks how you want to play:
 
-- **Explorer mode** – you go hunting yourself. The addon reveals the information bit by bit: first that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. A short tour shows you around, and your hunter rank rises with the beasts you find.
-- **Complete mode** – you see everything that is known right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left to discover yourself.
+- **Explorer mode** – the hunt is yours: the world is full of beasts and their secrets. The more you discover, the more you unlock – from the first glimpse to what a beast teaches. A short tour shows you around, and your hunter rank grows as you go.
+- **Complete mode** – here the addon merely serves as a reference book: what you could find out yourself in explorer mode, you can look up here. In return you may get spoiled, and there is no collecting game, no progress per zone and no hunter rank.
 
 ![The start view: explorer mode and complete mode side by side (German client)](docs/images/start.jpg)
 

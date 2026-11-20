@@ -58,7 +58,7 @@ local function create()
   local intro = W.Text(f, "GameFontHighlight", true)
   intro:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
   intro:SetWidth(DW - 96 - 16 * 3)
-  intro:SetText(L["Forever Hunter Pets turns finding pets into a hunt of your own – or simply shows you everything that is known."])
+  intro:SetText(L["Forever Hunter Pets turns finding pets into a hunt of your own – or serves as a reference book."])
 
   -- Die Höhe folgt den Texten (je nach Sprache verschieden lang): y läuft von oben nach unten mit
   local y = -16 - math.max(96, 4 + title:GetStringHeight() + 10 + intro:GetStringHeight()) - 14
@@ -66,8 +66,8 @@ local function create()
   -- zwei Spalten nebeneinander: Icon, Name, Beschreibung, Knopf. Die Knöpfe stehen auf einer Höhe, deshalb
   -- richten sich beide Spalten nach der längeren Beschreibung.
   local cols = {
-    { true, SPYGLASS, L["Explorer mode"], L["The hunt is yours: the world is full of beasts and their secrets, and the addon gives you what you need for your exploring. The more you discover, the more you unlock: first a beast, then its name, then whether it teaches something, and once you have tamed it, what it teaches. The Zone tab shows your progress, and your hunter rank grows with it. Can you uncover all their secrets?"] },
-    { false, BOOK, L["Complete mode"], L["A reference book: the addon simply shows you everything that is known – every beast, what it teaches and where it lives. There is nothing to discover or unlock here."] },
+    { true, SPYGLASS, L["Explorer mode"], L["The hunt is yours: the world is full of beasts and their secrets. The more you discover, the more you unlock – from the first glimpse to what a beast teaches. Your hunter rank grows as you go. Can you uncover all their secrets?"] },
+    { false, BOOK, L["Complete mode"], L["Here the addon merely serves as a reference book: what you could find out yourself in explorer mode, you can look up here. In return you may get spoiled, and there is no collecting game, no progress per zone and no hunter rank."] },
   }
   local top, bottom = y, y
   for i, c in ipairs(cols) do
