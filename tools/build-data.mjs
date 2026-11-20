@@ -321,7 +321,9 @@ const foreignRanksIn = fs.existsSync(path.join(OWN, 'fremde-raenge.json')) ? rea
         n = { de, en, kind: 'family', source: 'tame', families: [], ranks: [],
           beleg: `Zähmungen anderer Spieler, Name und Rang vom eigenen Client, seit ${f.datum} (tools/eigene/fremde-raenge.json)` };
         fresh.set(key, n);
-        abilitiesIn.push(n);
+        // vor die Tempo-Fähigkeiten: die stehen im Addon am Ende, nach dem Tempo sortiert (#189)
+        const firstTrait = abilitiesIn.findIndex((x) => x.kind === 'trait');
+        abilitiesIn.splice(firstTrait < 0 ? abilitiesIn.length : firstTrait, 0, n);
       }
       if (n.ranks.some((r) => r.rank === f.rang)) continue;
       n.ranks.push(rank);
