@@ -113,7 +113,7 @@
       {"zeit":1795019720,"datum":"2026-11-18","zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","14916":"unavailable/0","16827":"available/1","16828":"available/4","17253":"used/1","17255":"used/0","24545":"available/1"}}
     ],
     "12": [
-      {"zeit":1792680830,"datum":"2026-10-22","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"available/0","4187":"available/5","14916":"available/0","16827":"available/0","16828":"available/0","17253":"available/1","17255":"available/4","24545":"available/1"}}
+      {"zeit":1792680830,"datum":"2026-10-22","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"available/0","4187":"available/5","14916":"available/0","17253":"available/1","17255":"available/4","24545":"available/1"}}
     ],
     "20": [
       {"zeit":1794581723,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","14916":"used/0","16827":"used/1","16828":"used/0","24545":"available/1","24640":"used/0"}}

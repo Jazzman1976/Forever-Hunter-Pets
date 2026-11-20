@@ -3,7 +3,7 @@
 -- sie gehören Blizzard Entertainment – siehe NOTICE.md.
 local _, ns = ...
 ns.Data = {
-  generatedAt = "2026-11-20T22:22:09.479Z",
+  generatedAt = "2026-11-20T22:34:49.473Z",
   families = {
     [1] = { de = "Wolf", icon = 132203 },
     [2] = { de = "Katze", icon = 132185 },
@@ -557,7 +557,7 @@ ns.Data = {
     },
     {
       de = "Klaue", icon = 132140, kind = "family", source = "tame",
-      families = { 2, 4, 7, 8, 11, 12, 20, 26 },
+      families = { 2, 4, 7, 8, 11, 20, 26 },
       ranks = {
         { id = 16827, rank = 1, level = 1, tp = 1 },
         { id = 16828, rank = 2, level = 8, tp = 4 },
