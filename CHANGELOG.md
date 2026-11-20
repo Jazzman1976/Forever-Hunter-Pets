@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.0 – 2026-11-18
+
+Training points and pet levels now travel between players, Beast Training is read more reliably, and the start view describes both modes anew. A full release, straight without a beta.
+
+**Please restart the game** after updating – this version brings a new file, and `/reload` is not enough.
+
+- **Training points and pet levels from other players:** ranks that other players found used to arrive without pet level and training points. Now the addon shares what *Beast Training* shows – only where the data still has a gap, and only what fits what is already known. As with everything else, a value counts once 3 characters have reported it, and it becomes part of the addon's data with the next update.
+- **Beast Training is read more reliably:** the addon reads the window a little later (about 1.5 seconds after it opens) and only counts a list when two openings in a row show the same. If you hide rows with the window's filters, it briefly shows all rows and then puts your filters back – the list may jump, usually only the first two times per session.
+- **Addon users first:** `/fhp search` now greets hunters you already have data from first, and they don't count towards the limit of 20 per search and 100 per session.
+- **The start view, reworded:** explorer mode and complete mode are described anew – explorer mode as the hunt it is, complete mode as a plain reference book. The new `/fhp start` shows the start view again any time.
+- **Help for players:** `/fhp` followed by any other word now lists only the commands meant for players. The chat output of `/fhp area` and `/fhp share` is translated.
+- **Under the hood:** one combat and instance check everywhere, shared helpers instead of copies, and a sturdier import of the collected data.
+- **More data from the game:** 251 beasts (1.3.0: 219), 1997 spawn points (1.3.0: 1558), a new ability – Prowl for cats – and the new ranks Cower 3, Bite 5 and Furious Howl 2. Charge rank 1 now shows its training points, and there are new teaching beasts for Cower, Claw, Bite, Furious Howl, Web and Faster Attack.
+
 ## 1.3.0 – 2026-11-14
 
 Explorer mode explains itself. Many of you told us you didn't know what to do in explorer mode, that there were two modes at all, or how to switch – and that finding things didn't feel rewarding enough. This release is all about that.

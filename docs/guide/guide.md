@@ -13,7 +13,7 @@ Forever Hunter Pets answers that – and turns the search into a game:
 - **Find everything.** The addon catalogues every ability, every rank, every beast that teaches it and every place it was seen.
 - **Collected in the game.** Nothing comes from websites or other addons. What the addon knows was found by players of the addon – by you, and by others who share what they see.
 - **Gaps are tasks.** What nobody has found yet is shown as such (a red ✖ with *No data*, *spawn point unknown*). Finding it is part of the fun.
-- **Your choice how much you want to see.** In *complete mode* you get everything that is known. In *explorer mode* you only see what you found yourself – and how much there is left to discover.
+- **Your choice how you want to play.** In *explorer mode* the search becomes a hunt of your own: the more you discover, the more you unlock. *Complete mode* is a reference book of what is known so far – without the hunt.
 
 The addon follows the language of your client (English and German).
 
@@ -42,8 +42,8 @@ The folder in `AddOns` must be named `Forever-Hunter-Pets`, like the `.toc` file
 
 Type `/fhp` or click the button at the minimap. The first time a character opens the addon, it asks **how you want to play**:
 
-- **Explorer mode** – you go hunting yourself: the addon reveals the information only bit by bit. First you see that a beast exists, then its name, then whether it teaches something, and once you have tamed it, what it teaches. Everything you see, find and tame fills the Zone tab.
-- **Complete mode** – you find every piece of information right away: every beast, what it teaches and where it lives. In return you may get spoiled, and nothing is left for you to discover yourself.
+- **Explorer mode** – the hunt is yours: the world is full of beasts and their secrets. The more you discover, the more you unlock – from the first glimpse to what a beast teaches. Your hunter rank grows as you go.
+- **Complete mode** – here the addon merely serves as a reference book: what you could find out yourself in explorer mode, you can look up here. In return you may get spoiled, and there is no collecting game, no progress per zone and no hunter rank.
 
 ![Start view: explorer mode and complete mode side by side, each with a short description and a button, below the notes on the data, your characters and sharing (German client)](../images/start.jpg)
 

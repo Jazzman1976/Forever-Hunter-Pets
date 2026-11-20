@@ -79,19 +79,24 @@
   },
   "listen": {
     "1": [
-      {"zeit":1794344654,"datum":"2026-11-10","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"unavailable/10","2649":"available/0","4187":"available/5","4188":"unavailable/10","4189":"unavailable/15","4190":"unavailable/25","14916":"unavailable/0","14917":"unavailable/0","17253":"used/0","17255":"unavailable/3","17256":"unavailable/6","17257":"unavailable/9","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"unavailable/5","24550":"unavailable/10","24551":"unavailable/15","24604":"unavailable/10"}}
+      {"zeit":1794344654,"datum":"2026-11-10","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"unavailable/10","2649":"available/0","4187":"available/5","4188":"unavailable/10","4189":"unavailable/15","4190":"unavailable/25","14916":"unavailable/0","14917":"unavailable/0","17253":"used/0","17255":"unavailable/3","17256":"unavailable/6","17257":"unavailable/9","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"unavailable/5","24550":"unavailable/10","24551":"unavailable/15","24604":"unavailable/10"}},
+      {"zeit":1795104791,"datum":"2026-11-19","zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","4188":"available/10","4189":"available/15","14916":"used/0","14917":"used/0","17253":"available/1","17255":"available/4","17256":"available/7","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24604":"available/10"}}
     ],
     "2": [
-      {"zeit":1794580922,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"unavailable/15","4190":"unavailable/25","14916":"used/0","14917":"unavailable/0","16827":"available/1","16828":"available/4","16829":"unavailable/7","16830":"unavailable/10","17253":"available/1","17255":"available/4","17256":"unavailable/7","17257":"unavailable/10","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"available/5","24550":"unavailable/10","24551":"unavailable/15"}}
+      {"zeit":1794580922,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"unavailable/15","4190":"unavailable/25","14916":"used/0","14917":"unavailable/0","16827":"available/1","16828":"available/4","16829":"unavailable/7","16830":"unavailable/10","17253":"available/1","17255":"available/4","17256":"unavailable/7","17257":"unavailable/10","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"available/5","24550":"unavailable/10","24551":"unavailable/15"}},
+      {"zeit":1795021644,"datum":"2026-11-18","zeilen":{"1742":"used/0","2649":"used/0","4187":"available/5","14916":"unavailable/0","16827":"available/1","16828":"available/4","17253":"available/1","17255":"available/4","24545":"available/1"}}
     ],
     "3": [
-      {"zeit":1794608914,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"available/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"unavailable/25","14916":"available/0","14917":"unavailable/0","17253":"used/1","17255":"used/4","17256":"used/0","17257":"unavailable/3","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"unavailable/15"}}
+      {"zeit":1794608914,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"available/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"unavailable/25","14916":"available/0","14917":"unavailable/0","17253":"used/1","17255":"used/4","17256":"used/0","17257":"unavailable/3","23992":"unavailable/5","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"unavailable/15"}},
+      {"zeit":1795101394,"datum":"2026-11-19","zeilen":{"1742":"available/8","2649":"available/0","4187":"available/5","4188":"available/10","4189":"available/15","14916":"available/0","14917":"available/0","17253":"used/1","17255":"used/4","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","1265843":"available/0"}}
     ],
     "4": [
-      {"zeit":1794129631,"datum":"2026-11-08","zusammengefuehrt":true,"zeilen":{"1742":"available/8","4187":"available/5","4188":"available/5","14916":"unavailable/0","24545":"available/1","24549":"available/5"}}
+      {"zeit":1794129631,"datum":"2026-11-08","zusammengefuehrt":true,"zeilen":{"1742":"available/8","4187":"available/5","4188":"available/5","14916":"unavailable/0","24545":"available/1","24549":"available/5"}},
+      {"zeit":1794682544,"datum":"2026-11-14","zeilen":{"1742":"available/8","2649":"used/0","4187":"used/0","4188":"available/5","4189":"unavailable/10","14916":"used/0","16827":"used/1","16828":"used/4","16829":"used/0","17253":"used/1","17255":"used/0","24545":"available/1","24549":"available/5","24550":"unavailable/10","1264494":"used/0"}}
     ],
     "5": [
-      {"zeit":1794609869,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"used/5","4188":"used/0","7371":"used/0","14916":"unavailable/0","17253":"used/1","17255":"used/0","24545":"used/1","24549":"used/0","26177":"used/0"}}
+      {"zeit":1794609869,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"used/5","4188":"used/0","7371":"used/0","14916":"unavailable/0","17253":"used/1","17255":"used/0","24545":"used/1","24549":"used/0","26177":"used/0"}},
+      {"zeit":1795040280,"datum":"2026-11-18","zeilen":{"1742":"available/8","2649":"used/0","4187":"used/5","4188":"used/10","4189":"used/0","7371":"used/5","14916":"used/0","14917":"used/0","17253":"used/1","17255":"used/0","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"used/1","24549":"used/5","24550":"used/0","26177":"used/0"}}
     ],
     "6": [
       {"zeit":1794606057,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","4188":"available/10","4189":"unavailable/15","14916":"used/0","17255":"available/4","24545":"available/1","24549":"available/5","24550":"unavailable/10","1264758":"used/0"}}
@@ -100,13 +105,15 @@
       {"zeit":1794342913,"datum":"2026-11-10","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"unavailable/10","2649":"available/0","4187":"available/5","4188":"unavailable/10","4189":"unavailable/15","4190":"unavailable/25","14916":"unavailable/0","14917":"unavailable/0","16827":"used/0","16828":"unavailable/3","16829":"unavailable/6","16830":"unavailable/9","17253":"available/1","17255":"unavailable/4","17256":"unavailable/7","17257":"unavailable/10","23992":"unavailable/5","24423":"unavailable/10","24446":"unavailable/5","24488":"unavailable/5","24492":"unavailable/5","24493":"unavailable/5","24545":"available/1","24549":"unavailable/5","24550":"unavailable/10","24551":"unavailable/15"}}
     ],
     "8": [
-      {"zeit":1794604331,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","4188":"available/10","14916":"unavailable/0","16827":"available/1","16828":"available/4","24545":"available/1","24549":"available/5","1264735":"used/0"}}
+      {"zeit":1794604331,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","4188":"available/10","14916":"unavailable/0","16827":"available/1","16828":"available/4","24545":"available/1","24549":"available/5","1264735":"used/0"}},
+      {"zeit":1794780638,"datum":"2026-11-15","zeilen":{"1742":"available/8","4189":"available/5","24549":"available/4","24550":"available/9"}}
     ],
     "11": [
-      {"zeit":1794638215,"datum":"2026-11-14","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"available/25","14916":"used/0","14917":"used/0","16827":"available/1","16828":"available/4","16829":"available/7","16830":"available/10","17253":"available/1","17255":"available/4","17256":"available/7","17257":"available/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"available/15","1265065":"used/0","1265066":"used/0"}}
+      {"zeit":1794638215,"datum":"2026-11-14","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"available/25","14916":"used/0","14917":"used/0","16827":"available/1","16828":"available/4","16829":"available/7","16830":"available/10","17253":"available/1","17255":"available/4","17256":"available/7","17257":"available/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"available/15","1265065":"used/0","1265066":"used/0"}},
+      {"zeit":1795019720,"datum":"2026-11-18","zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","14916":"unavailable/0","16827":"available/1","16828":"available/4","17253":"used/1","17255":"used/0","24545":"available/1"}}
     ],
     "12": [
-      {"zeit":1792680830,"datum":"2026-10-22","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"available/0","4187":"available/5","14916":"available/0","16827":"available/0","16828":"available/0","17253":"available/1","17255":"available/4","24545":"available/1"}}
+      {"zeit":1792680830,"datum":"2026-10-22","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"available/0","4187":"available/5","14916":"available/0","17253":"available/1","17255":"available/4","24545":"available/1"}}
     ],
     "20": [
       {"zeit":1794581723,"datum":"2026-11-13","zusammengefuehrt":true,"zeilen":{"1742":"available/8","2649":"used/0","4187":"available/5","14916":"used/0","16827":"used/1","16828":"used/0","24545":"available/1","24640":"used/0"}}
@@ -121,7 +128,8 @@
       {"zeit":1792324621,"datum":"2026-10-18","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"available/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"unavailable/25","14916":"available/0","14917":"available/0","17253":"available/1","17255":"available/4","17256":"available/7","17257":"unavailable/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"unavailable/15","25008":"used/0"}}
     ],
     "319": [
-      {"zeit":1792143881,"datum":"2026-10-16","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"unavailable/25","14916":"used/0","14917":"used/0","17253":"available/1","17255":"available/4","17256":"available/7","17257":"unavailable/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"unavailable/15","1310612":"used/0"}}
+      {"zeit":1792143881,"datum":"2026-10-16","zusammengefuehrt":true,"zeilen":{"1742":"available/8","1753":"available/10","2649":"used/0","4187":"available/5","4188":"available/10","4189":"available/15","4190":"unavailable/25","14916":"used/0","14917":"used/0","17253":"available/1","17255":"available/4","17256":"available/7","17257":"unavailable/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24545":"available/1","24549":"available/5","24550":"available/10","24551":"unavailable/15","1310612":"used/0"}},
+      {"zeit":1795002551,"datum":"2026-11-18","zeilen":{"1742":"available/8","4188":"available/5","4189":"available/10","23992":"available/5","24446":"available/5","24488":"available/5","24492":"available/5","24493":"available/5","24549":"available/4","24550":"available/9"}}
     ]
   },
   "familien": {
@@ -140,15 +148,15 @@
     "25": {"name":{"deDE":"Hyäne"},"icon":132190},
     "26": {"name":{"deDE":"Raubvogel"},"icon":132192},
     "27": {"name":{"deDE":"Windnatter"},"icon":132202},
-    "319": {"name":{"deDE":"Fuchs"}}
+    "319": {"name":{"deDE":"Fuchs"},"icon":458223}
   },
   "zauberbuch": {
     "1742": {"name":{"deDE":"Ducken"},"familien":[2,12],"rang":1,"datum":"2026-10-16"},
     "1753": {"name":{"deDE":"Ducken"},"familien":[2,12],"rang":2,"datum":"2026-10-17"},
     "1755": {"name":{"deDE":"Ducken"},"familien":[2],"rang":4,"datum":"2026-10-18"},
     "2649": {"name":{"deDE":"Knurren"},"familien":[1,2,3,4,5,8,11,20],"rang":1,"datum":"2026-10-16"},
-    "4187": {"name":{"deDE":"Große Ausdauer"},"familien":[1,4,5],"rang":1,"passiv":true,"datum":"2026-11-07"},
-    "4188": {"name":{"deDE":"Große Ausdauer"},"familien":[5],"rang":2,"passiv":true,"datum":"2026-11-07"},
+    "4187": {"name":{"deDE":"Große Ausdauer"},"familien":[1,4,5,319],"rang":1,"passiv":true,"datum":"2026-11-07"},
+    "4188": {"name":{"deDE":"Große Ausdauer"},"familien":[5,8],"rang":2,"passiv":true,"datum":"2026-11-07"},
     "4189": {"name":{"deDE":"Große Ausdauer"},"familien":[5,319],"rang":3,"passiv":true,"datum":"2026-10-16"},
     "7371": {"name":{"deDE":"Sturmangriff"},"familien":[5],"rang":1,"datum":"2026-10-17"},
     "14916": {"name":{"deDE":"Knurren"},"familien":[1,2,4,5,6,7,8,11,20,25,26,27],"rang":2,"datum":"2026-10-17"},
@@ -158,13 +166,13 @@
     "16829": {"name":{"deDE":"Klaue"},"familien":[4,8],"rang":3,"datum":"2026-10-18"},
     "16830": {"name":{"deDE":"Klaue"},"familien":[4],"rang":4,"datum":"2026-10-18"},
     "17253": {"name":{"deDE":"Beißen"},"familien":[1,3,4,5,6],"rang":1,"datum":"2026-10-17"},
-    "17255": {"name":{"deDE":"Beißen"},"familien":[1,3,4,5,6,11],"rang":2,"datum":"2026-10-16"},
+    "17255": {"name":{"deDE":"Beißen"},"familien":[1,3,4,5,6,11,319],"rang":2,"datum":"2026-10-16"},
     "17256": {"name":{"deDE":"Beißen"},"familien":[1,3,5,319],"rang":3,"datum":"2026-10-16"},
     "17257": {"name":{"deDE":"Beißen"},"familien":[3],"rang":4,"datum":"2026-10-18"},
     "23992": {"name":{"deDE":"Feuerwiderstand"},"familien":[5],"rang":1,"passiv":true,"datum":"2026-10-16"},
     "24423": {"name":{"deDE":"Demoralisierendes Kreischen"},"familien":[7],"rang":1,"datum":"2026-10-16"},
     "24492": {"name":{"deDE":"Naturwiderstand"},"familien":[5],"rang":1,"passiv":true,"datum":"2026-10-16"},
-    "24545": {"name":{"deDE":"Natürliche Rüstung"},"familien":[4,5],"rang":1,"passiv":true,"datum":"2026-11-07"},
+    "24545": {"name":{"deDE":"Natürliche Rüstung"},"familien":[4,5,8,319],"rang":1,"passiv":true,"datum":"2026-11-07"},
     "24549": {"name":{"deDE":"Natürliche Rüstung"},"familien":[5],"rang":2,"passiv":true,"datum":"2026-11-07"},
     "24550": {"name":{"deDE":"Natürliche Rüstung"},"familien":[5,319],"rang":3,"passiv":true,"datum":"2026-10-16"},
     "24604": {"name":{"deDE":"Wutgeheul"},"familien":[1],"rang":1,"datum":"2026-10-16"},
