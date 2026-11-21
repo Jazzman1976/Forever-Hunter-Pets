@@ -93,9 +93,15 @@ Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer)
 - **Die Abfragen unterscheiden einen NPC-Begleiter nicht von einem wilden Tier:** `UnitPlayerControlled`, `UnitIsOtherPlayersPet` und `UnitIsCharmed` sind `false`, Kreaturtyp Wildtier, die GUID ist `Creature-…-3939-…` wie bei wilden Tieren.
 - **Der Tooltip unterscheidet sie:** `C_TooltipInfo.GetUnit(unit)` liefert beim Begleiter eine Zeile vom Typ `Enum.TooltipDataLineType.UnitOwner` (16) mit „Begleiter von Jäger der Grimmhauer“. Wilde Tiere haben keine solche Zeile. Der Zeilentyp hängt nicht von der Sprache ab.
 - **Auch bei Namensplaketten:** Die Zeile kommt für `nameplateN` genauso wie für Ziel und Maus. Der versteckte Tooltip (`SetUnit`) zeigt dieselben Zeilen, nur ohne Typ.
-- **Vorlagen:** Der Text der Zeile folgt `UNITNAME_SUMMON_TITLE1` („Begleiter von %s“); `UNITNAME_TITLE_*` gibt es in Forever nicht. Mit dem Zeilentyp ist kein Textvergleich nötig.
+- **Vorlagen:** Der Text der Zeile folgt `UNITNAME_SUMMON_TITLE1` („Begleiter von %s“); `UNITNAME_TITLE_*` gibt es in Forever nicht. Der Zeilentyp reicht fast immer; Ausnahmen mit Typ 0 stehen unten („Besitzerzeile ohne Typ“) und kommen in die Sperrliste.
 - **Pet eines Spielers:** GUID `Pet-…`, `UnitPlayerControlled` = `true`, dieselbe Zeile vom Typ 16. Es wird schon über `UnitPlayerControlled` ausgeschlossen.
 - **Zähmen eines NPC-Begleiters:** `UI_ERROR_MESSAGE` mit der Fehler-ID **306** und „Kreatur wird bereits kontrolliert..“; keine Konstante in `_G` hat genau diesen Text, und `UNIT_SPELLCAST_FAILED` kommt dabei nicht. Das Ziel ist in dem Moment noch das Tier. Beim Pet eines Spielers kommt dagegen `UNIT_SPELLCAST_FAILED` (1515) und `UI_ERROR_MESSAGE` 57 „Ungültiges Ziel“ (`SPELL_FAILED_BAD_TARGETS`).
+- **Besitzerzeile ohne Typ** (zweite Besitzer-Probe, 21.11.2026, Build 71037, #225): Raylann (NPC 256518, Katze, Karte 2521) ist ein Begleiter, der mit seinem Besitzer im Level steigt. Er hat eine Creature-GUID und den Kreaturtyp Wildtier. `UnitPlayerControlled`, `UnitIsOtherPlayersPet` und `UnitIsCharmed` sind `false`, die Reaktion ist freundlich (5), `UnitCanAttack` ist `false`.
+  - Die Zeile „Begleiter von …“ kommt schon beim ersten Blick, aber mit dem **Typ 0** statt 16. Deshalb erkennt `ns.HasOwner` sie nicht, und das Tier kam bei drei Meldern als wildes Tier in die Daten.
+  - In derselben Probe hat die Zeile beim Pet eines Spielers (`Pet-…`) wie erwartet den Typ 16.
+  - Auch „Stufe 6“ kommt als Typ 0, obwohl es `UnitLevel` (47) gibt: Forever belegt die Zeilentypen nicht vollständig.
+  - Zähmen scheitert mit `UI_ERROR_MESSAGE` 57 „Ungültiges Ziel“, wie beim Pet eines Spielers.
+  - Behoben über die Sperrliste, ohne Codeänderung (Entscheidung des Maintainers). Eine Erkennung am Text der Vorlagen `UNITNAME_SUMMON_TITLE*` ist zurückgestellt, bis sich solche Fälle häufen.
 
 ## Addon-Nachrichten (Selbsttest `/fhp teilen test`, 14.10.2026 in der Beta, 10.11.2026 live)
 
