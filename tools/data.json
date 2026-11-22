@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-21T22:02:50.724Z",
+ "generatedAt": "2026-11-22T12:22:46.872Z",
  "families": {
   "1": {
    "de": "Wolf",
@@ -8671,6 +8671,13 @@
    "npc": 6250,
    "karten": [
     1436
+   ],
+   "stufen": null
+  },
+  {
+   "npc": 256108,
+   "karten": [
+    2521
    ],
    "stufen": null
   },
