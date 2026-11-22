@@ -19,7 +19,7 @@ tools/eigene/*.json  ──tools/build-data.mjs──>  tools/data.json  ──t
 | `Core/Places.lua` | Fundorte als Zellen eines Rasters, nur aus der Nähe |
 | `Core/Discover.lua` | Entdecken: Status je Tier und Zone, was ein Tier lehrt, Hinweise, was als Nächstes zu tun ist (`ns.StatusHint`, `ns.MapHint`), Fortschritt je Zone; `/fhp gebiet` |
 | `Core/Comm.lua` | Teilen im Spiel: Addon-Nachrichten über Gilde und Gruppe, Antworten per Flüstern |
-| `Core/Probe.lua` | `/fhp api`, `/fhp karte`, `/fhp zaehmen`, `/fhp besitzer`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables |
+| `Core/Probe.lua` | `/fhp api`, `/fhp api instanz`, `/fhp karte`, `/fhp zaehmen`, `/fhp besitzer`: Entwicklerwerkzeuge, schreiben ein Protokoll in die SavedVariables (die Instanz-Probe als Liste von Läufen in `probeInst`, #223) |
 | `Core/Survey.lua` | Erhebung der Fähigkeiten aus Wildtierausbildung, Tierausbilder und Zauberbuch; `/fhp erhebung` |
 | `Core/ForeignRanks.lua` | Fremde Ränge (#103): unbekannte Zauber aus fremden Zähmungen über den eigenen Client in Name und Rang auflösen |
 | `UI/Widgets.lua` | Scrollbereich, Auswahlliste, Pool, Markierung der gewählten Zeile (`W.Selection`), Rand von Hauptfenster und Startansicht (`W.Border`, #67) |

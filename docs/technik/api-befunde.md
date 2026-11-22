@@ -126,6 +126,12 @@ Geprüft am Wolf der Grimmhauer (NPC 3939, Begleiter des Jägers der Grimmhauer)
 
 In Kampf und Instanzen liefert die API „secret values“, die schon beim Vergleichen einen Fehler werfen. Nur `issecretvalue()` ist ein sicherer Test. Auslesen also nur außerhalb des Kampfs und durch `ns.clean()`.
 
+## Instanzen (Instanz-Probe `/fhp api instanz`, #223)
+
+Was die API in einer Instanz **außerhalb des Kampfs** liefert: Ort, Karte und Position, Tiere an Ziel, Maus und Namensplaketten, ihr Tooltip, Addon-Nachrichten und ein Bild der Instanz – je Wert lesbar, geheim oder fehlt. Gemessen wird für das Epic #220.
+
+Noch nicht gemessen. Der Befund kommt nach der Messung im Spiel als Tabelle hierher.
+
 ## Pet-Rahmen (Test von #120, 07.11.2026)
 
 - **`GetPetExperience()`** liefert in Forever aktuelle und nötige EP des Pets; `UnitLevel("pet")` die Stufe. Leiste und Stufe folgen im Spiel ohne `/reload` (EP beim Töten, Stufenaufstieg, Pet wegschicken und rufen) über `UNIT_PET_EXPERIENCE`, `UNIT_LEVEL`, `UNIT_PET` und `PET_UI_UPDATE`.

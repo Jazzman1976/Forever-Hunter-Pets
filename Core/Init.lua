@@ -135,6 +135,7 @@ local CHAR_DEFAULTS = { known = {}, filters = { show = {} } }
 -- Protokoll einer Probe oder des Selbsttests speichern (ForeverHunterPetsDB.probe), mit Zeitstempel: Es soll
 -- nach /reload aus der Datei lesbar sein, aber nicht ewig liegen bleiben (#68)
 local PROBE_KEEP = 24 * 60 * 60
+local PROBE_INST_KEEP = 14 * 24 * 60 * 60
 function ns.SaveProbe(log)
   if not ns.db then return end
   ns.db.probe, ns.db.probeAt = log, time()
@@ -152,6 +153,16 @@ ns.On("ADDON_LOADED", function(name)
   -- Protokoll der letzten Probe bzw. des Selbsttests nur einen Tag aufheben (#68); ohne Zeitstempel ist es
   -- von vor diesem Stand und kommt auch weg
   if not (ns.db.probeAt and time() - ns.db.probeAt < PROBE_KEEP) then ns.db.probe, ns.db.probeAt = nil, nil end
+  -- Läufe der Instanz-Probe (#223, Core/Probe.lua) 14 Tage aufheben: gemessen wird über mehrere Abende
+  if type(ns.db.probeInst) == "table" then
+    local keep = {}
+    for _, run in ipairs(ns.db.probeInst) do
+      if type(run) == "table" and type(run.at) == "number" and time() - run.at < PROBE_INST_KEEP then keep[#keep + 1] = run end
+    end
+    ns.db.probeInst = #keep > 0 and keep or nil
+  elseif ns.db.probeInst ~= nil then
+    ns.db.probeInst = nil
+  end
   -- Schalter „Fundorte anderer Spieler“ gibt es nicht mehr (16.10.2026)
   ns.db.ui.showForeignCells = nil
 end)
@@ -168,7 +179,13 @@ SlashCmdList.FOREVERHUNTERPETS = function(msg)
   if cmd == "" then
     ns.SafeCall("window", ns.Toggle)
   elseif cmd == "api" then
-    ns.SafeCall("api", ns.ProbeApi)
+    -- /fhp api instanz [neu] (#223): Instanz-Probe, „neu“ leert vorher die Liste der Läufe
+    local sub, opt = (msg or ""):lower():match("^%s*%S+%s+(%S+)%s*(%S*)")
+    if sub == "instanz" or sub == "instance" then
+      ns.SafeCall("api", ns.ProbeInstance, opt == "neu" or opt == "new")
+    else
+      ns.SafeCall("api", ns.ProbeApi)
+    end
   elseif cmd == "karte" or cmd == "map" then
     ns.SafeCall("map", ns.ProbeMap)
   elseif cmd == "zaehmen" or cmd == "zähmen" or cmd == "tame" then
